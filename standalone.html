@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#03060c" />
-  <meta name="description" content="HOVERDRIFT: COSMIC EXPANSE — Open-world 360° space combat starfighter simulation with responsive arcade physics, procedural asteroid fields, and dynamic enemy drone swarms." />
+  <meta name="description" content="HOVERDRIFT: COSMIC EXPANSE — Open-world 360° space combat starfighter simulation with photorealistic nebulae, multi-ship hangar, asteroid fields, and epic capital boss battles." />
   <title>HOVERDRIFT: COSMIC EXPANSE</title>
 
   <!-- Offline / Local Fallback Three.js with CDN safety -->
@@ -18,7 +18,7 @@
 
   <style>
     :root {
-      --bg: #03060c;
+      --bg: #02040a;
       --ink: #e3f3ff;
       --muted: #7d93a8;
       --cyan: #3ef0ff;
@@ -28,7 +28,8 @@
       --green: #5cff9d;
       --danger: #ff2244;
       --amber: #ffc247;
-      --panel-bg: rgba(6, 14, 24, 0.78);
+      --purple: #bf00ff;
+      --panel-bg: rgba(6, 14, 24, 0.82);
       --panel-line: rgba(110, 180, 220, 0.22);
       --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
@@ -66,7 +67,7 @@
       pointer-events: none;
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.75) 100%);
+      background: radial-gradient(circle at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.8) 100%);
       z-index: 2;
     }
 
@@ -74,7 +75,7 @@
       pointer-events: none;
       position: absolute;
       inset: 0;
-      opacity: 0.18;
+      opacity: 0.16;
       background: repeating-linear-gradient(rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px);
       z-index: 2;
     }
@@ -127,10 +128,81 @@
       box-shadow: 0 0 10px var(--orange-glow);
     }
 
+    /* Dedicated Capital Ship Boss Health Bar */
+    .hud-boss-bar-panel {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(520px, 90vw);
+      background: rgba(14, 8, 22, 0.88);
+      border: 1.5px solid var(--purple);
+      box-shadow: 0 0 25px rgba(191, 0, 255, 0.35);
+      padding: 10px 18px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .boss-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .boss-warning-tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 800;
+      color: #ff3366;
+      letter-spacing: 0.2em;
+      animation: alertPulse 0.8s infinite alternate;
+    }
+
+    .boss-name {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 800;
+      color: #f1b3ff;
+      letter-spacing: 0.16em;
+      text-shadow: 0 0 12px var(--purple);
+    }
+
+    .boss-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .boss-track {
+      height: 7px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      overflow: hidden;
+      border: 1px solid rgba(191, 0, 255, 0.3);
+    }
+
+    .boss-fill {
+      height: 100%;
+      transition: width 0.15s ease-out;
+    }
+
+    .boss-shield-fill {
+      background: linear-gradient(90deg, #7b2cbf, var(--purple));
+      box-shadow: 0 0 8px rgba(191, 0, 255, 0.6);
+    }
+
+    .boss-hull-fill {
+      background: linear-gradient(90deg, #d90429, #ff1744);
+      box-shadow: 0 0 8px rgba(255, 23, 68, 0.6);
+    }
+
     /* Central Alert Announcement */
     .hud-center-alert {
       position: absolute;
-      top: 18%;
+      top: 22%;
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
@@ -143,9 +215,9 @@
       font-weight: 800;
       letter-spacing: 0.26em;
       color: #fff;
-      background: rgba(14, 25, 42, 0.92);
+      background: rgba(14, 25, 42, 0.94);
       border: 1px solid var(--cyan);
-      box-shadow: 0 0 28px var(--cyan-glow);
+      box-shadow: 0 0 30px var(--cyan-glow);
       padding: 12px 28px;
       text-align: center;
       text-shadow: 0 0 12px var(--cyan);
@@ -216,7 +288,7 @@
       font-family: var(--mono);
       font-size: 10.5px;
       letter-spacing: 0.12em;
-      background: rgba(5, 12, 22, 0.82);
+      background: rgba(5, 12, 22, 0.85);
       border-left: 2px solid var(--cyan);
       padding: 4px 10px;
       text-shadow: 0 0 8px currentColor;
@@ -229,7 +301,7 @@
       100% { opacity: 1; transform: translateX(0); }
     }
 
-    /* Fullscreen Target Tracking 2D Canvas */
+    /* Target Tracking Canvas */
     .hud-tracking-canvas {
       position: absolute;
       inset: 0;
@@ -237,15 +309,6 @@
       height: 100%;
       pointer-events: none;
       z-index: 5;
-    }
-
-    /* Bottom HUD Layout */
-    .hud-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      padding: 20px 24px;
-      position: relative;
     }
 
     /* 360-Degree Radar Panel (Bottom Left) */
@@ -265,9 +328,9 @@
       height: 140px;
       border-radius: 50%;
       border: 1.5px solid var(--panel-line);
-      box-shadow: 0 0 20px rgba(62, 240, 255, 0.15);
+      box-shadow: 0 0 20px rgba(62, 240, 255, 0.18);
       overflow: hidden;
-      background: radial-gradient(circle, rgba(10, 22, 38, 0.8) 0%, rgba(4, 9, 16, 0.95) 100%);
+      background: radial-gradient(circle, rgba(10, 22, 38, 0.82) 0%, rgba(3, 7, 14, 0.96) 100%);
     }
 
     .radar-canvas {
@@ -280,7 +343,7 @@
       position: absolute;
       inset: 0;
       border-radius: 50%;
-      background: conic-gradient(from 0deg, rgba(62, 240, 255, 0.2) 0deg, transparent 65deg, transparent 360deg);
+      background: conic-gradient(from 0deg, rgba(62, 240, 255, 0.22) 0deg, transparent 65deg, transparent 360deg);
       animation: radarSpin 2.4s linear infinite;
       pointer-events: none;
     }
@@ -316,7 +379,7 @@
 
     .vital-row {
       display: grid;
-      grid-template-columns: 50px 1fr 44px;
+      grid-template-columns: 75px 1fr 44px;
       align-items: center;
       gap: 10px;
       font-size: 9.5px;
@@ -380,7 +443,7 @@
       100% { opacity: 1.0; }
     }
 
-    /* Key Hints (Bottom Right) */
+    /* Key Hints */
     .hud-hints {
       position: absolute;
       bottom: 20px;
@@ -407,92 +470,252 @@
       font-weight: 700;
     }
 
-    /* Intro Overlay Menu */
-    .intro-modal {
+    /* =========================================================
+       SCI-FI HANGAR & STARFIGHTER SELECTION UI
+       ========================================================= */
+    .hangar-overlay {
       position: absolute;
       inset: 0;
       z-index: 20;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: radial-gradient(circle at 50% 45%, rgba(10, 22, 38, 0.92) 0%, rgba(3, 6, 12, 0.98) 75%);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      text-align: center;
-      padding: 24px;
+      background: radial-gradient(circle at 50% 40%, rgba(8, 18, 32, 0.88) 0%, rgba(2, 4, 10, 0.98) 75%);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 24px 32px;
     }
 
-    .intro-logo {
-      font-size: clamp(34px, 7vw, 58px);
+    .hangar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--panel-line);
+      padding-bottom: 14px;
+    }
+
+    .hangar-title {
+      font-size: 22px;
       font-weight: 900;
       letter-spacing: 0.28em;
       color: #fff;
-      text-shadow: 0 0 32px var(--cyan-glow);
-      margin-bottom: 8px;
+      text-shadow: 0 0 20px var(--cyan-glow);
     }
 
-    .intro-logo span {
+    .hangar-title span {
       color: var(--cyan);
     }
 
-    .intro-sub {
-      font-size: 13px;
-      letter-spacing: 0.24em;
-      color: var(--muted);
-      margin-bottom: 32px;
-      max-width: 580px;
-      line-height: 1.6;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      max-width: 680px;
-      margin-bottom: 38px;
-      text-align: left;
-    }
-
-    .feat-card {
-      background: rgba(14, 25, 42, 0.65);
-      border: 1px solid var(--panel-line);
-      padding: 14px 16px;
-      border-radius: 4px;
-    }
-
-    .feat-title {
+    .hangar-subtitle {
       font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.16em;
-      color: var(--cyan);
-      margin-bottom: 6px;
+      font-family: var(--mono);
+      letter-spacing: 0.18em;
+      color: var(--muted);
     }
 
-    .feat-desc {
-      font-size: 10px;
-      color: #9cb5cb;
-      line-height: 1.5;
+    .hangar-content {
+      display: grid;
+      grid-template-columns: 360px 1fr 360px;
+      gap: 24px;
+      flex: 1;
+      align-items: center;
+      padding: 20px 0;
     }
 
-    .btn-engage {
-      font-family: inherit;
-      font-size: 13px;
+    /* Left: Ship Selection Cards */
+    .ship-cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .ship-card {
+      background: rgba(10, 20, 34, 0.65);
+      border: 1px solid var(--panel-line);
+      border-radius: 4px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .ship-card:hover {
+      background: rgba(16, 32, 54, 0.85);
+      border-color: var(--cyan);
+      transform: translateX(4px);
+    }
+
+    .ship-card.active {
+      background: linear-gradient(90deg, rgba(62, 240, 255, 0.16), rgba(6, 14, 24, 0.85));
+      border-color: var(--cyan);
+      box-shadow: 0 0 22px rgba(62, 240, 255, 0.25);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 14px;
       font-weight: 800;
-      letter-spacing: 0.26em;
-      color: #03060c;
-      background: linear-gradient(90deg, #3ef0ff, #7bf5ff);
+      letter-spacing: 0.16em;
+      color: #fff;
+    }
+
+    .card-type {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.14em;
+    }
+
+    .card-desc {
+      font-size: 10.5px;
+      color: #8faec9;
+      line-height: 1.45;
+    }
+
+    /* Center: 3D Holographic Turntable Canvas */
+    .hangar-turntable-container {
+      position: relative;
+      height: 100%;
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #hangar-turntable-canvas {
+      width: 100%;
+      height: 100%;
+      max-height: 520px;
+      display: block;
+      cursor: grab;
+    }
+
+    #hangar-turntable-canvas:active {
+      cursor: grabbing;
+    }
+
+    .turntable-hint {
+      position: absolute;
+      bottom: 12px;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+    }
+
+    /* Right: Ship Diagnostics & Stat Meters */
+    .ship-stats-panel {
+      background: rgba(8, 16, 28, 0.82);
+      border: 1px solid var(--panel-line);
+      border-radius: 4px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .stats-header {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      color: var(--cyan);
+      border-bottom: 1px solid var(--panel-line);
+      padding-bottom: 8px;
+    }
+
+    .stat-bar-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stat-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+    }
+
+    .stat-meta b {
+      font-family: var(--mono);
+      color: #fff;
+    }
+
+    .stat-track {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .stat-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1aa4b8, var(--cyan));
+      box-shadow: 0 0 8px var(--cyan-glow);
+      transition: width 0.3s ease;
+    }
+
+    .hangar-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--panel-line);
+      padding-top: 18px;
+    }
+
+    .mission-brief {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brief-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+      animation: alertPulse 1.2s infinite alternate;
+    }
+
+    .brief-text {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: #a8c7e2;
+    }
+
+    .btn-launch-mission {
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.28em;
+      color: #02040a;
+      background: linear-gradient(90deg, #3ef0ff, #82f6ff);
       border: none;
-      padding: 16px 42px;
+      padding: 16px 48px;
       border-radius: 3px;
       cursor: pointer;
-      box-shadow: 0 0 30px var(--cyan-glow);
+      box-shadow: 0 0 32px var(--cyan-glow);
       transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
     }
 
-    .btn-engage:hover {
+    .btn-launch-mission:hover {
       transform: translateY(-2px) scale(1.03);
-      box-shadow: 0 0 45px rgba(62, 240, 255, 0.7);
+      box-shadow: 0 0 48px rgba(62, 240, 255, 0.75);
     }
 
     /* Mobile Virtual Touch Controls */
@@ -562,12 +785,10 @@
       box-shadow: 0 0 20px var(--cyan-glow);
     }
 
-    /* Responsive Queries */
-    @media (max-width: 768px) {
+    @media (max-width: 960px) {
+      .hangar-content { grid-template-columns: 1fr; overflow-y: auto; }
       .hud-hints { display: none; }
-      .features-grid { grid-template-columns: 1fr; }
       .hud-vitals { width: 250px; bottom: 85px; }
-      .hud-radar-panel { transform: scale(0.85); transform-origin: bottom left; }
       .touch-controls { display: block; }
     }
   </style>
@@ -583,36 +804,92 @@
   <!-- Tactical HUD Container -->
   <div class="hud" id="hud-container"></div>
 
-  <!-- Launch Mission Splash Screen -->
-  <div class="intro-modal" id="intro-modal">
-    <h1 class="intro-logo">HOVERDRIFT<span> // COSMIC</span></h1>
-    <p class="intro-sub">
-      Infinite 360° Open-World Cosmic Battlefield.<br />
-      Command the Dark Armored Twin-Hull Cruiser across procedural drifting asteroid fields and dynamic enemy drone squadrons.
-    </p>
+  <!-- Interactive Sci-Fi Hangar & Ship Selection Overlay -->
+  <div class="hangar-overlay" id="hangar-overlay">
+    <header class="hangar-header">
+      <div class="hangar-brand">
+        <h1 class="hangar-title">HOVERDRIFT<span> // HANGAR BAY</span></h1>
+        <div class="hangar-subtitle">SELECT STARFIGHTER // DEPLOYMENT PROTOCOL READY</div>
+      </div>
+    </header>
 
-    <div class="features-grid">
-      <div class="feat-card">
-        <div class="feat-title">OPEN COSMIC VOID</div>
-        <div class="feat-desc">Zero confining boundary walls or rigid limits. Infinite 360° flight through procedural nebulae and asteroid belts.</div>
+    <div class="hangar-content">
+      <!-- Ship Selection Cards (Left) -->
+      <div class="ship-cards-list">
+        <!-- Ship 1: Aether Vanguard -->
+        <div class="ship-card active" data-ship="aether" id="card-aether">
+          <div class="card-top">
+            <span class="card-title">AETHER VANGUARD</span>
+            <span class="card-type">INTERCEPTOR</span>
+          </div>
+          <p class="card-desc">Sleek aerodynamic spaceframe with cranked delta wings, dual canted stabilizers, and rapid blue plasma cannons.</p>
+        </div>
+
+        <!-- Ship 2: Void Dreadnought -->
+        <div class="ship-card" data-ship="dreadnought" id="card-dreadnought">
+          <div class="card-top">
+            <span class="card-title">VOID DREADNOUGHT</span>
+            <span class="card-type">TWIN-HULL CRUISER</span>
+          </div>
+          <p class="card-desc">Monolithic warship with stealth composite armor, heavy catamaran hulls, and twin rail-cannons.</p>
+        </div>
+
+        <!-- Ship 3: Crimson Interceptor -->
+        <div class="ship-card" data-ship="crimson" id="card-crimson">
+          <div class="card-top">
+            <span class="card-title">CRIMSON INTERCEPTOR</span>
+            <span class="card-type">TACTICAL STRIKE</span>
+          </div>
+          <p class="card-desc">Brushed titanium aero-body with racing crimson foils, twin circular VTOL thrusters, and triple lasers.</p>
+        </div>
       </div>
-      <div class="feat-card">
-        <div class="feat-title">ARCADE FLIGHT DYNAMICS</div>
-        <div class="feat-desc">Responsive mouse & keyboard controls with natural aerodynamic roll banking and afterburner overdrive.</div>
+
+      <!-- Center: 3D Holographic Turntable Showcase -->
+      <div class="hangar-turntable-container">
+        <canvas id="hangar-turntable-canvas"></canvas>
+        <div class="turntable-hint">DRAG TO INSPECT 360° MODEL</div>
       </div>
-      <div class="feat-card">
-        <div class="feat-title">DRONE SQUADRONS</div>
-        <div class="feat-desc">Dynamic waves of Scout, Assault, and Interceptor drones with 360° radar and tactical target lock-on.</div>
+
+      <!-- Right: Ship Diagnostics & Stat Meters -->
+      <div class="ship-stats-panel">
+        <div class="stats-header" id="stats-ship-title">AETHER VANGUARD // STATS</div>
+        <div class="stat-bar-group">
+          <div class="stat-row">
+            <div class="stat-meta"><span>TOP SPEED</span><b id="stat-speed-val">95%</b></div>
+            <div class="stat-track"><div class="stat-fill" id="stat-speed-bar" style="width: 95%;"></div></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-meta"><span>AGILITY & ROLL</span><b id="stat-agility-val">98%</b></div>
+            <div class="stat-track"><div class="stat-fill" id="stat-agility-bar" style="width: 98%;"></div></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-meta"><span>SHIELD CAPACITY</span><b id="stat-shields-val">75%</b></div>
+            <div class="stat-track"><div class="stat-fill" id="stat-shields-bar" style="width: 75%;"></div></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-meta"><span>HULL ARMOR</span><b id="stat-hull-val">70%</b></div>
+            <div class="stat-track"><div class="stat-fill" id="stat-hull-bar" style="width: 70%;"></div></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-meta"><span>FIREPOWER</span><b id="stat-firepower-val">82%</b></div>
+            <div class="stat-track"><div class="stat-fill" id="stat-firepower-bar" style="width: 82%;"></div></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <button class="btn-engage" id="btn-engage">ENGAGE ENGINES</button>
+    <footer class="hangar-footer">
+      <div class="mission-brief">
+        <div class="brief-dot"></div>
+        <div class="brief-text">SECTOR 01 PATROL READY // CAPITAL BOSS SIGNATURES DETECTED AT SECTOR 03 & 06</div>
+      </div>
+      <button class="btn-launch-mission" id="btn-launch-mission">LAUNCH MISSION</button>
+    </footer>
   </div>
 
-  <!-- Modular Scripts Entry -->
-    <script>
-    // Self-Contained Standalone Cosmic Expanse Game Bundle
-/**
+  <script>
+    // Self-Contained Standalone Game Bundle
+    /**
  * Cosmic Battlefield - Procedural Audio Engine
  * High-fidelity 100% procedural sound synthesis via Web Audio API.
  * Zero external audio file dependencies.
@@ -956,274 +1233,149 @@ class SoundEngine {
   }
 }
 
-/**
- * Starfighter Model & Controller: Dark Armored Twin-Hull Cruiser
- * Features glowing orange energy strips, rear thruster flames, dual-laser systems,
- * and responsive arcade flight physics with roll banking.
+    /**
+ * Photorealistic Starfighter Models & Flight Controller
+ * Features 3 distinct flyable ships meticulously crafted after reference designs:
+ * 1. Aether Vanguard - Sleek, highly agile interceptor with blue plasma trails
+ * 2. Void Dreadnought - Heavy armored twin-hull cruiser with dark metallic matte finish
+ * 3. Crimson Interceptor - Tactical fighter with silver-grey chassis and red/orange energy highlights
  */
+
+const SHIP_CONFIGS = {
+  aether: {
+    id: 'aether',
+    name: 'AETHER VANGUARD',
+    type: 'High-Agility Interceptor',
+    description: 'Sleek aerodynamic spaceframe engineered for hyper-maneuverability. Features cranked delta wings, dual canted stabilizers, and twin high-frequency blue plasma cannons.',
+    maxSpeed: 64,
+    boostSpeed: 136,
+    accelRate: 68,
+    turnRate: 7.8,
+    rollRate: 11.0,
+    maxShield: 85,
+    maxHull: 80,
+    shieldRegenRate: 24,
+    boostDrainRate: 26,
+    fireInterval: 0.10,
+    primaryColor: 0x3ef0ff,
+    engineGlow: 0x3ef0ff,
+    laserColor: 0x3ef0ff,
+    weaponType: 'dual_rapid',
+    stats: { speed: 95, agility: 98, shields: 75, hull: 70, firepower: 82 }
+  },
+  dreadnought: {
+    id: 'dreadnought',
+    name: 'VOID DREADNOUGHT',
+    type: 'Heavy Twin-Hull Cruiser',
+    description: 'Monolithic combat warship with stealth composite armor and dual reinforced catamarans. Deploys heavy kinetic plasma batteries and an impenetrable layered shield capacitor.',
+    maxSpeed: 44,
+    boostSpeed: 98,
+    accelRate: 46,
+    turnRate: 5.2,
+    rollRate: 7.0,
+    maxShield: 140,
+    maxHull: 160,
+    shieldRegenRate: 16,
+    boostDrainRate: 32,
+    fireInterval: 0.16,
+    primaryColor: 0xff7700,
+    engineGlow: 0xff5500,
+    laserColor: 0xff8800,
+    weaponType: 'heavy_dual',
+    stats: { speed: 68, agility: 60, shields: 98, hull: 100, firepower: 95 }
+  },
+  crimson: {
+    id: 'crimson',
+    name: 'CRIMSON INTERCEPTOR',
+    type: 'Tactical Strike Fighter',
+    description: 'Advanced tactical strike craft built with brushed titanium alloys and racing crimson aero-foils. Features twin VTOL plasma turbine rings and a triple laser system.',
+    maxSpeed: 55,
+    boostSpeed: 120,
+    accelRate: 58,
+    turnRate: 6.8,
+    rollRate: 9.2,
+    maxShield: 105,
+    maxHull: 105,
+    shieldRegenRate: 20,
+    boostDrainRate: 28,
+    fireInterval: 0.12,
+    primaryColor: 0xff1744,
+    engineGlow: 0xff2244,
+    laserColor: 0xff2244,
+    weaponType: 'triple_pulse',
+    stats: { speed: 85, agility: 86, shields: 85, hull: 85, firepower: 90 }
+  }
+};
+
 class Starfighter {
-  constructor(scene, THREE) {
+  constructor(scene, THREE, shipType = 'aether') {
     this.scene = scene;
     this.THREE = THREE;
+    this.config = SHIP_CONFIGS[shipType] || SHIP_CONFIGS.aether;
+    this.shipType = shipType;
 
     // Movement & Physics State
     this.position = new THREE.Vector3(0, 0, 0);
     this.velocity = new THREE.Vector3(0, 0, 0);
-    this.heading = 0;          // Yaw angle in radians (0 = pointing +Z or -Z)
+    this.heading = 0;
     this.targetHeading = 0;
-    this.roll = 0;             // Banking angle in radians
+    this.roll = 0;
     this.pitch = 0;
 
-    // Vitals
-    this.maxHull = 100;
-    this.hull = 100;
-    this.maxShield = 100;
-    this.shield = 100;
-    this.shieldRegenDelay = 3.0; // Seconds after damage before recharge
+    // Vitals from Config
+    this.maxHull = this.config.maxHull;
+    this.hull = this.maxHull;
+    this.maxShield = this.config.maxShield;
+    this.shield = this.maxShield;
+    this.shieldRegenDelay = 3.0;
     this.lastDamageTime = 0;
-    this.shieldRegenRate = 18;   // Shield points per second
+    this.shieldRegenRate = this.config.shieldRegenRate;
 
     // Energy / Boost
     this.maxEnergy = 100;
     this.energy = 100;
-    this.boostDrainRate = 28;
-    this.energyRegenRate = 20;
+    this.boostDrainRate = this.config.boostDrainRate;
+    this.energyRegenRate = 22;
     this.isBoosting = false;
+    this.invulnerableTimer = 0; // For Shield Overcharge power-up
 
-    // Speeds & Acceleration (Arcade Flight Tuning)
-    this.cruisingSpeed = 48;
-    this.boostSpeed = 110;
-    this.accelRate = 55;
-    this.brakingRate = 75;
-    this.friction = 0.985;
-    this.turnRate = 6.5;
-
-    // Weapons
-    this.fireInterval = 0.12;   // Rapid dual laser fire
+    // Weapon Upgrades
+    this.weaponLevel = 1; // 1 = Standard, 2 = Triple/Heavy, 3 = Hyper Quad
+    this.weaponLevelTimer = 0;
+    this.fireInterval = this.config.fireInterval;
     this.lastFireTime = 0;
-    this.laserAlternator = false;
     this.heat = 0;
     this.overheated = false;
-    this.heatPerShot = 0.045;
-    this.coolRate = 0.35;
+    this.coolRate = 0.38;
 
-    // Build the 3D Starfighter Mesh Group
+    // 3D Objects & FX
     this.group = new THREE.Group();
+    this.shipMesh = null;
     this.thrusterFlames = [];
     this.thrusterLights = [];
-    this.shieldMesh = null;
     this.laserMuzzleOffsets = [];
+    this.shieldMesh = null;
 
-    this._buildModel();
+    this._buildShipModel();
     this.scene.add(this.group);
   }
 
-  _buildModel() {
+  _buildShipModel() {
     const THREE = this.THREE;
+    const type = this.shipType;
 
-    // Core Materials
-    const darkArmorMat = new THREE.MeshStandardMaterial({
-      color: 0x121722,
-      metalness: 0.88,
-      roughness: 0.32,
-      envMapIntensity: 1.2
-    });
+    if (type === 'aether') {
+      this._buildAetherVanguard();
+    } else if (type === 'dreadnought') {
+      this._buildVoidDreadnought();
+    } else {
+      this._buildCrimsonInterceptor();
+    }
 
-    const darkTrimMat = new THREE.MeshStandardMaterial({
-      color: 0x1d2535,
-      metalness: 0.78,
-      roughness: 0.42
-    });
-
-    const orangeEnergyMat = new THREE.MeshStandardMaterial({
-      color: 0xff6600,
-      emissive: 0xff7700,
-      emissiveIntensity: 2.8,
-      roughness: 0.2,
-      metalness: 0.5
-    });
-
-    const canopyMat = new THREE.MeshPhysicalMaterial({
-      color: 0x071b26,
-      metalness: 0.92,
-      roughness: 0.1,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-      emissive: 0x1a4566,
-      emissiveIntensity: 0.35,
-      transparent: true,
-      opacity: 0.88
-    });
-
-    const gunBarrelMat = new THREE.MeshStandardMaterial({
-      color: 0x242e3f,
-      metalness: 0.92,
-      roughness: 0.25
-    });
-
-    this.orangeMat = orangeEnergyMat;
-
-    // Ship Root Model Group
-    const shipRoot = new THREE.Group();
-
-    // 1. TWIN HULLS (Left and Right Catamaran Outriggers)
-    const hullSpacing = 1.35;
-    const hullGeom = new THREE.BoxGeometry(0.72, 0.44, 3.6);
-    const prowGeom = new THREE.ConeGeometry(0.48, 1.4, 4);
-    prowGeom.rotateX(Math.PI / 2);
-    prowGeom.rotateY(Math.PI / 4);
-
-    const energyStripSpineGeom = new THREE.BoxGeometry(0.12, 0.08, 2.8);
-    const energyStripFlankGeom = new THREE.BoxGeometry(0.06, 0.08, 2.2);
-
-    [-1, 1].forEach((side) => {
-      const hullSideGroup = new THREE.Group();
-      hullSideGroup.position.set(side * hullSpacing, 0, 0);
-
-      // Main Hull Beam
-      const hullMesh = new THREE.Mesh(hullGeom, darkArmorMat);
-      hullMesh.castShadow = true;
-      hullMesh.receiveShadow = true;
-      hullSideGroup.add(hullMesh);
-
-      // Forward Angled Prow
-      const prowMesh = new THREE.Mesh(prowGeom, darkArmorMat);
-      prowMesh.position.set(0, 0, 2.4);
-      prowMesh.scale.set(0.9, 0.65, 1.3);
-      prowMesh.castShadow = true;
-      hullSideGroup.add(prowMesh);
-
-      // Glowing Orange Energy Strips along Spine
-      const spineStrip = new THREE.Mesh(energyStripSpineGeom, orangeEnergyMat);
-      spineStrip.position.set(0, 0.24, 0.2);
-      hullSideGroup.add(spineStrip);
-
-      // Flank Glowing Strip
-      const flankStrip = new THREE.Mesh(energyStripFlankGeom, orangeEnergyMat);
-      flankStrip.position.set(side * 0.38, 0.05, 0);
-      hullSideGroup.add(flankStrip);
-
-      // Outboard Winglet / Stabilizer Fin
-      const wingletGeom = new THREE.BoxGeometry(0.8, 0.08, 1.6);
-      const winglet = new THREE.Mesh(wingletGeom, darkTrimMat);
-      winglet.position.set(side * 0.55, 0.04, -0.4);
-      winglet.rotation.z = side * 0.18;
-      hullSideGroup.add(winglet);
-
-      // Wingtip Glowing Beacon
-      const wingTipStrip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.8), orangeEnergyMat);
-      wingTipStrip.position.set(side * 0.95, 0.08, -0.3);
-      hullSideGroup.add(wingTipStrip);
-
-      // Dual Laser Cannons on Outboard Pylons
-      const gunBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.6, 8), darkTrimMat);
-      gunBase.rotation.x = Math.PI / 2;
-      gunBase.position.set(side * 0.42, -0.05, 1.8);
-      hullSideGroup.add(gunBase);
-
-      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.8, 12), gunBarrelMat);
-      barrel.rotation.x = Math.PI / 2;
-      barrel.position.set(side * 0.42, -0.05, 2.6);
-      barrel.castShadow = true;
-      hullSideGroup.add(barrel);
-
-      const gunEmitterRing = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.03, 8, 16), orangeEnergyMat);
-      gunEmitterRing.position.set(side * 0.42, -0.05, 3.4);
-      hullSideGroup.add(gunEmitterRing);
-
-      // Store Muzzle World Offset
-      this.laserMuzzleOffsets.push({ side, x: side * (hullSpacing + 0.42), y: -0.05, z: 3.5 });
-
-      // Rear Ion Engine Bell
-      const engineBellGeom = new THREE.CylinderGeometry(0.28, 0.36, 0.7, 16);
-      engineBellGeom.rotateX(Math.PI / 2);
-      const engineBell = new THREE.Mesh(engineBellGeom, darkTrimMat);
-      engineBell.position.set(0, 0.02, -1.9);
-      hullSideGroup.add(engineBell);
-
-      const engineGlowRing = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.04, 8, 16), orangeEnergyMat);
-      engineGlowRing.position.set(0, 0.02, -2.25);
-      hullSideGroup.add(engineGlowRing);
-
-      // Outer Thruster Flame (Orange/Gold Plasma Flare)
-      const outerFlameGeom = new THREE.ConeGeometry(0.26, 1.8, 16, 1, true);
-      outerFlameGeom.rotateX(-Math.PI / 2);
-      outerFlameGeom.translate(0, 0, -0.9);
-      const outerFlameMat = new THREE.MeshBasicMaterial({
-        color: 0xff6600,
-        transparent: true,
-        opacity: 0.85,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-      const outerFlame = new THREE.Mesh(outerFlameGeom, outerFlameMat);
-      outerFlame.position.set(0, 0.02, -2.25);
-      hullSideGroup.add(outerFlame);
-
-      // Inner Thruster Flame (White-Cyan Core Jet)
-      const innerFlameGeom = new THREE.ConeGeometry(0.14, 1.2, 12, 1, true);
-      innerFlameGeom.rotateX(-Math.PI / 2);
-      innerFlameGeom.translate(0, 0, -0.6);
-      const innerFlameMat = new THREE.MeshBasicMaterial({
-        color: 0x88ffff,
-        transparent: true,
-        opacity: 0.95,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-      const innerFlame = new THREE.Mesh(innerFlameGeom, innerFlameMat);
-      innerFlame.position.set(0, 0.02, -2.25);
-      hullSideGroup.add(innerFlame);
-
-      this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
-
-      shipRoot.add(hullSideGroup);
-    });
-
-    // 2. CENTRAL BRIDGE & COCKPIT CANOPY
-    const centerBridge = new THREE.Group();
-
-    // Cross-Spans linking the hulls
-    const forwardCrossSpan = new THREE.Mesh(new THREE.BoxGeometry(hullSpacing * 2, 0.22, 1.2), darkArmorMat);
-    forwardCrossSpan.position.set(0, 0.08, 0.3);
-    centerBridge.add(forwardCrossSpan);
-
-    const aftCrossSpan = new THREE.Mesh(new THREE.BoxGeometry(hullSpacing * 2, 0.18, 0.9), darkArmorMat);
-    aftCrossSpan.position.set(0, 0.08, -1.1);
-    centerBridge.add(aftCrossSpan);
-
-    // Command Pod Body
-    const podBody = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.36, 2.1), darkArmorMat);
-    podBody.position.set(0, 0.2, -0.2);
-    centerBridge.add(podBody);
-
-    // Sleek Beveled Cockpit Canopy
-    const canopyGeom = new THREE.ConeGeometry(0.42, 1.5, 4);
-    canopyGeom.rotateX(Math.PI / 2);
-    canopyGeom.rotateY(Math.PI / 4);
-    const canopy = new THREE.Mesh(canopyGeom, canopyMat);
-    canopy.position.set(0, 0.42, 0.25);
-    canopy.scale.set(0.85, 0.55, 1.2);
-    centerBridge.add(canopy);
-
-    // Glowing Orange Center Crest
-    const centerCrest = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 1.4), orangeEnergyMat);
-    centerCrest.position.set(0, 0.42, -0.6);
-    centerBridge.add(centerCrest);
-
-    // Ventral Sensor Array
-    const ventralSensor = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), orangeEnergyMat);
-    ventralSensor.position.set(0, -0.15, 0.4);
-    centerBridge.add(ventralSensor);
-
-    shipRoot.add(centerBridge);
-
-    // 3. REACTIVE HOLOGRAPHIC FORCE SHIELD BUBBLE
-    const shieldGeom = new THREE.IcosahedronGeometry(2.8, 2);
+    // Reactive Holographic Shield Bubble
+    const shieldGeom = new THREE.IcosahedronGeometry(3.2, 2);
     const shieldMat = new THREE.MeshBasicMaterial({
-      color: 0x3ef0ff,
+      color: this.config.primaryColor,
       wireframe: true,
       transparent: true,
       opacity: 0.0,
@@ -1231,78 +1383,517 @@ class Starfighter {
       depthWrite: false
     });
     this.shieldMesh = new THREE.Mesh(shieldGeom, shieldMat);
-    this.shieldMesh.scale.set(1.15, 0.65, 1.35);
+    this.shieldMesh.scale.set(1.2, 0.65, 1.4);
     this.group.add(this.shieldMesh);
+  }
+
+  /**
+   * SHIP 1: AETHER VANGUARD (Ref Image 1)
+   * Sleek aerodynamic interceptor, cranked-arrow forward delta wings,
+   * dual canted vertical stabilizers, canopy cockpit, and cyan energy trails.
+   */
+  _buildAetherVanguard() {
+    const THREE = this.THREE;
+    const shipRoot = new THREE.Group();
+
+    // PBR Materials
+    const aeroArmorMat = new THREE.MeshStandardMaterial({
+      color: 0x8ebbd9,
+      metalness: 0.82,
+      roughness: 0.28,
+      envMapIntensity: 1.5
+    });
+
+    const darkUnderbodyMat = new THREE.MeshStandardMaterial({
+      color: 0x182433,
+      metalness: 0.88,
+      roughness: 0.35
+    });
+
+    const cyanEnergyMat = new THREE.MeshStandardMaterial({
+      color: 0x3ef0ff,
+      emissive: 0x3ef0ff,
+      emissiveIntensity: 3.2,
+      roughness: 0.15,
+      metalness: 0.4
+    });
+
+    const canopyMat = new THREE.MeshPhysicalMaterial({
+      color: 0x071e2e,
+      metalness: 0.95,
+      roughness: 0.08,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.08,
+      emissive: 0x16527a,
+      emissiveIntensity: 0.45,
+      transparent: true,
+      opacity: 0.88
+    });
+
+    // 1. Sleek needle-like faceted fuselage
+    const noseGeom = new THREE.ConeGeometry(0.68, 3.8, 5);
+    noseGeom.rotateX(Math.PI / 2);
+    noseGeom.rotateY(Math.PI / 5);
+    const noseMesh = new THREE.Mesh(noseGeom, aeroArmorMat);
+    noseMesh.position.set(0, 0.1, 1.6);
+    noseMesh.scale.set(0.9, 0.45, 1.3);
+    shipRoot.add(noseMesh);
+
+    // Fuselage center spine
+    const spineGeom = new THREE.BoxGeometry(0.95, 0.46, 3.2);
+    const spineMesh = new THREE.Mesh(spineGeom, aeroArmorMat);
+    spineMesh.position.set(0, 0.15, -0.2);
+    shipRoot.add(spineMesh);
+
+    // Cyan glowing spine strip
+    const spineGlow = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 2.6), cyanEnergyMat);
+    spineGlow.position.set(0, 0.39, -0.1);
+    shipRoot.add(spineGlow);
+
+    // 2. Cockpit canopy
+    const canopyGeom = new THREE.ConeGeometry(0.42, 1.8, 4);
+    canopyGeom.rotateX(Math.PI / 2);
+    canopyGeom.rotateY(Math.PI / 4);
+    const canopyMesh = new THREE.Mesh(canopyGeom, canopyMat);
+    canopyMesh.position.set(0, 0.38, 0.45);
+    canopyMesh.scale.set(0.85, 0.55, 1.25);
+    shipRoot.add(canopyMesh);
+
+    // 3. Cranked-Arrow Swept-Forward Delta Wings
+    [-1, 1].forEach((side) => {
+      const wingGroup = new THREE.Group();
+      wingGroup.position.set(side * 0.45, 0.08, -0.4);
+
+      // Main inner swept wing
+      const wingShape = new THREE.Shape();
+      wingShape.moveTo(0, 0);
+      wingShape.lineTo(side * 2.8, -0.8);
+      wingShape.lineTo(side * 2.4, -1.8);
+      wingShape.lineTo(0, -1.2);
+      wingShape.closePath();
+
+      const extrudeSettings = { depth: 0.12, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 2 };
+      const wingGeom = new THREE.ExtrudeGeometry(wingShape, extrudeSettings);
+      wingGeom.rotateX(Math.PI / 2);
+      const wingMesh = new THREE.Mesh(wingGeom, aeroArmorMat);
+      wingGroup.add(wingMesh);
+
+      // Underwing structural panels
+      const underWing = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 1.2), darkUnderbodyMat);
+      underWing.position.set(side * 1.3, -0.06, -0.8);
+      underWing.rotation.y = side * 0.15;
+      wingGroup.add(underWing);
+
+      // Wingtip vertical canted winglets
+      const wingletGeom = new THREE.BoxGeometry(0.08, 0.95, 0.9);
+      const winglet = new THREE.Mesh(wingletGeom, aeroArmorMat);
+      winglet.position.set(side * 2.65, 0.45, -1.1);
+      winglet.rotation.z = side * -0.32;
+      wingGroup.add(winglet);
+
+      // Wingtip glowing cyan beacon
+      const tipLight = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.6), cyanEnergyMat);
+      tipLight.position.set(side * 2.68, 0.45, -1.1);
+      wingGroup.add(tipLight);
+
+      // Wing-mounted laser cannons
+      const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.2, 8), darkUnderbodyMat);
+      cannon.rotation.x = Math.PI / 2;
+      cannon.position.set(side * 1.25, -0.08, 1.2);
+      wingGroup.add(cannon);
+
+      const emitter = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.25, 8), cyanEnergyMat);
+      emitter.rotation.x = Math.PI / 2;
+      emitter.position.set(side * 1.25, -0.08, 2.3);
+      wingGroup.add(emitter);
+
+      this.laserMuzzleOffsets.push({ side, x: side * 1.7, y: -0.02, z: 2.8 });
+
+      // Canted dorsal stabilizer fins
+      const dorsalFin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.1, 1.4), aeroArmorMat);
+      dorsalFin.position.set(side * 0.52, 0.65, -1.2);
+      dorsalFin.rotation.z = side * -0.25;
+      dorsalFin.rotation.x = -0.22;
+      wingGroup.add(dorsalFin);
+
+      // Rear Ion Engine Exhaust
+      const engineBell = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 0.8, 16), darkUnderbodyMat);
+      engineBell.rotation.x = Math.PI / 2;
+      engineBell.position.set(side * 0.48, 0.1, -1.9);
+      wingGroup.add(engineBell);
+
+      const engineRing = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.04, 8, 16), cyanEnergyMat);
+      engineRing.position.set(side * 0.48, 0.1, -2.3);
+      wingGroup.add(engineRing);
+
+      // Dual Thruster Flame (Inner Cyan Jet + Outer Flare)
+      const outerFlame = this._createFlameMesh(0.26, 2.2, 0x00c8ff, 0x0055ff);
+      outerFlame.position.set(side * 0.48, 0.1, -2.3);
+      wingGroup.add(outerFlame);
+
+      const innerFlame = this._createFlameMesh(0.12, 1.4, 0xffffff, 0x88ffff);
+      innerFlame.position.set(side * 0.48, 0.1, -2.3);
+      wingGroup.add(innerFlame);
+
+      this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
+
+      shipRoot.add(wingGroup);
+    });
 
     this.shipMesh = shipRoot;
     this.group.add(shipRoot);
   }
 
-  update(dt, input, time) {
+  /**
+   * SHIP 2: VOID DREADNOUGHT (Ref Image 2)
+   * Heavy armored twin-hull cruiser, dark matte gunmetal stealth plating,
+   * broad catamaran prow, massive heavy cannons, glowing orange energy channels.
+   */
+  _buildVoidDreadnought() {
     const THREE = this.THREE;
+    const shipRoot = new THREE.Group();
 
-    // 1. RECHARGE & ENERGY LOGIC
+    const stealthMat = new THREE.MeshStandardMaterial({
+      color: 0x141820,
+      metalness: 0.92,
+      roughness: 0.32,
+      envMapIntensity: 1.2
+    });
+
+    const armorPlatesMat = new THREE.MeshStandardMaterial({
+      color: 0x222a38,
+      metalness: 0.85,
+      roughness: 0.38
+    });
+
+    const orangeEnergyMat = new THREE.MeshStandardMaterial({
+      color: 0xff6600,
+      emissive: 0xff7700,
+      emissiveIntensity: 3.0,
+      roughness: 0.2
+    });
+
+    const cockpitMat = new THREE.MeshPhysicalMaterial({
+      color: 0x050c12,
+      metalness: 0.95,
+      roughness: 0.1,
+      clearcoat: 1.0,
+      emissive: 0x331800,
+      emissiveIntensity: 0.3,
+      transparent: true,
+      opacity: 0.9
+    });
+
+    // 1. Broad armored central hull
+    const centerHull = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.52, 4.4), stealthMat);
+    centerHull.position.set(0, 0.18, 0);
+    centerHull.castShadow = true;
+    shipRoot.add(centerHull);
+
+    // Segmented upper armored deck plates
+    const deckPlate = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.18, 3.2), armorPlatesMat);
+    deckPlate.position.set(0, 0.45, -0.2);
+    shipRoot.add(deckPlate);
+
+    // Orange energy channels along deck
+    [-0.55, 0.55].forEach(side => {
+      const channel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 2.8), orangeEnergyMat);
+      channel.position.set(side, 0.46, -0.2);
+      shipRoot.add(channel);
+    });
+
+    // Armored low-profile cockpit
+    const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.8, 4), cockpitMat);
+    canopy.rotation.x = Math.PI / 2;
+    canopy.rotation.y = Math.PI / 4;
+    canopy.position.set(0, 0.48, 1.1);
+    canopy.scale.set(0.9, 0.42, 1.2);
+    shipRoot.add(canopy);
+
+    // 2. Heavy Outrigger Catamaran Hulls
+    const hullSpacing = 1.65;
+    [-1, 1].forEach((side) => {
+      const hullGroup = new THREE.Group();
+      hullGroup.position.set(side * hullSpacing, 0.12, 0);
+
+      // Heavy Outrigger Beam
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.48, 4.2), stealthMat);
+      hullGroup.add(beam);
+
+      // Forward Armor Beveled Ram Prow
+      const prow = new THREE.Mesh(new THREE.ConeGeometry(0.52, 1.6, 4), armorPlatesMat);
+      prow.rotation.x = Math.PI / 2;
+      prow.rotation.y = Math.PI / 4;
+      prow.position.set(0, 0, 2.8);
+      prow.scale.set(0.9, 0.65, 1.2);
+      hullGroup.add(prow);
+
+      // Heavy Outboard Rail-Cannons
+      const cannonBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 2.6, 8), armorPlatesMat);
+      cannonBarrel.rotation.x = Math.PI / 2;
+      cannonBarrel.position.set(side * 0.45, -0.05, 2.2);
+      hullGroup.add(cannonBarrel);
+
+      const muzzleShroud = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.4, 8), orangeEnergyMat);
+      muzzleShroud.rotation.x = Math.PI / 2;
+      muzzleShroud.position.set(side * 0.45, -0.05, 3.4);
+      hullGroup.add(muzzleShroud);
+
+      this.laserMuzzleOffsets.push({ side, x: side * (hullSpacing + 0.45), y: 0.05, z: 3.5 });
+
+      // Cross-connect armor bridges
+      const bridge = new THREE.Mesh(new THREE.BoxGeometry(hullSpacing, 0.22, 1.4), stealthMat);
+      bridge.position.set(-side * (hullSpacing / 2), 0.08, -0.4);
+      hullGroup.add(bridge);
+
+      // Heavy Rear Fusion Drive
+      const thrusterBell = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 0.9, 16), armorPlatesMat);
+      thrusterBell.rotation.x = Math.PI / 2;
+      thrusterBell.position.set(0, 0, -2.4);
+      hullGroup.add(thrusterBell);
+
+      const thrusterGlow = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.05, 8, 16), orangeEnergyMat);
+      thrusterGlow.position.set(0, 0, -2.85);
+      hullGroup.add(thrusterGlow);
+
+      // Thruster Plasma Flare
+      const outerFlame = this._createFlameMesh(0.35, 2.6, 0xff5500, 0xff2200);
+      outerFlame.position.set(0, 0, -2.85);
+      hullGroup.add(outerFlame);
+
+      const innerFlame = this._createFlameMesh(0.18, 1.8, 0xffe066, 0xff8800);
+      innerFlame.position.set(0, 0, -2.85);
+      hullGroup.add(innerFlame);
+
+      this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
+
+      shipRoot.add(hullGroup);
+    });
+
+    this.shipMesh = shipRoot;
+    this.group.add(shipRoot);
+  }
+
+  /**
+   * SHIP 3: CRIMSON INTERCEPTOR (Ref Image 3)
+   * Tactical fighter with brushed titanium chassis, racing crimson energy strips,
+   * elongated tapered nose, twin circular VTOL thruster rings, and triple lasers.
+   */
+  _buildCrimsonInterceptor() {
+    const THREE = this.THREE;
+    const shipRoot = new THREE.Group();
+
+    const silverAlloyMat = new THREE.MeshStandardMaterial({
+      color: 0xabb8c6,
+      metalness: 0.88,
+      roughness: 0.25,
+      envMapIntensity: 1.4
+    });
+
+    const darkTrimMat = new THREE.MeshStandardMaterial({
+      color: 0x242830,
+      metalness: 0.85,
+      roughness: 0.4
+    });
+
+    const crimsonRacingMat = new THREE.MeshStandardMaterial({
+      color: 0xd90429,
+      emissive: 0xff1744,
+      emissiveIntensity: 2.8,
+      roughness: 0.22
+    });
+
+    const cockpitMat = new THREE.MeshPhysicalMaterial({
+      color: 0x1a1215,
+      metalness: 0.92,
+      roughness: 0.08,
+      clearcoat: 1.0,
+      emissive: 0x4a0a16,
+      emissiveIntensity: 0.35,
+      transparent: true,
+      opacity: 0.9
+    });
+
+    // 1. Elongated Tapered Titanium Needle Nose
+    const noseGeom = new THREE.ConeGeometry(0.62, 4.2, 5);
+    noseGeom.rotateX(Math.PI / 2);
+    const nose = new THREE.Mesh(noseGeom, silverAlloyMat);
+    nose.position.set(0, 0.1, 1.4);
+    nose.scale.set(0.85, 0.45, 1.3);
+    shipRoot.add(nose);
+
+    // Crimson nose racing stripe
+    const noseStripe = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 2.8), crimsonRacingMat);
+    noseStripe.position.set(0, 0.32, 1.4);
+    shipRoot.add(noseStripe);
+
+    // Center Nose Needle Cannon
+    const noseGun = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.0, 8), darkTrimMat);
+    noseGun.rotation.x = Math.PI / 2;
+    noseGun.position.set(0, -0.04, 3.2);
+    shipRoot.add(noseGun);
+    this.laserMuzzleOffsets.push({ side: 0, x: 0, y: -0.04, z: 4.2 });
+
+    // Mid Cockpit
+    const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.44, 1.6, 4), cockpitMat);
+    canopy.rotation.x = Math.PI / 2;
+    canopy.rotation.y = Math.PI / 4;
+    canopy.position.set(0, 0.38, 0.3);
+    canopy.scale.set(0.85, 0.52, 1.2);
+    shipRoot.add(canopy);
+
+    // 2. Wings, Dual Circular VTOL Thruster Rings & Outboard Guns
+    [-1, 1].forEach((side) => {
+      const wingGroup = new THREE.Group();
+      wingGroup.position.set(side * 0.7, 0.1, -0.3);
+
+      // Swept wing body
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 1.4), silverAlloyMat);
+      wing.position.set(side * 0.8, 0, -0.4);
+      wing.rotation.y = side * 0.18;
+      wingGroup.add(wing);
+
+      // Crimson wing highlight strip
+      const wingStripe = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 0.22), crimsonRacingMat);
+      wingStripe.position.set(side * 0.8, 0.07, -0.4);
+      wingGroup.add(wingStripe);
+
+      // Unique Circular VTOL / Lift Turbine Rings
+      const ringTorus = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.1, 12, 24), crimsonRacingMat);
+      ringTorus.rotation.x = Math.PI / 2;
+      ringTorus.position.set(side * 1.35, 0.05, -0.9);
+      wingGroup.add(ringTorus);
+
+      const turbineCenter = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.2, 12), darkTrimMat);
+      turbineCenter.position.set(side * 1.35, 0.05, -0.9);
+      wingGroup.add(turbineCenter);
+
+      // Forward Wing Pylon Cannons
+      const wingCannon = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.4, 8), darkTrimMat);
+      wingCannon.rotation.x = Math.PI / 2;
+      wingCannon.position.set(side * 1.65, 0, 0.6);
+      wingGroup.add(wingCannon);
+
+      const muzzleRing = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.03, 8, 16), crimsonRacingMat);
+      muzzleRing.position.set(side * 1.65, 0, 1.8);
+      wingGroup.add(muzzleRing);
+
+      this.laserMuzzleOffsets.push({ side, x: side * 2.35, y: 0.1, z: 2.2 });
+
+      // Angled Twin Tailfins
+      const tailFin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.2, 0.9), silverAlloyMat);
+      tailFin.position.set(side * 0.42, 0.65, -1.3);
+      tailFin.rotation.z = side * -0.28;
+      tailFin.rotation.x = -0.25;
+      wingGroup.add(tailFin);
+
+      // Main Rear Thrusters
+      const thrusterBell = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 0.7, 16), darkTrimMat);
+      thrusterBell.rotation.x = Math.PI / 2;
+      thrusterBell.position.set(side * 0.38, 0.02, -1.8);
+      wingGroup.add(thrusterBell);
+
+      const outerFlame = this._createFlameMesh(0.26, 2.0, 0xff1744, 0xff5500);
+      outerFlame.position.set(side * 0.38, 0.02, -2.15);
+      wingGroup.add(outerFlame);
+
+      const innerFlame = this._createFlameMesh(0.12, 1.3, 0xffffff, 0xff88aa);
+      innerFlame.position.set(side * 0.38, 0.02, -2.15);
+      wingGroup.add(innerFlame);
+
+      this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
+
+      shipRoot.add(wingGroup);
+    });
+
+    this.shipMesh = shipRoot;
+    this.group.add(shipRoot);
+  }
+
+  _createFlameMesh(radius, length, colorCore, colorOuter) {
+    const THREE = this.THREE;
+    const geom = new THREE.ConeGeometry(radius, length, 16, 1, true);
+    geom.rotateX(-Math.PI / 2);
+    geom.translate(0, 0, -length / 2);
+    const mat = new THREE.MeshBasicMaterial({
+      color: colorCore,
+      transparent: true,
+      opacity: 0.92,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    return new THREE.Mesh(geom, mat);
+  }
+
+  update(dt, input, time) {
+    // 1. RECHARGE & TIMERS
+    if (this.invulnerableTimer > 0) {
+      this.invulnerableTimer -= dt;
+      if (this.shieldMesh) this.shieldMesh.material.opacity = 0.85;
+    }
+
+    if (this.weaponLevelTimer > 0) {
+      this.weaponLevelTimer -= dt;
+      if (this.weaponLevelTimer <= 0) this.weaponLevel = 1;
+    }
+
     if (this.isBoosting) {
       this.energy = Math.max(0, this.energy - this.boostDrainRate * dt);
-      if (this.energy <= 0) {
-        this.isBoosting = false;
-      }
+      if (this.energy <= 0) this.isBoosting = false;
     } else {
       this.energy = Math.min(this.maxEnergy, this.energy + this.energyRegenRate * dt);
     }
 
-    // Shield Auto-Recharge (after delay out of combat)
+    // Shield Auto-Recharge out of combat
     if (time - this.lastDamageTime > this.shieldRegenDelay && this.shield < this.maxShield) {
       this.shield = Math.min(this.maxShield, this.shield + this.shieldRegenRate * dt);
     }
 
-    // Heat Dissipation
+    // Weapon Heat dissipation
     this.heat = Math.max(0, this.heat - this.coolRate * dt);
-    if (this.overheated && this.heat <= 0.05) {
-      this.overheated = false;
-    }
+    if (this.overheated && this.heat <= 0.05) this.overheated = false;
 
-    // Shield Mesh Fade
-    if (this.shieldMesh && this.shieldMesh.material.opacity > 0) {
+    // Shield mesh fade
+    if (this.shieldMesh && this.shieldMesh.material.opacity > 0 && this.invulnerableTimer <= 0) {
       this.shieldMesh.material.opacity = Math.max(0, this.shieldMesh.material.opacity - dt * 2.5);
     }
 
     // 2. FLIGHT PHYSICS & STEERING
-    // Target Speed Calculation
     const boostActive = input.boost && this.energy > 5;
     this.isBoosting = boostActive;
-    const maxSpeed = boostActive ? this.boostSpeed : this.cruisingSpeed;
+    const maxSpeed = boostActive ? this.config.boostSpeed : this.config.maxSpeed;
 
-    // Heading calculation: Shortest angle interpolation to avoid 180° snap / lockup
+    // Heading calculation: Shortest angle interpolation to avoid gimbal locks
     let angleDiff = Math.atan2(Math.sin(this.targetHeading - this.heading), Math.cos(this.targetHeading - this.heading));
-    const smoothFactor = 1 - Math.exp(-this.turnRate * dt);
+    const smoothFactor = 1 - Math.exp(-this.config.turnRate * dt);
     this.heading += angleDiff * smoothFactor;
 
     // Banking (Roll) based on angular turning velocity
     const targetRoll = -angleDiff * 0.95;
-    this.roll += (targetRoll - this.roll) * (1 - Math.exp(-9.0 * dt));
+    this.roll += (targetRoll - this.roll) * (1 - Math.exp(-this.config.rollRate * dt));
 
-    // Pitch based on throttle acceleration
-    const forwardThrust = input.thrust; // 1 = forward, -1 = reverse, 0 = neutral
-    const targetPitch = forwardThrust * (boostActive ? 0.12 : 0.06);
+    // Pitch based on forward throttle
+    const forwardThrust = input.thrust;
+    const targetPitch = forwardThrust * (boostActive ? 0.14 : 0.07);
     this.pitch += (targetPitch - this.pitch) * (1 - Math.exp(-8.0 * dt));
 
     // Forward Direction Vector in Open Cosmic Space
     const forwardX = Math.sin(this.heading);
     const forwardZ = Math.cos(this.heading);
 
-    // Apply Acceleration along forward vector
+    // Apply Acceleration
     if (forwardThrust > 0) {
-      const accel = this.accelRate * (boostActive ? 1.8 : 1.0) * forwardThrust;
+      const accel = this.config.accelRate * (boostActive ? 1.85 : 1.0) * forwardThrust;
       this.velocity.x += forwardX * accel * dt;
       this.velocity.z += forwardZ * accel * dt;
     } else if (forwardThrust < 0) {
-      // Braking / Reverse
-      this.velocity.x -= forwardX * this.brakingRate * 0.6 * dt;
-      this.velocity.z -= forwardZ * this.brakingRate * 0.6 * dt;
+      // Reverse / Airbrake
+      this.velocity.x -= forwardX * 65.0 * dt;
+      this.velocity.z -= forwardZ * 65.0 * dt;
     }
 
-    // Soft velocity damping (cosmic inertia with arcade stability)
+    // Velocity Clamping & Cosmic Friction
     const currentSpeed = Math.hypot(this.velocity.x, this.velocity.z);
     if (currentSpeed > maxSpeed) {
       const scale = maxSpeed / currentSpeed;
@@ -1310,47 +1901,43 @@ class Starfighter {
       this.velocity.z *= scale;
     }
 
-    // Natural drag when not actively thrusting
     if (forwardThrust === 0) {
-      const dragFactor = Math.pow(this.friction, dt * 60);
+      const dragFactor = Math.pow(0.985, dt * 60);
       this.velocity.x *= dragFactor;
       this.velocity.z *= dragFactor;
     }
 
-    // UPDATE POSITION (Open 360-degree cosmic expanse, no walls)
+    // Infinite 360-degree open movement
     this.position.x += this.velocity.x * dt;
     this.position.z += this.velocity.z * dt;
 
-    // Sync 3D Group Transform
+    // Synchronize 3D Transforms
     this.group.position.set(this.position.x, 0, this.position.z);
     this.group.rotation.y = this.heading;
     this.shipMesh.rotation.z = this.roll;
     this.shipMesh.rotation.x = this.pitch;
 
-    // 3. REAR THRUSTER FLAME ANIMATION
-    const speedRatio = Math.min(1.0, currentSpeed / this.cruisingSpeed);
-    const flameScale = 0.5 + speedRatio * 0.8 + (boostActive ? 1.2 : 0) + Math.sin(time * 30) * 0.12;
+    // 3. Thruster Flame Scaling
+    const speedRatio = Math.min(1.0, currentSpeed / this.config.maxSpeed);
+    const flameScale = 0.5 + speedRatio * 0.8 + (boostActive ? 1.4 : 0) + Math.sin(time * 35) * 0.14;
 
     this.thrusterFlames.forEach(({ outer, inner }) => {
       outer.scale.set(1.0 + (boostActive ? 0.35 : 0), 1.0 + (boostActive ? 0.35 : 0), flameScale);
-      inner.scale.set(1.0, 1.0, flameScale * 1.1);
+      inner.scale.set(1.0, 1.0, flameScale * 1.15);
       outer.visible = speedRatio > 0.05 || forwardThrust > 0 || boostActive;
       inner.visible = outer.visible;
     });
 
     // Gentle floating idle bobbing
-    this.shipMesh.position.y = Math.sin(time * 2.2) * 0.08;
+    this.shipMesh.position.y = Math.sin(time * 2.4) * 0.08;
   }
 
   takeDamage(amount, time) {
+    if (this.invulnerableTimer > 0) return { isFatal: false, hitShield: true };
+
     this.lastDamageTime = time;
+    if (this.shieldMesh) this.shieldMesh.material.opacity = 0.9;
 
-    // Flash shield ripple
-    if (this.shieldMesh) {
-      this.shieldMesh.material.opacity = 0.85;
-    }
-
-    // Absorb into shield first
     if (this.shield > 0) {
       if (this.shield >= amount) {
         this.shield -= amount;
@@ -1364,63 +1951,86 @@ class Starfighter {
       this.hull = Math.max(0, this.hull - amount);
     }
 
-    const isFatal = this.hull <= 0;
-    return { isFatal, hitShield: false };
+    return { isFatal: this.hull <= 0, hitShield: false };
   }
 
   repairShield(amount) {
     this.shield = Math.min(this.maxShield, this.shield + amount);
-    if (this.shieldMesh) {
-      this.shieldMesh.material.opacity = 0.5;
-    }
+    if (this.shieldMesh) this.shieldMesh.material.opacity = 0.6;
   }
 
   repairHull(amount) {
     this.hull = Math.min(this.maxHull, this.hull + amount);
   }
 
+  applyOvercharge() {
+    this.shield = this.maxShield;
+    this.invulnerableTimer = 6.0; // 6 seconds invulnerability
+    if (this.shieldMesh) this.shieldMesh.material.opacity = 1.0;
+  }
+
+  upgradeWeapons() {
+    this.weaponLevel = Math.min(3, this.weaponLevel + 1);
+    this.weaponLevelTimer = 18.0; // 18 seconds weapon power boost
+  }
+
   canFire(time) {
-    return !this.overheated && (time - this.lastFireTime >= this.fireInterval);
+    const effectiveInterval = this.weaponLevel >= 3 ? this.fireInterval * 0.75 : this.fireInterval;
+    return !this.overheated && (time - this.lastFireTime >= effectiveInterval);
+  }
+
+  recordShot(time) {
+    this.lastFireTime = time;
+    this.heat = Math.min(1.0, this.heat + 0.045);
+    if (this.heat >= 1.0) this.overheated = true;
   }
 
   getLaserSpawns() {
-    // Alternating twin laser cannon fire from outboard hulls
-    this.laserAlternator = !this.laserAlternator;
-    const offsets = this.laserAlternator
-      ? [this.laserMuzzleOffsets[0]]
-      : [this.laserMuzzleOffsets[1]];
+    const cosH = Math.cos(this.heading);
+    const sinH = Math.sin(this.heading);
+    const speed = 175;
 
-    // Or dual synchronized volley
-    return this.laserMuzzleOffsets.map(offset => {
-      const cosH = Math.cos(this.heading);
-      const sinH = Math.sin(this.heading);
-      // Rotate local offset into world coordinates
+    const baseSpawns = this.laserMuzzleOffsets.map(offset => {
       const worldX = this.position.x + (offset.x * cosH + offset.z * sinH);
       const worldZ = this.position.z + (-offset.x * sinH + offset.z * cosH);
       return {
         x: worldX,
         y: offset.y,
         z: worldZ,
-        vx: sinH * 160 + this.velocity.x * 0.4,
-        vz: cosH * 160 + this.velocity.z * 0.4,
-        heading: this.heading
+        vx: sinH * speed + this.velocity.x * 0.35,
+        vz: cosH * speed + this.velocity.z * 0.35,
+        heading: this.heading,
+        color: this.config.laserColor
       };
     });
-  }
 
-  recordShot(time) {
-    this.lastFireTime = time;
-    this.heat = Math.min(1.0, this.heat + this.heatPerShot);
-    if (this.heat >= 1.0) {
-      this.overheated = true;
+    // Weapon Level 3: Quad / Triple Spread Volley
+    if (this.weaponLevel >= 2) {
+      const spreadAngle = 0.12;
+      const leftSpread = {
+        ...baseSpawns[0],
+        vx: Math.sin(this.heading - spreadAngle) * speed + this.velocity.x * 0.35,
+        vz: Math.cos(this.heading - spreadAngle) * speed + this.velocity.z * 0.35,
+        heading: this.heading - spreadAngle
+      };
+      const rightSpread = {
+        ...baseSpawns[baseSpawns.length - 1],
+        vx: Math.sin(this.heading + spreadAngle) * speed + this.velocity.x * 0.35,
+        vz: Math.cos(this.heading + spreadAngle) * speed + this.velocity.z * 0.35,
+        heading: this.heading + spreadAngle
+      };
+      return [...baseSpawns, leftSpread, rightSpread];
     }
+
+    return baseSpawns;
   }
 }
 
-/**
- * Open-World Cosmic Battlefield Environment
- * Boundless 360-degree space with procedural starfields, volumetric nebulae,
- * distant binary star, and infinite cosmic backdrop. Zero walls or rigid limits.
+    /**
+ * Hyper-Realistic Photorealistic Cosmic Environment
+ * Features high-resolution multi-tiered starfields, volumetric glowing nebulae,
+ * cinematic gas giant planet with atmospheric rim scattering, realistic solar lens flare,
+ * and deep-space dust particles.
  */
 class CosmicEnvironment {
   constructor(scene, THREE) {
@@ -1430,64 +2040,68 @@ class CosmicEnvironment {
     this.group = new THREE.Group();
     this.dustParticles = null;
     this.dustPositions = null;
-    this.dustCount = 600;
-    this.dustRadius = 240;
+    this.dustCount = 900;
+    this.dustRadius = 260;
 
-    this._createStarfields();
-    this._createNebulae();
-    this._createCosmicSun();
+    this._createDeepStarfield();
+    this._createVolumetricNebulae();
+    this._createCinematicPlanet();
+    this._createCosmicSunAndLensflare();
     this._createSpaceDust();
 
     this.scene.add(this.group);
   }
 
-  _createStarfields() {
+  _createDeepStarfield() {
     const THREE = this.THREE;
-
-    // Layer 1: Distant Celestial Starfield
-    const count = 3000;
+    const count = 4200;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
 
-    const starColors = [
-      new THREE.Color(0xffffff),
-      new THREE.Color(0x99ddff),
-      new THREE.Color(0xffd480),
-      new THREE.Color(0xff7799),
-      new THREE.Color(0x77eeff)
+    // Astronomical star spectral color temperatures
+    const starPalette = [
+      new THREE.Color(0xffffff), // White A-class
+      new THREE.Color(0xaad8ff), // Brilliant Blue B-class
+      new THREE.Color(0x66c0ff), // Deep Blue O-class
+      new THREE.Color(0xffeedd), // Soft Yellow-White F-class
+      new THREE.Color(0xffd27d), // Warm Amber G-class
+      new THREE.Color(0xff7055)  // Red Supergiant M-class
     ];
 
     for (let i = 0; i < count; i++) {
-      // Distribute on large sphere surface
       const u = Math.random();
       const v = Math.random();
       const theta = u * 2.0 * Math.PI;
       const phi = Math.acos(2.0 * v - 1.0);
-      const r = 2400 + Math.random() * 400;
+      const r = 2600 + Math.random() * 600;
 
       const sinPhi = Math.sin(phi);
       positions[i * 3] = r * sinPhi * Math.cos(theta);
-      positions[i * 3 + 1] = r * Math.cos(phi) * 0.6; // Slight cosmic disc flattening
+      positions[i * 3 + 1] = r * Math.cos(phi) * 0.7; // Cosmic disc flattening
       positions[i * 3 + 2] = r * sinPhi * Math.sin(theta);
 
-      const col = starColors[Math.floor(Math.random() * starColors.length)];
-      const brightness = 0.5 + Math.random() * 0.5;
+      const col = starPalette[Math.floor(Math.random() * starPalette.length)];
+      const brightness = 0.4 + Math.random() * 0.6;
       colors[i * 3] = col.r * brightness;
       colors[i * 3 + 1] = col.g * brightness;
       colors[i * 3 + 2] = col.b * brightness;
+
+      sizes[i] = (Math.random() > 0.94) ? 4.8 : (1.6 + Math.random() * 2.2);
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
     const starTexture = this._generateStarTexture();
     const material = new THREE.PointsMaterial({
-      size: 3.5,
+      size: 3.2,
       map: starTexture,
       vertexColors: true,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.95,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -1496,23 +2110,26 @@ class CosmicEnvironment {
     this.group.add(this.starPoints);
   }
 
-  _createNebulae() {
+  _createVolumetricNebulae() {
     const THREE = this.THREE;
     const nebulaTexture = this._generateNebulaTexture();
 
-    // 8 Major Volumetric Cosmic Nebula Clouds
-    const nebulaeData = [
-      { color: 0x6e22cf, size: 850, x: -900, y: 120, z: -1100, opacity: 0.35 }, // Violet
-      { color: 0x1f75fe, size: 950, x: 1200, y: -80, z: -1400, opacity: 0.32 }, // Cyan Blue
-      { color: 0xff3b77, size: 700, x: 750, y: 220, z: 900, opacity: 0.28 },   // Magenta
-      { color: 0x00d4ff, size: 800, x: -1100, y: -150, z: 800, opacity: 0.30 }, // Neon Turquoise
-      { color: 0xff8c00, size: 650, x: -400, y: 300, z: -1500, opacity: 0.25 }, // Amber Dust
-      { color: 0x9400d3, size: 1100, x: 1500, y: 100, z: 400, opacity: 0.24 },  // Deep Purple
-      { color: 0x00f5d4, size: 600, x: -600, y: -200, z: -700, opacity: 0.22 }, // Aquamarine
-      { color: 0xe024c3, size: 750, x: 200, y: -300, z: 1300, opacity: 0.26 }   // Neon Pink
+    // 10 Volumetric High-Density Cosmic Nebula Clouds
+    const nebulae = [
+      { color: 0x4822cf, size: 1200, x: -1100, y: 220, z: -1400, opacity: 0.38 }, // Deep Indigo-Violet
+      { color: 0x0088ff, size: 1400, x: 1400, y: -120, z: -1600, opacity: 0.34 }, // Sapphire Expanse
+      { color: 0xff1493, size: 950, x: 900, y: 320, z: 1100, opacity: 0.30 },    // Luminous Magenta
+      { color: 0x00e5ff, size: 1100, x: -1300, y: -200, z: 950, opacity: 0.32 },  // Electric Cyan
+      { color: 0xff8800, size: 850, x: -500, y: 400, z: -1800, opacity: 0.28 },  // Solar Amber Dust
+      { color: 0x9400d3, size: 1300, x: 1800, y: 150, z: 500, opacity: 0.26 },   // Dark Orchid
+      { color: 0x00ffcc, size: 800, x: -800, y: -250, z: -850, opacity: 0.25 },  // Turquoise Shimmer
+      { color: 0x7b2cbf, size: 1050, x: 300, y: -380, z: 1500, opacity: 0.28 },  // Royal Violet
+      { color: 0x3a0ca3, size: 1500, x: -1600, y: 50, z: -400, opacity: 0.32 },  // Midnight Void
+      { color: 0xf72585, size: 900, x: 1100, y: -280, z: -900, opacity: 0.25 }   // Radiant Pink
     ];
 
-    nebulaeData.forEach(data => {
+    this.nebulaSprites = [];
+    nebulae.forEach(data => {
       const mat = new THREE.SpriteMaterial({
         map: nebulaTexture,
         color: data.color,
@@ -1524,64 +2141,127 @@ class CosmicEnvironment {
 
       const sprite = new THREE.Sprite(mat);
       sprite.position.set(data.x, data.y, data.z);
-      sprite.scale.set(data.size, data.size * 0.75, 1);
+      sprite.scale.set(data.size, data.size * 0.8, 1);
       this.group.add(sprite);
+      this.nebulaSprites.push({ sprite, rotSpeed: (Math.random() - 0.5) * 0.02 });
     });
   }
 
-  _createCosmicSun() {
+  _createCinematicPlanet() {
     const THREE = this.THREE;
-    const sunGroup = new THREE.Group();
-    sunGroup.position.set(-1800, 450, -2200);
+    const planetGroup = new THREE.Group();
+    // Position distant giant planet on the celestial horizon (as in Ref Image 1)
+    planetGroup.position.set(1600, -320, 2100);
 
-    // Glowing Sun Core
-    const sunGeom = new THREE.SphereGeometry(140, 32, 32);
-    const sunMat = new THREE.MeshBasicMaterial({
-      color: 0xfff3d6,
-      transparent: true,
-      opacity: 0.98
+    // Planet Core Sphere
+    const planetGeom = new THREE.SphereGeometry(380, 48, 48);
+    const planetTexture = this._generatePlanetTexture();
+    const planetMat = new THREE.MeshStandardMaterial({
+      map: planetTexture,
+      roughness: 0.75,
+      metalness: 0.15,
+      color: 0x6bb5e6
     });
-    const sunMesh = new THREE.Mesh(sunGeom, sunMat);
-    sunGroup.add(sunMesh);
+    const planet = new THREE.Mesh(planetGeom, planetMat);
+    planetGroup.add(planet);
 
-    // Corona Glow Sprite
-    const coronaTexture = this._generateNebulaTexture();
-    const coronaMat = new THREE.SpriteMaterial({
-      map: coronaTexture,
-      color: 0xff9933,
-      transparent: true,
-      opacity: 0.65,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    const corona = new THREE.Sprite(coronaMat);
-    corona.scale.set(700, 700, 1);
-    sunGroup.add(corona);
-
-    // Outer Blue Starburst / Lens flare
-    const flareMat = new THREE.SpriteMaterial({
-      map: coronaTexture,
-      color: 0x55ccff,
+    // Atmospheric Glow Rim Envelope
+    const atmoGeom = new THREE.SphereGeometry(395, 32, 32);
+    const atmoMat = new THREE.MeshBasicMaterial({
+      color: 0x4cc9f0,
       transparent: true,
       opacity: 0.35,
       blending: THREE.AdditiveBlending,
-      depthWrite: false
+      side: THREE.BackSide
     });
-    const flare = new THREE.Sprite(flareMat);
-    flare.scale.set(1200, 1200, 1);
-    sunGroup.add(flare);
+    const atmo = new THREE.Mesh(atmoGeom, atmoMat);
+    planetGroup.add(atmo);
 
-    // Directional Sunlight Illuminating Cosmic Rocks and Starfighter
-    const sunLight = new THREE.DirectionalLight(0xfff5ea, 1.4);
+    // Concentric Planetary Rings
+    const ringGeom = new THREE.RingGeometry(460, 720, 64);
+    ringGeom.rotateX(Math.PI / 2.3);
+    ringGeom.rotateY(0.4);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x88ccff,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.28,
+      blending: THREE.AdditiveBlending
+    });
+    const rings = new THREE.Mesh(ringGeom, ringMat);
+    planetGroup.add(rings);
+
+    this.planetGroup = planetGroup;
+    this.group.add(planetGroup);
+  }
+
+  _createCosmicSunAndLensflare() {
+    const THREE = this.THREE;
+    const sunGroup = new THREE.Group();
+    sunGroup.position.set(-2200, 520, -2600);
+
+    // 1. Incandescent Sun Core
+    const sunCore = new THREE.Mesh(
+      new THREE.SphereGeometry(180, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.99 })
+    );
+    sunGroup.add(sunCore);
+
+    // 2. Multi-Element Solar Corona & Glare Sprites
+    const flareTex = this._generateNebulaTexture();
+
+    // Hot Inner Corona
+    const innerCorona = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: flareTex,
+      color: 0xffe099,
+      transparent: true,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    }));
+    innerCorona.scale.set(950, 950, 1);
+    sunGroup.add(innerCorona);
+
+    // Chromatic Outer Halo
+    const outerHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: flareTex,
+      color: 0x44aaff,
+      transparent: true,
+      opacity: 0.42,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    }));
+    outerHalo.scale.set(1800, 1800, 1);
+    sunGroup.add(outerHalo);
+
+    // Anamorphic Horizontal Streak (Cinematic sci-fi flare)
+    const streak = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: flareTex,
+      color: 0x77d4ff,
+      transparent: true,
+      opacity: 0.55,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    }));
+    streak.scale.set(4500, 220, 1);
+    sunGroup.add(streak);
+
+    // Dynamic Directional Sun Light illuminating open cosmic battlefield
+    const sunLight = new THREE.DirectionalLight(0xfff7ea, 1.8);
     sunLight.position.copy(sunGroup.position);
     this.scene.add(sunLight);
 
+    // Deep space fill lighting
+    const fillLight = new THREE.DirectionalLight(0x1a3048, 0.85);
+    fillLight.position.set(2200, -400, 2600);
+    this.scene.add(fillLight);
+
     // Ambient Space Radiance
-    const ambientLight = new THREE.AmbientLight(0x1a2638, 0.75);
+    const ambientLight = new THREE.AmbientLight(0x141f2e, 0.85);
     this.scene.add(ambientLight);
 
-    // Hemisphere light for cosmic sky-ground gradient
-    const hemiLight = new THREE.HemisphereLight(0x283b54, 0x080c14, 0.85);
+    // Cosmic sky-to-ground gradient
+    const hemiLight = new THREE.HemisphereLight(0x284262, 0x070b14, 0.9);
     this.scene.add(hemiLight);
 
     this.group.add(sunGroup);
@@ -1596,24 +2276,23 @@ class CosmicEnvironment {
 
     for (let i = 0; i < count; i++) {
       positions[i * 3] = (Math.random() - 0.5) * this.dustRadius * 2;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 80;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 90;
       positions[i * 3 + 2] = (Math.random() - 0.5) * this.dustRadius * 2;
 
-      // Subtle cyan/amber sparkle
       const isCyan = Math.random() > 0.4;
-      colors[i * 3] = isCyan ? 0.3 : 0.9;
-      colors[i * 3 + 1] = isCyan ? 0.8 : 0.6;
-      colors[i * 3 + 2] = isCyan ? 1.0 : 0.2;
+      colors[i * 3] = isCyan ? 0.35 : 0.95;
+      colors[i * 3 + 1] = isCyan ? 0.85 : 0.75;
+      colors[i * 3 + 2] = isCyan ? 1.0 : 0.3;
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 1.8,
+      size: 2.2,
       vertexColors: true,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.72,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -1630,8 +2309,8 @@ class CosmicEnvironment {
     const ctx = canvas.getContext('2d');
     const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
     grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    grad.addColorStop(0.2, 'rgba(230, 245, 255, 0.8)');
-    grad.addColorStop(0.5, 'rgba(120, 200, 255, 0.25)');
+    grad.addColorStop(0.18, 'rgba(220, 245, 255, 0.85)');
+    grad.addColorStop(0.45, 'rgba(100, 180, 255, 0.3)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 64, 64);
@@ -1640,27 +2319,64 @@ class CosmicEnvironment {
 
   _generateNebulaTexture() {
     const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 128;
+    canvas.width = 256;
+    canvas.height = 256;
     const ctx = canvas.getContext('2d');
-    const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
     grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    grad.addColorStop(0.3, 'rgba(200, 220, 255, 0.55)');
-    grad.addColorStop(0.65, 'rgba(120, 80, 240, 0.18)');
+    grad.addColorStop(0.25, 'rgba(210, 230, 255, 0.65)');
+    grad.addColorStop(0.6, 'rgba(120, 90, 240, 0.22)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 128, 128);
+    ctx.fillRect(0, 0, 256, 256);
     return new this.THREE.CanvasTexture(canvas);
   }
 
-  update(playerPos) {
-    // Keep the distant celestial starfield centered around the player
-    // to provide infinite 360-degree cosmic parallax
-    if (this.starPoints) {
-      this.starPoints.position.set(playerPos.x * 0.92, 0, playerPos.z * 0.92);
+  _generatePlanetTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Deep ocean base
+    ctx.fillStyle = '#0f3152';
+    ctx.fillRect(0, 0, 512, 256);
+
+    // Swirling atmospheric cloud bands
+    for (let y = 0; y < 256; y += 4) {
+      const alpha = 0.15 + Math.sin(y * 0.08) * 0.12;
+      ctx.fillStyle = `rgba(180, 225, 255, ${alpha})`;
+      ctx.fillRect(0, y, 512, 4);
     }
 
-    // Wrap local space dust around the player's active volume
+    // Organic atmospheric vortex storms
+    for (let i = 0; i < 18; i++) {
+      const cx = Math.random() * 512;
+      const cy = 40 + Math.random() * 176;
+      const rad = 25 + Math.random() * 50;
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+      grad.addColorStop(1, 'rgba(100, 180, 240, 0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    return new this.THREE.CanvasTexture(canvas);
+  }
+
+  update(playerPos, dt = 0.016) {
+    if (this.starPoints) {
+      this.starPoints.position.set(playerPos.x * 0.94, 0, playerPos.z * 0.94);
+    }
+
+    // Slowly rotate distant planet for living cosmos effect
+    if (this.planetGroup) {
+      this.planetGroup.rotation.y += 0.008 * dt;
+    }
+
+    // Wrap local space dust around player position
     if (this.dustParticles && this.dustPositions) {
       const posAttr = this.dustParticles.geometry.attributes.position;
       const r = this.dustRadius;
@@ -1668,7 +2384,6 @@ class CosmicEnvironment {
         let x = this.dustPositions[i * 3];
         let z = this.dustPositions[i * 3 + 2];
 
-        // Wrap relative to player
         while (x - playerPos.x > r) x -= r * 2;
         while (x - playerPos.x < -r) x += r * 2;
         while (z - playerPos.z > r) z -= r * 2;
@@ -1682,7 +2397,7 @@ class CosmicEnvironment {
   }
 }
 
-/**
+    /**
  * Boundless Drifting Asteroid Field & Destructible Space Rocks
  * Generates procedural tumbling asteroids across an infinite cosmic expanse.
  * Asteroids can be shattered by lasers, dropping collectible mineral/energy crystals.
@@ -1980,10 +2695,10 @@ class AsteroidManager {
   }
 }
 
-/**
- * Enemy Drone AI & Dynamic Spawner
- * Spawns Scout, Assault, and Interceptor drones in tactical waves.
- * Features smart spatial AI, weapons, health, and clean target tracking.
+    /**
+ * Advanced Drone AI, Dynamic Wave Spawner & Epic Boss Battles
+ * Features Scout, Assault, and Interceptor drones, plus multi-stage Capital Bosses
+ * and holographic power-up drops (Shield Overcharge, Weapon Upgrades, Overdrive Cores).
  */
 class DroneManager {
   constructor(scene, THREE) {
@@ -1991,56 +2706,179 @@ class DroneManager {
     this.THREE = THREE;
 
     this.drones = [];
+    this.boss = null;
     this.enemyLasers = [];
-    this.laserGeom = new THREE.CylinderGeometry(0.12, 0.12, 1.8, 8);
+    this.enemyMissiles = [];
+    this.powerups = [];
+
+    // Shared Geometries & Materials
+    this.laserGeom = new THREE.CylinderGeometry(0.14, 0.14, 2.0, 8);
     this.laserGeom.rotateX(Math.PI / 2);
 
     this.droneLaserMat = new THREE.MeshBasicMaterial({
-      color: 0xff2244,
+      color: 0xff1744,
       transparent: true,
       opacity: 0.95
     });
 
+    this.bossLaserMat = new THREE.MeshBasicMaterial({
+      color: 0xff0055,
+      transparent: true,
+      opacity: 0.98
+    });
+
+    this.missileGeom = new THREE.ConeGeometry(0.35, 1.4, 8);
+    this.missileGeom.rotateX(Math.PI / 2);
+    this.missileMat = new THREE.MeshStandardMaterial({
+      color: 0xff3b00,
+      emissive: 0xff5500,
+      emissiveIntensity: 3.0
+    });
+
     // Drone Materials
     this.droneArmorMat = new THREE.MeshStandardMaterial({
-      color: 0x181a20,
-      metalness: 0.85,
-      roughness: 0.35
+      color: 0x161a22,
+      metalness: 0.88,
+      roughness: 0.32
     });
 
     this.crimsonGlowMat = new THREE.MeshStandardMaterial({
       color: 0xff1744,
       emissive: 0xff1744,
-      emissiveIntensity: 3.0,
+      emissiveIntensity: 3.2,
       roughness: 0.2
     });
 
-    this.amberGlowMat = new THREE.MeshStandardMaterial({
-      color: 0xff9100,
-      emissive: 0xff9100,
-      emissiveIntensity: 3.0,
-      roughness: 0.2
+    this.bossArmorMat = new THREE.MeshStandardMaterial({
+      color: 0x0c0f16,
+      metalness: 0.94,
+      roughness: 0.26,
+      envMapIntensity: 1.4
     });
+
+    this.bossCoreMat = new THREE.MeshStandardMaterial({
+      color: 0x9400d3,
+      emissive: 0xbf00ff,
+      emissiveIntensity: 4.5,
+      roughness: 0.1
+    });
+
+    // Power-up geometries
+    this.powerupGeom = new THREE.OctahedronGeometry(1.2, 0);
+    this.powerupRingGeom = new THREE.TorusGeometry(1.6, 0.08, 8, 24);
   }
 
   spawnWave(sectorNumber, playerPos) {
-    // Clear old drones if any
     this.clearAll();
 
-    // Scale wave composition with Sector Number
-    const scoutCount = 3 + sectorNumber * 2;
-    const assaultCount = Math.floor(sectorNumber / 2);
-    const interceptorCount = Math.max(0, sectorNumber - 1);
+    // Every 3rd Sector is an EPIC CAPITAL SHIP BOSS BATTLE!
+    const isBossSector = (sectorNumber % 3 === 0);
 
-    for (let i = 0; i < scoutCount; i++) {
-      this._createDrone('scout', playerPos, i * (Math.PI * 2 / scoutCount));
+    if (isBossSector) {
+      this._spawnBoss(sectorNumber, playerPos);
+      // Spawn light escort squadron
+      for (let i = 0; i < 2; i++) {
+        this._createDrone('scout', playerPos, i * Math.PI);
+      }
+    } else {
+      // Dynamic standard wave
+      const scoutCount = 3 + sectorNumber * 2;
+      const assaultCount = Math.floor(sectorNumber / 2);
+      const interceptorCount = Math.max(0, sectorNumber - 1);
+
+      for (let i = 0; i < scoutCount; i++) {
+        this._createDrone('scout', playerPos, i * (Math.PI * 2 / scoutCount));
+      }
+      for (let i = 0; i < assaultCount; i++) {
+        this._createDrone('assault', playerPos, (i + 0.5) * (Math.PI * 2 / assaultCount));
+      }
+      for (let i = 0; i < interceptorCount; i++) {
+        this._createDrone('interceptor', playerPos, Math.random() * Math.PI * 2);
+      }
     }
-    for (let i = 0; i < assaultCount; i++) {
-      this._createDrone('assault', playerPos, (i + 0.5) * (Math.PI * 2 / assaultCount));
-    }
-    for (let i = 0; i < interceptorCount; i++) {
-      this._createDrone('interceptor', playerPos, Math.random() * Math.PI * 2);
-    }
+  }
+
+  _spawnBoss(sectorNumber, playerPos) {
+    const THREE = this.THREE;
+    const bossName = sectorNumber >= 6 ? 'VOID OMEGA CRUCIBLE' : 'LEVIATHAN DREADNOUGHT';
+    const maxHp = sectorNumber >= 6 ? 90 : 55;
+    const maxShield = sectorNumber >= 6 ? 60 : 40;
+
+    const spawnDist = 240;
+    const angle = Math.random() * Math.PI * 2;
+    const x = playerPos.x + Math.sin(angle) * spawnDist;
+    const z = playerPos.z + Math.cos(angle) * spawnDist;
+
+    const group = new THREE.Group();
+
+    // 1. Massive Capital Ship Core Superstructure
+    const coreHull = new THREE.Mesh(new THREE.BoxGeometry(8.0, 3.2, 28.0), this.bossArmorMat);
+    coreHull.castShadow = true;
+    group.add(coreHull);
+
+    // Elevated command bridge
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(5.2, 2.2, 8.5), this.bossArmorMat);
+    bridge.position.set(0, 2.4, -4.0);
+    group.add(bridge);
+
+    // Glowing alien hyper-matter core
+    const coreReactor = new THREE.Mesh(new THREE.SphereGeometry(2.4, 16, 16), this.bossCoreMat);
+    coreReactor.position.set(0, 0.4, 2.0);
+    group.add(coreReactor);
+
+    // 2. Outrigger Heavy Sponsons with Dual Weapon Batteries
+    [-5.8, 5.8].forEach(side => {
+      const sponson = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.2, 22.0), this.bossArmorMat);
+      sponson.position.set(side, 0, -1.0);
+      group.add(sponson);
+
+      // Heavy Cannon Barrels
+      [-4.0, 4.0].forEach(zOff => {
+        const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 4.8, 8), this.crimsonGlowMat);
+        cannon.rotation.x = Math.PI / 2;
+        cannon.position.set(side * 1.15, -0.2, zOff);
+        group.add(cannon);
+      });
+
+      // Lateral glowing crimson conduits
+      const conduit = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 18.0), this.crimsonGlowMat);
+      conduit.position.set(side * 1.25, 0.8, -1.0);
+      group.add(conduit);
+    });
+
+    // 3. Reactive Boss Shield Mesh
+    const bossShieldGeom = new THREE.IcosahedronGeometry(18.0, 2);
+    const bossShieldMat = new THREE.MeshBasicMaterial({
+      color: 0xbf00ff,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending
+    });
+    const bossShield = new THREE.Mesh(bossShieldGeom, bossShieldMat);
+    bossShield.scale.set(1.1, 0.45, 1.3);
+    group.add(bossShield);
+
+    group.position.set(x, 0, z);
+    this.scene.add(group);
+
+    this.boss = {
+      name: bossName,
+      group,
+      shieldMesh: bossShield,
+      hp: maxHp,
+      maxHp,
+      shield: maxShield,
+      maxShield,
+      speed: 16,
+      heading: angle + Math.PI,
+      radius: 14.0,
+      lastFireTime: 0,
+      fireRate: 1.2,
+      lastMissileTime: 0,
+      missileRate: 4.8,
+      points: 8000
+    };
   }
 
   _createDrone(type, playerPos, angle) {
@@ -2055,73 +2893,55 @@ class DroneManager {
     if (type === 'scout') {
       name = 'SCOUT DRONE';
       hp = maxHp = 2;
-      speed = 38;
-      fireRate = 1.8;
+      speed = 42;
+      fireRate = 1.6;
       points = 150;
-      radius = 1.8;
+      radius = 2.0;
 
-      // Delta Wing Scout Model
-      const wingGeom = new THREE.ConeGeometry(1.6, 2.4, 3);
+      const wingGeom = new THREE.ConeGeometry(1.8, 2.8, 3);
       wingGeom.rotateX(Math.PI / 2);
       wingGeom.rotateY(Math.PI);
       const wing = new THREE.Mesh(wingGeom, this.droneArmorMat);
       group.add(wing);
 
-      // Red Core Sensor Eye
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), this.crimsonGlowMat);
-      eye.position.set(0, 0.12, 0.8);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 12), this.crimsonGlowMat);
+      eye.position.set(0, 0.15, 0.9);
       group.add(eye);
-
-      // Wingtip Lasers
-      [-0.8, 0.8].forEach(side => {
-        const gun = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 1.2), this.crimsonGlowMat);
-        gun.position.set(side, 0, 0.2);
-        group.add(gun);
-      });
     } else if (type === 'assault') {
       name = 'ASSAULT CRUISER';
-      hp = maxHp = 7;
-      speed = 24;
-      fireRate = 2.4;
-      points = 400;
-      radius = 3.2;
+      hp = maxHp = 8;
+      speed = 26;
+      fireRate = 2.2;
+      points = 450;
+      radius = 3.6;
 
-      // Hexagonal Gunship
-      const hullGeom = new THREE.CylinderGeometry(2.2, 2.6, 0.9, 6);
-      hullGeom.rotateX(Math.PI / 2);
-      const hull = new THREE.Mesh(hullGeom, this.droneArmorMat);
+      const hull = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.8, 1.1, 6), this.droneArmorMat);
+      hull.rotation.x = Math.PI / 2;
       group.add(hull);
 
-      // Heavy Armor Plates
-      const armorPlate = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 3.2), this.droneArmorMat);
-      armorPlate.position.set(0, 0.2, 0);
-      group.add(armorPlate);
+      const gunL = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.6, 8), this.crimsonGlowMat);
+      gunL.rotation.x = Math.PI / 2;
+      gunL.position.set(-1.4, 0, 1.4);
+      group.add(gunL);
 
-      // Dual Heavy Plasma Cannons
-      [-1.2, 1.2].forEach(side => {
-        const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.4, 8), this.crimsonGlowMat);
-        cannon.rotation.x = Math.PI / 2;
-        cannon.position.set(side, -0.1, 1.4);
-        group.add(cannon);
-      });
+      const gunR = gunL.clone();
+      gunR.position.x = 1.4;
+      group.add(gunR);
     } else {
-      // Interceptor
       name = 'SEEKER INTERCEPTOR';
-      hp = maxHp = 3;
-      speed = 52;
-      fireRate = 1.3;
-      points = 250;
-      radius = 1.6;
+      hp = maxHp = 4;
+      speed = 54;
+      fireRate = 1.4;
+      points = 280;
+      radius = 1.8;
 
-      // Dart Wing
-      const dartGeom = new THREE.ConeGeometry(0.9, 3.2, 4);
-      dartGeom.rotateX(Math.PI / 2);
-      const dart = new THREE.Mesh(dartGeom, this.droneArmorMat);
+      const dart = new THREE.Mesh(new THREE.ConeGeometry(1.0, 3.6, 4), this.droneArmorMat);
+      dart.rotation.x = Math.PI / 2;
       group.add(dart);
 
-      const glowFin = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.6, 1.8), this.amberGlowMat);
-      glowFin.position.set(0, 0.4, -0.4);
-      group.add(glowFin);
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.7, 2.0), this.crimsonGlowMat);
+      fin.position.set(0, 0.45, -0.4);
+      group.add(fin);
     }
 
     group.position.set(x, 0, z);
@@ -2139,69 +2959,85 @@ class DroneManager {
       points,
       radius,
       heading: angle + Math.PI,
-      strafeAngle: Math.random() * Math.PI * 2,
-      strafeTimer: 0
+      strafeAngle: Math.random() * Math.PI * 2
     });
   }
 
   update(dt, player, time, audio) {
     const THREE = this.THREE;
 
-    // 1. UPDATE DRONE BEHAVIOR & AI
+    // 1. UPDATE BOSS (if active)
+    if (this.boss) {
+      const b = this.boss;
+      const dx = player.position.x - b.group.position.x;
+      const dz = player.position.z - b.group.position.z;
+      const dist = Math.hypot(dx, dz);
+
+      // Smooth turning towards player
+      const angleToPlayer = Math.atan2(dx, dz);
+      let angleDiff = Math.atan2(Math.sin(angleToPlayer - b.heading), Math.cos(angleToPlayer - b.heading));
+      b.heading += angleDiff * Math.min(1.0, 1.2 * dt);
+      b.group.rotation.y = b.heading;
+
+      // Slow deliberate pursuit
+      if (dist > 80) {
+        b.group.position.x += Math.sin(b.heading) * b.speed * dt;
+        b.group.position.z += Math.cos(b.heading) * b.speed * dt;
+      }
+
+      // Update Shield Mesh Opacity
+      if (b.shieldMesh) {
+        b.shieldMesh.material.opacity = (b.shield > 0) ? (0.35 + Math.sin(time * 4) * 0.15) : 0;
+      }
+
+      // Boss Weapon Battery Volley
+      if (dist < 220 && (time - b.lastFireTime >= b.fireRate)) {
+        b.lastFireTime = time;
+        this._bossFire(b, player, audio);
+      }
+
+      // Boss Homing Seeker Missiles
+      if (dist < 250 && (time - b.lastMissileTime >= b.missileRate)) {
+        b.lastMissileTime = time;
+        this._bossLaunchMissile(b, player, audio);
+      }
+    }
+
+    // 2. UPDATE STANDARD DRONES
     for (let i = this.drones.length - 1; i >= 0; i--) {
       const drone = this.drones[i];
       const dx = player.position.x - drone.group.position.x;
       const dz = player.position.z - drone.group.position.z;
       const dist = Math.hypot(dx, dz);
 
-      // Calculate Target Angle toward player
       const angleToPlayer = Math.atan2(dx, dz);
-
-      // Smooth turning towards player
       let angleDiff = Math.atan2(Math.sin(angleToPlayer - drone.heading), Math.cos(angleToPlayer - drone.heading));
       drone.heading += angleDiff * Math.min(1.0, 4.0 * dt);
       drone.group.rotation.y = drone.heading;
 
-      // Flight Movement Logic based on Drone Type
       let forwardMove = 0;
       let strafeMove = 0;
 
       if (drone.type === 'scout') {
-        // Scout maintains optimal engagement distance (40-75 units) while strafing
-        if (dist > 75) {
-          forwardMove = drone.speed;
-        } else if (dist < 40) {
-          forwardMove = -drone.speed * 0.6;
-        } else {
-          forwardMove = drone.speed * 0.2;
-        }
+        if (dist > 75) forwardMove = drone.speed;
+        else if (dist < 40) forwardMove = -drone.speed * 0.6;
+        else forwardMove = drone.speed * 0.2;
         strafeMove = Math.sin(time * 1.5 + drone.strafeAngle) * drone.speed * 0.65;
       } else if (drone.type === 'assault') {
-        // Assault moves slowly and steadily, suppressing with firepower
         if (dist > 60) forwardMove = drone.speed;
-        else forwardMove = Math.sin(time) * 6;
+        else forwardMove = Math.sin(time) * 8;
       } else {
-        // Interceptor aggressively closes distance
         forwardMove = drone.speed;
-        strafeMove = Math.sin(time * 3.0) * 12;
+        strafeMove = Math.sin(time * 3.0) * 14;
       }
 
-      // Compute World Velocities
       const cosH = Math.cos(drone.heading);
       const sinH = Math.sin(drone.heading);
-
-      const vx = sinH * forwardMove + cosH * strafeMove;
-      const vz = cosH * forwardMove - sinH * strafeMove;
-
-      drone.group.position.x += vx * dt;
-      drone.group.position.z += vz * dt;
-
-      // Natural Banking roll
+      drone.group.position.x += (sinH * forwardMove + cosH * strafeMove) * dt;
+      drone.group.position.z += (cosH * forwardMove - sinH * strafeMove) * dt;
       drone.group.rotation.z = -strafeMove * 0.02;
 
-      // Weapon Firing Logic
-      if (dist < 140 && (time - drone.lastFireTime >= drone.fireRate)) {
-        // Check if roughly facing player (within 35 degrees)
+      if (dist < 150 && (time - drone.lastFireTime >= drone.fireRate)) {
         if (Math.abs(angleDiff) < 0.6) {
           drone.lastFireTime = time;
           this._droneFire(drone, player, audio);
@@ -2209,14 +3045,47 @@ class DroneManager {
       }
     }
 
-    // 2. UPDATE ENEMY LASER PROJECTILES
+    // 3. UPDATE HOMING MISSILES
+    for (let i = this.enemyMissiles.length - 1; i >= 0; i--) {
+      const m = this.enemyMissiles[i];
+      m.life -= dt;
+
+      // Homing tracking towards player
+      const dx = player.position.x - m.mesh.position.x;
+      const dz = player.position.z - m.mesh.position.z;
+      const dist = Math.hypot(dx, dz);
+
+      const targetAngle = Math.atan2(dx, dz);
+      let angleDiff = Math.atan2(Math.sin(targetAngle - m.heading), Math.cos(targetAngle - m.heading));
+      m.heading += angleDiff * Math.min(1.0, 3.2 * dt);
+
+      m.mesh.rotation.y = m.heading;
+      const speed = 75;
+      m.mesh.position.x += Math.sin(m.heading) * speed * dt;
+      m.mesh.position.z += Math.cos(m.heading) * speed * dt;
+
+      // Hit Player
+      if (dist < 3.2) {
+        player.takeDamage(m.damage, time);
+        audio.explode(false);
+        this.scene.remove(m.mesh);
+        this.enemyMissiles.splice(i, 1);
+        continue;
+      }
+
+      if (m.life <= 0) {
+        this.scene.remove(m.mesh);
+        this.enemyMissiles.splice(i, 1);
+      }
+    }
+
+    // 4. UPDATE ENEMY LASER PROJECTILES
     for (let i = this.enemyLasers.length - 1; i >= 0; i--) {
       const laser = this.enemyLasers[i];
       laser.mesh.position.x += laser.vx * dt;
       laser.mesh.position.z += laser.vz * dt;
       laser.life -= dt;
 
-      // Check collision with Player Starfighter
       const pDx = player.position.x - laser.mesh.position.x;
       const pDz = player.position.z - laser.mesh.position.z;
       if (Math.hypot(pDx, pDz) < 2.5) {
@@ -2233,45 +3102,150 @@ class DroneManager {
         this.enemyLasers.splice(i, 1);
       }
     }
+
+    // 5. UPDATE HOLOGRAPHIC POWER-UP PICKUPS
+    for (let i = this.powerups.length - 1; i >= 0; i--) {
+      const p = this.powerups[i];
+      p.life -= dt;
+      p.group.rotation.y += 2.8 * dt;
+      p.group.rotation.x += 1.4 * dt;
+
+      // Magnetize towards player if within 42m
+      const dx = player.position.x - p.group.position.x;
+      const dz = player.position.z - p.group.position.z;
+      const dist = Math.hypot(dx, dz);
+
+      if (dist < 42) {
+        const pull = 50 * (1 - dist / 42);
+        p.group.position.x += (dx / dist) * pull * dt;
+        p.group.position.z += (dz / dist) * pull * dt;
+      }
+
+      // Collect Power-up
+      if (dist < 4.0) {
+        this._applyPowerup(p.type, player, audio);
+        this.scene.remove(p.group);
+        this.powerups.splice(i, 1);
+        continue;
+      }
+
+      if (p.life <= 0) {
+        this.scene.remove(p.group);
+        this.powerups.splice(i, 1);
+      }
+    }
+  }
+
+  _bossFire(boss, player, audio) {
+    const THREE = this.THREE;
+    // Quad broadside plasma volley
+    [-3.5, -1.2, 1.2, 3.5].forEach(offset => {
+      const mesh = new THREE.Mesh(this.laserGeom, this.bossLaserMat);
+      mesh.scale.set(1.6, 1.6, 1.6);
+      mesh.position.copy(boss.group.position);
+      mesh.position.x += Math.cos(boss.heading) * offset;
+      mesh.position.z -= Math.sin(boss.heading) * offset;
+      mesh.rotation.y = boss.heading;
+
+      const speed = 135;
+      this.scene.add(mesh);
+      this.enemyLasers.push({
+        mesh,
+        vx: Math.sin(boss.heading) * speed,
+        vz: Math.cos(boss.heading) * speed,
+        damage: 18,
+        life: 2.5
+      });
+    });
+    audio.enemyShoot();
+  }
+
+  _bossLaunchMissile(boss, player, audio) {
+    const THREE = this.THREE;
+    const mesh = new THREE.Mesh(this.missileGeom, this.missileMat);
+    mesh.position.copy(boss.group.position);
+    mesh.position.y = 1.0;
+    mesh.rotation.y = boss.heading;
+
+    this.scene.add(mesh);
+    this.enemyMissiles.push({
+      mesh,
+      heading: boss.heading,
+      damage: 28,
+      life: 7.0
+    });
+    audio.waveAlert();
   }
 
   _droneFire(drone, player, audio) {
     const THREE = this.THREE;
     const mesh = new THREE.Mesh(this.laserGeom, this.droneLaserMat);
     mesh.position.copy(drone.group.position);
-    mesh.position.y = 0;
     mesh.rotation.y = drone.heading;
 
-    // Laser velocity towards player
-    const speed = 120;
-    const vx = Math.sin(drone.heading) * speed;
-    const vz = Math.cos(drone.heading) * speed;
-
+    const speed = 125;
     this.scene.add(mesh);
     this.enemyLasers.push({
       mesh,
-      vx,
-      vz,
-      damage: drone.type === 'assault' ? 18 : 10,
+      vx: Math.sin(drone.heading) * speed,
+      vz: Math.cos(drone.heading) * speed,
+      damage: drone.type === 'assault' ? 16 : 10,
       life: 2.2
     });
-
     audio.enemyShoot();
   }
 
   checkPlayerLaserCollisions(laser, damage, particles, audio) {
+    // 1. Check against Capital Boss
+    if (this.boss) {
+      const b = this.boss;
+      const dx = laser.position.x - b.group.position.x;
+      const dz = laser.position.z - b.group.position.z;
+      if (Math.hypot(dx, dz) < b.radius) {
+        // Damage Shield first
+        if (b.shield > 0) {
+          b.shield -= damage;
+          particles.createSparks(laser.position, 10, 0xbf00ff);
+          audio.shieldHit();
+        } else {
+          b.hp -= damage;
+          particles.createSparks(laser.position, 12, 0xff0055);
+          audio.hit();
+        }
+
+        if (b.hp <= 0) {
+          // Boss Destroyed!
+          const pos = b.group.position.clone();
+          const points = b.points;
+          const name = b.name;
+
+          particles.createShipExplosion(pos, true);
+          audio.explode(true);
+
+          // Drop massive power-up cache
+          this._spawnPowerup(pos, 'shield_boost');
+          this._spawnPowerup(pos, 'weapon_upgrade');
+          this._spawnPowerup(pos, 'overdrive');
+
+          this.scene.remove(b.group);
+          this.boss = null;
+          return { hit: true, destroyed: true, isBoss: true, points, name, pos };
+        }
+        return { hit: true, destroyed: false, isBoss: true };
+      }
+    }
+
+    // 2. Check against Standard Drones
     for (let i = 0; i < this.drones.length; i++) {
       const drone = this.drones[i];
       const dx = laser.position.x - drone.group.position.x;
       const dz = laser.position.z - drone.group.position.z;
-      const distSq = dx * dx + dz * dz;
 
-      if (distSq < drone.radius * drone.radius) {
+      if (dx * dx + dz * dz < drone.radius * drone.radius) {
         drone.hp -= damage;
-        particles.createSparks(drone.group.position, 8, 0xff2244);
+        particles.createSparks(drone.group.position, 8, 0xff1744);
 
         if (drone.hp <= 0) {
-          // Drone Destroyed!
           const pos = drone.group.position.clone();
           const points = drone.points;
           const name = drone.name;
@@ -2279,10 +3253,16 @@ class DroneManager {
           particles.createShipExplosion(pos, drone.type === 'assault');
           audio.explode(true);
 
+          // Chance to drop powerup (35%)
+          if (Math.random() < 0.35) {
+            const types = ['shield_boost', 'weapon_upgrade', 'overdrive'];
+            this._spawnPowerup(pos, types[Math.floor(Math.random() * types.length)]);
+          }
+
           this.scene.remove(drone.group);
           this.drones.splice(i, 1);
 
-          return { hit: true, destroyed: true, points, name, pos };
+          return { hit: true, destroyed: true, isBoss: false, points, name, pos };
         } else {
           audio.hit();
           return { hit: true, destroyed: false };
@@ -2292,69 +3272,136 @@ class DroneManager {
     return { hit: false };
   }
 
+  _spawnPowerup(pos, type) {
+    const THREE = this.THREE;
+    const group = new THREE.Group();
+
+    let color = 0x5cff9d;
+    if (type === 'weapon_upgrade') color = 0xffc247;
+    if (type === 'overdrive') color = 0x3ef0ff;
+
+    const core = new THREE.Mesh(this.powerupGeom, new THREE.MeshBasicMaterial({ color }));
+    group.add(core);
+
+    const ring = new THREE.Mesh(this.powerupRingGeom, new THREE.MeshBasicMaterial({ color, wireframe: true }));
+    ring.rotation.x = Math.PI / 2;
+    group.add(ring);
+
+    group.position.copy(pos);
+    group.position.x += (Math.random() - 0.5) * 6;
+    group.position.z += (Math.random() - 0.5) * 6;
+
+    this.scene.add(group);
+    this.powerups.push({ group, type, life: 25.0 });
+  }
+
+  _applyPowerup(type, player, audio) {
+    audio.pickup(type);
+    if (type === 'shield_boost') {
+      player.applyOvercharge();
+    } else if (type === 'weapon_upgrade') {
+      player.upgradeWeapons();
+    } else if (type === 'overdrive') {
+      player.energy = player.maxEnergy;
+      player.isBoosting = true;
+    }
+  }
+
   getTargetTrackingInfo(player, camera, canvasWidth, canvasHeight) {
-    // Find closest and most centered enemy drone in front of player
     let bestTarget = null;
     let minScore = Infinity;
-
     const targets = [];
+
+    // Boss target priority
+    if (this.boss) {
+      const b = this.boss;
+      const dx = b.group.position.x - player.position.x;
+      const dz = b.group.position.z - player.position.z;
+      const dist = Math.hypot(dx, dz);
+
+      const screenPos = b.group.position.clone();
+      screenPos.project(camera);
+      const isBehind = screenPos.z > 1;
+      const screenX = (screenPos.x * 0.5 + 0.5) * canvasWidth;
+      const screenY = (-screenPos.y * 0.5 + 0.5) * canvasHeight;
+
+      const bossTarget = {
+        name: b.name,
+        dist: Math.round(dist),
+        hpRatio: b.hp / b.maxHp,
+        shieldRatio: b.shield / b.maxShield,
+        screenX,
+        screenY,
+        isBehind,
+        isInView: !isBehind && screenX >= 0 && screenX <= canvasWidth && screenY >= 0 && screenY <= canvasHeight,
+        isBoss: true
+      };
+      targets.push(bossTarget);
+      bestTarget = bossTarget;
+    }
 
     this.drones.forEach(drone => {
       const dx = drone.group.position.x - player.position.x;
       const dz = drone.group.position.z - player.position.z;
       const dist = Math.hypot(dx, dz);
 
-      // Angle relative to player heading
       const angleToDrone = Math.atan2(dx, dz);
       const angleDiff = Math.abs(Math.atan2(Math.sin(angleToDrone - player.heading), Math.cos(angleToDrone - player.heading)));
-
-      // Score: distance + forward angle penalty
       const trackingScore = dist + angleDiff * 50;
 
-      // Project 3D position to 2D Screen Coordinates
       const screenPos = drone.group.position.clone();
       screenPos.project(camera);
-
       const isBehind = screenPos.z > 1;
       const screenX = (screenPos.x * 0.5 + 0.5) * canvasWidth;
       const screenY = (-screenPos.y * 0.5 + 0.5) * canvasHeight;
 
       const targetData = {
-        drone,
         name: drone.name,
         dist: Math.round(dist),
         hpRatio: drone.hp / drone.maxHp,
         screenX,
         screenY,
         isBehind,
-        isInView: !isBehind && screenX >= 0 && screenX <= canvasWidth && screenY >= 0 && screenY <= canvasHeight
+        isInView: !isBehind && screenX >= 0 && screenX <= canvasWidth && screenY >= 0 && screenY <= canvasHeight,
+        isBoss: false
       };
-
       targets.push(targetData);
 
-      if (trackingScore < minScore && !isBehind) {
+      if (!this.boss && trackingScore < minScore && !isBehind) {
         minScore = trackingScore;
         bestTarget = targetData;
       }
     });
 
-    return { primaryTarget: bestTarget, allTargets: targets, remainingDrones: this.drones.length };
+    const activeCount = (this.boss ? 1 : 0) + this.drones.length;
+    return {
+      primaryTarget: bestTarget,
+      allTargets: targets,
+      remainingDrones: activeCount,
+      bossData: this.boss ? { name: this.boss.name, hp: this.boss.hp, maxHp: this.boss.maxHp, shield: this.boss.shield, maxShield: this.boss.maxShield } : null
+    };
   }
 
   clearAll() {
-    this.drones.forEach(d => {
-      this.scene.remove(d.group);
-    });
+    if (this.boss) {
+      this.scene.remove(this.boss.group);
+      this.boss = null;
+    }
+    this.drones.forEach(d => this.scene.remove(d.group));
     this.drones = [];
 
-    this.enemyLasers.forEach(l => {
-      this.scene.remove(l.mesh);
-    });
+    this.enemyLasers.forEach(l => this.scene.remove(l.mesh));
     this.enemyLasers = [];
+
+    this.enemyMissiles.forEach(m => this.scene.remove(m.mesh));
+    this.enemyMissiles = [];
+
+    this.powerups.forEach(p => this.scene.remove(p.group));
+    this.powerups = [];
   }
 }
 
-/**
+    /**
  * Particle Effects & Explosions System
  * High-performance particle bursts, shockwave rings, tumbling debris shards,
  * spark emitters, and afterburner trails.
@@ -2681,7 +3728,7 @@ class ParticleSystem {
   }
 }
 
-/**
+    /**
  * Smooth, Intuitive & Simplified Arcade Flight Controls
  * Handles Keyboard, Mouse Flight Steering, Gamepad, and Mobile Touch.
  * Eliminates jerky mechanics, freezes, and gimbal snapping.
@@ -2850,16 +3897,13 @@ class InputController {
   }
 }
 
-/**
- * Futuristic Cockpit Tactical HUD & Radar
- * Renders real-time Score, Shields, Hull, Energy, Wave/Sector,
- * 360-degree Radar Scanner, Target Lock-on Brackets, and Combat Feed.
+    /**
+ * Futuristic Cockpit Tactical HUD, 360° Radar & Boss Health Bar
  */
 class TacticalHUD {
   constructor(container) {
     this.container = container;
     this.feedMessages = [];
-    this.floatingScores = [];
     this._buildDOM();
   }
 
@@ -2873,10 +3917,30 @@ class TacticalHUD {
             <span class="hud-sector" id="hud-sector-badge">SECTOR 01</span>
           </div>
 
+          <!-- Dedicated Boss Health Bar (Active during Capital Boss Battles) -->
+          <div class="hud-boss-bar-panel" id="hud-boss-panel" style="display: none;">
+            <div class="boss-title-row">
+              <span class="boss-warning-tag">WARNING: CAPITAL THREAT</span>
+              <span class="boss-name" id="hud-boss-name">LEVIATHAN DREADNOUGHT</span>
+            </div>
+            <div class="boss-bars">
+              <!-- Boss Shield -->
+              <div class="boss-track">
+                <div class="boss-fill boss-shield-fill" id="hud-boss-shield" style="width: 100%;"></div>
+              </div>
+              <!-- Boss Hull -->
+              <div class="boss-track">
+                <div class="boss-fill boss-hull-fill" id="hud-boss-hull" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Central Alert Announcement -->
           <div class="hud-center-alert" id="hud-announcement" style="display: none;">
             <div class="alert-box" id="hud-alert-text">SECTOR COMPLETED</div>
           </div>
 
+          <!-- Score & Multiplier -->
           <div class="hud-score-panel">
             <div class="score-display">
               <span class="score-label">SCORE</span>
@@ -2901,7 +3965,7 @@ class TacticalHUD {
           <div class="radar-label">360° TACTICAL SCANNER</div>
         </div>
 
-        <!-- Lower Center: Vitals (Shields, Hull, Overdrive Energy) -->
+        <!-- Lower Center: Vitals (Shields, Hull, Boost, Weapon Power) -->
         <div class="hud-vitals">
           <!-- Shield Bar -->
           <div class="vital-row">
@@ -2921,7 +3985,7 @@ class TacticalHUD {
             <span class="vital-val" id="hud-hull-val">100%</span>
           </div>
 
-          <!-- Overdrive / Energy Bar -->
+          <!-- Boost / Energy Bar -->
           <div class="vital-row">
             <span class="vital-label">BOOST</span>
             <div class="bar-track thin">
@@ -2930,9 +3994,9 @@ class TacticalHUD {
             <span class="vital-val" id="hud-energy-val">100%</span>
           </div>
 
-          <!-- Laser Heat Gauge -->
+          <!-- Weapon Status & Heat -->
           <div class="vital-row">
-            <span class="vital-label">HEAT</span>
+            <span class="vital-label" id="hud-weapon-label">LASER LV1</span>
             <div class="bar-track thin">
               <div class="bar-fill heat-fill" id="hud-heat-fill" style="width: 0%;"></div>
             </div>
@@ -2949,7 +4013,7 @@ class TacticalHUD {
           <div class="hint-chip"><kbd>SHIFT</kbd> / <kbd>R-CLICK</kbd> BOOST</div>
         </div>
 
-        <!-- Mobile Touch Overlay (Visible only on touch devices) -->
+        <!-- Mobile Touch Overlay -->
         <div class="touch-controls" id="touch-controls">
           <div class="touch-stick" id="touch-stick-left">
             <div class="stick-knob" id="stick-knob-left"></div>
@@ -2962,7 +4026,7 @@ class TacticalHUD {
       </div>
     `;
 
-    // Cache DOM Elements
+    // Cache DOM
     this.scoreEl = document.getElementById('hud-score');
     this.comboEl = document.getElementById('hud-combo');
     this.sectorBadge = document.getElementById('hud-sector-badge');
@@ -2974,13 +4038,19 @@ class TacticalHUD {
     this.energyVal = document.getElementById('hud-energy-val');
     this.heatFill = document.getElementById('hud-heat-fill');
     this.heatVal = document.getElementById('hud-heat-val');
+    this.weaponLabel = document.getElementById('hud-weapon-label');
     this.feedEl = document.getElementById('hud-feed');
     this.announcementEl = document.getElementById('hud-announcement');
     this.alertTextEl = document.getElementById('hud-alert-text');
 
+    // Boss Bar Elements
+    this.bossPanel = document.getElementById('hud-boss-panel');
+    this.bossName = document.getElementById('hud-boss-name');
+    this.bossShield = document.getElementById('hud-boss-shield');
+    this.bossHull = document.getElementById('hud-boss-hull');
+
     this.trackingCanvas = document.getElementById('hud-tracking-canvas');
     this.trackingCtx = this.trackingCanvas.getContext('2d');
-
     this.radarCanvas = document.getElementById('hud-radar-canvas');
     this.radarCtx = this.radarCanvas.getContext('2d');
 
@@ -3009,7 +4079,6 @@ class TacticalHUD {
     item.textContent = text;
     this.feedEl.appendChild(item);
 
-    // Keep max 5 feed messages
     while (this.feedEl.children.length > 5) {
       this.feedEl.removeChild(this.feedEl.firstChild);
     }
@@ -3059,16 +4128,34 @@ class TacticalHUD {
       this.heatFill.style.background = 'linear-gradient(90deg, #ffaa00, #ff4400)';
     }
 
-    // 2. SCORE & SECTOR
+    // Weapon Level Badge
+    this.weaponLabel.textContent = `LASER LV${player.weaponLevel}`;
+    if (player.weaponLevel >= 2) {
+      this.weaponLabel.style.color = '#ffc247';
+    } else {
+      this.weaponLabel.style.color = 'var(--muted)';
+    }
+
+    // 2. BOSS HEALTH BAR
+    if (trackingInfo.bossData) {
+      this.bossPanel.style.display = 'flex';
+      this.bossName.textContent = trackingInfo.bossData.name;
+      const bShieldPct = Math.max(0, Math.round((trackingInfo.bossData.shield / trackingInfo.bossData.maxShield) * 100));
+      const bHullPct = Math.max(0, Math.round((trackingInfo.bossData.hp / trackingInfo.bossData.maxHp) * 100));
+      this.bossShield.style.width = `${bShieldPct}%`;
+      this.bossHull.style.width = `${bHullPct}%`;
+    } else {
+      this.bossPanel.style.display = 'none';
+    }
+
+    // 3. SCORE & SECTOR
     this.scoreEl.textContent = score.toString().padStart(6, '0');
     this.sectorBadge.textContent = `SECTOR ${sector.toString().padStart(2, '0')}`;
     this.comboEl.textContent = `x${combo} COMBO`;
     this.comboEl.style.opacity = combo > 1 ? '1' : '0.4';
 
-    // 3. DRAW 2D TARGET TRACKING OVERLAY (HUD Brackets & Off-screen Indicators)
+    // 4. DRAW 2D TRACKING OVERLAY & RADAR
     this._renderTrackingOverlay(trackingInfo);
-
-    // 4. DRAW 360-DEGREE RADAR
     this._renderRadar(player, radarData);
   }
 
@@ -3077,23 +4164,21 @@ class TacticalHUD {
     const w = this.trackingCanvas.width;
     const h = this.trackingCanvas.height;
     ctx.clearRect(0, 0, w, h);
-
     if (!trackingInfo) return;
 
-    // A. PRIMARY LOCKED TARGET BRACKET
+    // A. Primary Locked Target
     const target = trackingInfo.primaryTarget;
     if (target && target.isInView) {
       const x = target.screenX;
       const y = target.screenY;
-      const size = Math.max(26, Math.min(60, 4200 / Math.max(10, target.dist)));
+      const size = target.isBoss ? 48 : Math.max(26, Math.min(60, 4200 / Math.max(10, target.dist)));
 
       ctx.save();
-      ctx.strokeStyle = '#ff3366';
-      ctx.lineWidth = 2;
-      ctx.shadowColor = '#ff3366';
-      ctx.shadowBlur = 8;
+      ctx.strokeStyle = target.isBoss ? '#bf00ff' : '#ff3366';
+      ctx.lineWidth = target.isBoss ? 3 : 2;
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.shadowBlur = 10;
 
-      // Draw Corner Brackets
       const arm = size * 0.35;
       // Top-Left
       ctx.beginPath();
@@ -3123,8 +4208,8 @@ class TacticalHUD {
       ctx.lineTo(x + size, y + size - arm);
       ctx.stroke();
 
-      // Target Info Text & Health Bar
-      ctx.fillStyle = '#ff88aa';
+      // Target Name & Distance
+      ctx.fillStyle = target.isBoss ? '#ff88ff' : '#ff88aa';
       ctx.font = 'bold 11px monospace';
       ctx.textAlign = 'center';
       ctx.fillText(`${target.name} [${target.dist}M]`, x, y - size - 8);
@@ -3134,21 +4219,17 @@ class TacticalHUD {
       const barH = 4;
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
       ctx.fillRect(x - barW / 2, y + size + 6, barW, barH);
-      ctx.fillStyle = '#ff2244';
+      ctx.fillStyle = target.isBoss ? '#bf00ff' : '#ff2244';
       ctx.fillRect(x - barW / 2, y + size + 6, barW * target.hpRatio, barH);
 
       ctx.restore();
     }
 
-    // B. OFF-SCREEN DRONE INDICATOR CHEVRONS
+    // B. Off-Screen Chevrons
     if (trackingInfo.allTargets) {
       ctx.save();
-      ctx.fillStyle = '#ff2244';
-      ctx.strokeStyle = '#ffffff';
-
       trackingInfo.allTargets.forEach(t => {
         if (!t.isInView) {
-          // Calculate screen edge position
           const cx = w / 2;
           const cy = h / 2;
           let dx = t.screenX - cx;
@@ -3163,12 +4244,12 @@ class TacticalHUD {
           const edgeX = Math.max(margin, Math.min(w - margin, cx + Math.cos(angle) * (w / 2 - margin)));
           const edgeY = Math.max(margin, Math.min(h - margin, cy + Math.sin(angle) * (h / 2 - margin)));
 
-          // Draw Chevron Arrow pointing off-screen
+          ctx.fillStyle = t.isBoss ? '#bf00ff' : '#ff2244';
           ctx.save();
           ctx.translate(edgeX, edgeY);
           ctx.rotate(angle);
           ctx.beginPath();
-          ctx.moveTo(8, 0);
+          ctx.moveTo(t.isBoss ? 12 : 8, 0);
           ctx.lineTo(-6, -6);
           ctx.lineTo(-2, 0);
           ctx.lineTo(-6, 6);
@@ -3186,11 +4267,10 @@ class TacticalHUD {
     const size = 140;
     const center = size / 2;
     const radius = center - 6;
-    const radarScale = radius / 360; // 360m radar range
+    const radarScale = radius / 360;
 
     ctx.clearRect(0, 0, size, size);
 
-    // Radar Background & Grid Rings
     ctx.save();
     ctx.beginPath();
     ctx.arc(center, center, radius, 0, Math.PI * 2);
@@ -3200,7 +4280,6 @@ class TacticalHUD {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Range concentric circles
     [0.35, 0.7, 1.0].forEach(rRatio => {
       ctx.beginPath();
       ctx.arc(center, center, radius * rRatio, 0, Math.PI * 2);
@@ -3208,7 +4287,6 @@ class TacticalHUD {
       ctx.stroke();
     });
 
-    // Crosshairs
     ctx.beginPath();
     ctx.moveTo(center, center - radius);
     ctx.lineTo(center, center + radius);
@@ -3217,49 +4295,53 @@ class TacticalHUD {
     ctx.strokeStyle = 'rgba(62, 240, 255, 0.15)';
     ctx.stroke();
 
-    // Rotate context so radar aligns with player forward heading (Heading Up)
     ctx.translate(center, center);
     ctx.rotate(-player.heading);
 
-    // 1. Draw Asteroids (Grey Blips)
+    // 1. Asteroids
     if (radarData.asteroids) {
       ctx.fillStyle = 'rgba(150, 170, 190, 0.6)';
       radarData.asteroids.forEach(ast => {
         const rx = (ast.x - player.position.x) * radarScale;
         const rz = (ast.z - player.position.z) * radarScale;
+        if (Math.hypot(rx, rz) <= radius) ctx.fillRect(rx - 1.5, -rz - 1.5, 3, 3);
+      });
+    }
+
+    // 2. Power-ups & Minerals
+    if (radarData.powerups) {
+      radarData.powerups.forEach(p => {
+        const rx = (p.x - player.position.x) * radarScale;
+        const rz = (p.z - player.position.z) * radarScale;
         if (Math.hypot(rx, rz) <= radius) {
-          ctx.fillRect(rx - 1.5, -rz - 1.5, 3, 3);
+          ctx.fillStyle = (p.type === 'shield_boost') ? '#5cff9d' : (p.type === 'weapon_upgrade' ? '#ffc247' : '#3ef0ff');
+          ctx.fillRect(rx - 2, -rz - 2, 4, 4);
         }
       });
     }
 
-    // 2. Draw Mineral Crystals (Cyan / Amber Blips)
-    if (radarData.minerals) {
-      ctx.fillStyle = '#ffc247';
-      radarData.minerals.forEach(min => {
-        const rx = (min.x - player.position.x) * radarScale;
-        const rz = (min.z - player.position.z) * radarScale;
-        if (Math.hypot(rx, rz) <= radius) {
-          ctx.fillRect(rx - 1, -rz - 1, 2, 2);
-        }
-      });
-    }
-
-    // 3. Draw Enemy Drones (Glowing Red / Orange Triangles)
+    // 3. Enemy Drones & Boss
     if (radarData.drones) {
-      ctx.fillStyle = '#ff2244';
       radarData.drones.forEach(d => {
         const rx = (d.x - player.position.x) * radarScale;
         const rz = (d.z - player.position.z) * radarScale;
         if (Math.hypot(rx, rz) <= radius) {
-          ctx.beginPath();
-          ctx.arc(rx, -rz, 3, 0, Math.PI * 2);
-          ctx.fill();
+          if (d.isBoss) {
+            ctx.fillStyle = '#bf00ff';
+            ctx.beginPath();
+            ctx.arc(rx, -rz, 5, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillStyle = '#ff2244';
+            ctx.beginPath();
+            ctx.arc(rx, -rz, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
       });
     }
 
-    // 4. Draw Player Center Icon (Cyan Chevron)
+    // 4. Player Icon (Chevron)
     ctx.fillStyle = '#3ef0ff';
     ctx.beginPath();
     ctx.moveTo(0, -6);
@@ -3273,17 +4355,18 @@ class TacticalHUD {
   }
 }
 
-/**
+    /**
  * Main Game Engine & Loop Orchestrator
- * Connects Starfighter, Infinite Cosmic Environment, Asteroids, Drones,
- * Particles, Audio, Controls, and Live HUD.
+ * Connects Multi-Ship Selection, Photorealistic Environment, Asteroids,
+ * Dynamic Drone Squadrons, Capital Boss Battles, Power-ups, Audio, and HUD.
  */
 
 class CosmicGame {
-  constructor(canvas, hudContainer, THREE) {
+  constructor(canvas, hudContainer, THREE, selectedShipType = 'aether') {
     this.canvas = canvas;
     this.hudContainer = hudContainer;
     this.THREE = THREE;
+    this.selectedShipType = selectedShipType;
 
     // Game State
     this.running = false;
@@ -3292,15 +4375,14 @@ class CosmicGame {
     this.combo = 1;
     this.comboTimer = 0;
     this.sector = 1;
-    this.sectorDronesRemaining = 0;
     this.shake = 0;
 
     // Three.js Core
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x03060c);
-    this.scene.fog = new THREE.FogExp2(0x03060c, 0.0012);
+    this.scene.background = new THREE.Color(0x02040a);
+    this.scene.fog = new THREE.FogExp2(0x02040a, 0.0009);
 
-    this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.5, 4000);
+    this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.5, 5000);
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
       antialias: true,
@@ -3309,10 +4391,8 @@ class CosmicGame {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-    // Camera Chase Setup
-    this.camOffset = new THREE.Vector3(0, 32, -48);
-    this.camLookOffset = new THREE.Vector3(0, 0, 18);
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.15;
 
     // Audio & Systems
     this.audio = new SoundEngine();
@@ -3320,22 +4400,16 @@ class CosmicGame {
     this.input = new InputController(this.canvas, this.camera, THREE);
     this.particles = new ParticleSystem(this.scene, THREE);
     this.environment = new CosmicEnvironment(this.scene, THREE);
-    this.player = new Starfighter(this.scene, THREE);
+    this.player = new Starfighter(this.scene, THREE, this.selectedShipType);
     this.asteroids = new AsteroidManager(this.scene, THREE);
     this.drones = new DroneManager(this.scene, THREE);
 
     // Player Lasers
     this.playerLasers = [];
-    this.laserGeom = new THREE.CylinderGeometry(0.12, 0.12, 2.2, 8);
+    this.laserGeom = new THREE.CylinderGeometry(0.12, 0.12, 2.4, 8);
     this.laserGeom.rotateX(Math.PI / 2);
-    this.laserMat = new THREE.MeshBasicMaterial({
-      color: 0x3ef0ff,
-      transparent: true,
-      opacity: 0.95
-    });
 
     this.lastTime = performance.now();
-
     window.addEventListener('resize', () => this._onResize());
   }
 
@@ -3354,19 +4428,26 @@ class CosmicGame {
     this.combo = 1;
     this.sector = 1;
 
-    // Initialize Asteroid Field & First Wave
     this.asteroids.init(this.player.position);
     this._startSector(1);
 
-    this.hud.addFeedMessage('SYSTEMS ONLINE. WARP DRIVE READY.', '#3ef0ff');
+    this.hud.addFeedMessage(`PILOT INITIATED: ${this.player.config.name}`, '#3ef0ff');
     this.lastTime = performance.now();
     this._loop();
   }
 
   _startSector(sectorNum) {
     this.sector = sectorNum;
-    this.hud.showAnnouncement(`SECTOR ${sectorNum.toString().padStart(2, '0')}: HOSTILES INCOMING`);
-    this.hud.addFeedMessage(`SECTOR ${sectorNum} DRONE SQUADRON DETECTED`, '#ffaa00');
+    const isBoss = (sectorNum % 3 === 0);
+
+    if (isBoss) {
+      this.hud.showAnnouncement(`ALERT: CAPITAL CLASS BOSS INCOMING!`, 3500);
+      this.hud.addFeedMessage(`CAPITAL WARSHIP DETECTED IN SECTOR ${sectorNum}`, '#bf00ff');
+    } else {
+      this.hud.showAnnouncement(`SECTOR ${sectorNum.toString().padStart(2, '0')}: HOSTILE SQUADRONS`);
+      this.hud.addFeedMessage(`SECTOR ${sectorNum} DRONE SQUADRON DETECTED`, '#ffaa00');
+    }
+
     this.audio.waveAlert();
     this.drones.spawnWave(sectorNum, this.player.position);
   }
@@ -3389,17 +4470,13 @@ class CosmicGame {
   _update(dt, time) {
     // 1. SAMPLE INPUT & UPDATE PLAYER
     const inputState = this.input.sample(this.player);
-
-    // Smooth heading steering towards target input
     this.player.targetHeading = inputState.targetHeading;
     this.player.update(dt, inputState, time);
 
-    // Sound Engine Update
     const currentSpeed = Math.hypot(this.player.velocity.x, this.player.velocity.z);
-    this.audio.updateEngineHum(currentSpeed / this.player.cruisingSpeed);
+    this.audio.updateEngineHum(currentSpeed / this.player.config.maxSpeed);
     this.audio.setBoost(this.player.isBoosting);
 
-    // Thruster Spark Effects
     if (currentSpeed > 2.0 || this.player.isBoosting) {
       this.particles.createThrusterSparks(this.player.position, this.player.heading, this.player.isBoosting);
     }
@@ -3410,7 +4487,12 @@ class CosmicGame {
       const laserSpawns = this.player.getLaserSpawns();
 
       laserSpawns.forEach(spawn => {
-        const mesh = new this.THREE.Mesh(this.laserGeom, this.laserMat);
+        const mat = new this.THREE.MeshBasicMaterial({
+          color: spawn.color || this.player.config.laserColor,
+          transparent: true,
+          opacity: 0.95
+        });
+        const mesh = new this.THREE.Mesh(this.laserGeom, mat);
         mesh.position.set(spawn.x, spawn.y, spawn.z);
         mesh.rotation.y = spawn.heading;
         this.scene.add(mesh);
@@ -3419,13 +4501,13 @@ class CosmicGame {
           mesh,
           vx: spawn.vx,
           vz: spawn.vz,
-          life: 1.4,
-          damage: 1
+          life: 1.5,
+          damage: this.player.weaponLevel >= 2 ? 2 : 1
         });
       });
 
       this.audio.shoot(this.player.isBoosting);
-      this.addShake(0.08);
+      this.addShake(0.06);
     }
 
     // 3. UPDATE PLAYER LASERS & COLLISIONS
@@ -3435,15 +4517,15 @@ class CosmicGame {
       laser.mesh.position.z += laser.vz * dt;
       laser.life -= dt;
 
-      // Check collision against Enemy Drones
-      const droneHit = this.drones.checkPlayerLaserCollisions(laser.mesh, laser.damage, this.particles, this.audio);
-      if (droneHit.hit) {
-        if (droneHit.destroyed) {
-          const pts = droneHit.points * this.combo;
+      // Enemy / Boss Collision
+      const enemyHit = this.drones.checkPlayerLaserCollisions(laser.mesh, laser.damage, this.particles, this.audio);
+      if (enemyHit.hit) {
+        if (enemyHit.destroyed) {
+          const pts = enemyHit.points * this.combo;
           this.score += pts;
           this._incrementCombo();
-          this.hud.addFeedMessage(`+${pts} ${droneHit.name} DESTROYED`, '#5cff9d');
-          this.addShake(0.35);
+          this.hud.addFeedMessage(`+${pts} ${enemyHit.name} DESTROYED`, enemyHit.isBoss ? '#bf00ff' : '#5cff9d');
+          this.addShake(enemyHit.isBoss ? 0.8 : 0.35);
         }
 
         this.scene.remove(laser.mesh);
@@ -3451,7 +4533,7 @@ class CosmicGame {
         continue;
       }
 
-      // Check collision against Asteroids
+      // Asteroid Collision
       const astHit = this.asteroids.checkLaserCollisions(laser.mesh, laser.damage, this.particles, this.audio);
       if (astHit.hit) {
         if (astHit.result && astHit.result.destroyed) {
@@ -3465,14 +4547,13 @@ class CosmicGame {
         continue;
       }
 
-      // Out of range cleanup
       if (laser.life <= 0) {
         this.scene.remove(laser.mesh);
         this.playerLasers.splice(i, 1);
       }
     }
 
-    // 4. UPDATE ASTEROIDS & DRONES
+    // 4. UPDATE ASTEROIDS & DRONES & POWERUPS
     this.asteroids.update(dt, this.player.position);
     this.drones.update(dt, this.player, time, this.audio);
 
@@ -3484,7 +4565,7 @@ class CosmicGame {
       this.addShake(0.25);
     }
 
-    // Mineral Pickups
+    // Mineral Pickups from shattered asteroids
     this.asteroids.checkMineralPickups(this.player, (kind) => {
       this.audio.pickup(kind);
       if (kind === 'shield') {
@@ -3500,27 +4581,27 @@ class CosmicGame {
       }
     });
 
-    // 5. CHECK SECTOR WAVE COMPLETION
-    if (this.drones.drones.length === 0) {
+    // 5. CHECK SECTOR WAVE / BOSS COMPLETION
+    const totalRemaining = (this.drones.boss ? 1 : 0) + this.drones.drones.length;
+    if (totalRemaining === 0) {
       this.audio.sectorCleared();
-      this.hud.addFeedMessage(`SECTOR ${this.sector} CLEARED! +1000 BONUS`, '#5cff9d');
-      this.score += 1000;
+      const bonus = (this.sector % 3 === 0) ? 5000 : 1500;
+      this.hud.addFeedMessage(`SECTOR ${this.sector} CLEARED! +${bonus} VICTORY BONUS`, '#5cff9d');
+      this.score += bonus;
       setTimeout(() => {
         this._startSector(this.sector + 1);
-      }, 3000);
+      }, 3200);
     }
 
     // Combo Decay
     if (this.combo > 1) {
       this.comboTimer -= dt;
-      if (this.comboTimer <= 0) {
-        this.combo = 1;
-      }
+      if (this.comboTimer <= 0) this.combo = 1;
     }
 
     // 6. UPDATE PARTICLES & ENVIRONMENT
     this.particles.update(dt);
-    this.environment.update(this.player.position);
+    this.environment.update(this.player.position, dt);
 
     // 7. CAMERA CHASE SMOOTHING & LOOKAHEAD
     this._updateCamera(dt);
@@ -3535,50 +4616,47 @@ class CosmicGame {
 
     const radarData = {
       asteroids: this.asteroids.asteroids.map(a => ({ x: a.mesh.position.x, z: a.mesh.position.z })),
-      minerals: this.asteroids.minerals.map(m => ({ x: m.mesh.position.x, z: m.mesh.position.z })),
-      drones: this.drones.drones.map(d => ({ x: d.group.position.x, z: d.group.position.z }))
+      powerups: this.drones.powerups.map(p => ({ x: p.group.position.x, z: p.group.position.z, type: p.type })),
+      drones: [
+        ...(this.drones.boss ? [{ x: this.drones.boss.group.position.x, z: this.drones.boss.group.position.z, isBoss: true }] : []),
+        ...this.drones.drones.map(d => ({ x: d.group.position.x, z: d.group.position.z, isBoss: false }))
+      ]
     };
 
     this.hud.update(this.player, this.score, this.combo, this.sector, trackingInfo, radarData, time);
 
-    // Check Player Death
     if (this.player.hull <= 0) {
       this._onGameOver();
     }
   }
 
   _incrementCombo() {
-    this.combo = Math.min(5, this.combo + 1);
-    this.comboTimer = 4.0; // 4 seconds window to chain kills
+    this.combo = Math.min(6, this.combo + 1);
+    this.comboTimer = 4.2;
   }
 
   _updateCamera(dt) {
     const forwardX = Math.sin(this.player.heading);
     const forwardZ = Math.cos(this.player.heading);
 
-    // Camera sits behind and above ship
-    const targetCamX = this.player.position.x - forwardX * 42;
-    const targetCamZ = this.player.position.z - forwardZ * 42;
-    const targetCamY = 24;
+    const targetCamX = this.player.position.x - forwardX * 44;
+    const targetCamZ = this.player.position.z - forwardZ * 44;
+    const targetCamY = 26;
 
-    // Smooth position interpolation
     this.camera.position.x += (targetCamX - this.camera.position.x) * (1 - Math.exp(-6.5 * dt));
     this.camera.position.z += (targetCamZ - this.camera.position.z) * (1 - Math.exp(-6.5 * dt));
     this.camera.position.y += (targetCamY - this.camera.position.y) * (1 - Math.exp(-6.5 * dt));
 
-    // Dynamic FOV on boost
-    const targetFov = this.player.isBoosting ? 68 : 60;
+    const targetFov = this.player.isBoosting ? 70 : 62;
     this.camera.fov += (targetFov - this.camera.fov) * (1 - Math.exp(-5.0 * dt));
     this.camera.updateProjectionMatrix();
 
-    // Look point slightly ahead of ship
-    const lookTargetX = this.player.position.x + forwardX * 18;
-    const lookTargetZ = this.player.position.z + forwardZ * 18;
+    const lookTargetX = this.player.position.x + forwardX * 20;
+    const lookTargetZ = this.player.position.z + forwardZ * 20;
 
-    // Add trauma screen shake
     if (this.shake > 0) {
-      this.camera.position.x += (Math.random() - 0.5) * this.shake * 2.5;
-      this.camera.position.y += (Math.random() - 0.5) * this.shake * 2.5;
+      this.camera.position.x += (Math.random() - 0.5) * this.shake * 3.0;
+      this.camera.position.y += (Math.random() - 0.5) * this.shake * 3.0;
       this.shake = Math.max(0, this.shake - dt * 2.5);
     }
 
@@ -3586,7 +4664,7 @@ class CosmicGame {
   }
 
   addShake(amount) {
-    this.shake = Math.min(1.2, this.shake + amount);
+    this.shake = Math.min(1.4, this.shake + amount);
   }
 
   _render() {
@@ -3597,7 +4675,7 @@ class CosmicGame {
     this.running = false;
     this.audio.explode(true);
     this.particles.createShipExplosion(this.player.position, true);
-    this.hud.showAnnouncement('STARFIGHTER DESTROYED - RESTARTING', 4000);
+    this.hud.showAnnouncement('STARFIGHTER DESTROYED - RECONNECTING', 4000);
     setTimeout(() => {
       location.reload();
     }, 3500);
@@ -3605,26 +4683,141 @@ class CosmicGame {
 }
 
 
+    // =========================================================
+    // HANGAR 3D PREVIEW & MISSION LAUNCH CONTROLLER
+    // =========================================================
     window.addEventListener('DOMContentLoaded', () => {
-      const canvas = document.getElementById('viewport');
+      const mainCanvas = document.getElementById('viewport');
       const hudContainer = document.getElementById('hud-container');
-      const introModal = document.getElementById('intro-modal');
-      const btnEngage = document.getElementById('btn-engage');
+      const hangarOverlay = document.getElementById('hangar-overlay');
+      const btnLaunch = document.getElementById('btn-launch-mission');
+      const turntableCanvas = document.getElementById('hangar-turntable-canvas');
 
-      let game = null;
+      let selectedShip = 'aether';
+      let mainGame = null;
 
-      btnEngage.addEventListener('click', () => {
-        introModal.style.opacity = '0';
-        introModal.style.transition = 'opacity 0.4s ease-out';
-        setTimeout(() => introModal.style.display = 'none', 400);
+      // Hangar 3D Turntable Scene
+      const hangarScene = new THREE.Scene();
+      const hangarCamera = new THREE.PerspectiveCamera(45, turntableCanvas.clientWidth / turntableCanvas.clientHeight, 0.1, 100);
+      hangarCamera.position.set(0, 3.2, 7.8);
+      hangarCamera.lookAt(0, 0.2, 0);
 
-        if (!game) {
-          game = new CosmicGame(canvas, hudContainer, THREE);
-          game.start();
+      const hangarRenderer = new THREE.WebGLRenderer({
+        canvas: turntableCanvas,
+        antialias: true,
+        alpha: true
+      });
+      hangarRenderer.setSize(turntableCanvas.clientWidth, turntableCanvas.clientHeight);
+      hangarRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      // Hangar Lighting & Pedestal
+      const hSun = new THREE.DirectionalLight(0xffffff, 2.2);
+      hSun.position.set(5, 8, 6);
+      hangarScene.add(hSun);
+
+      const hRim = new THREE.DirectionalLight(0x3ef0ff, 1.8);
+      hRim.position.set(-6, 2, -6);
+      hangarScene.add(hRim);
+
+      const hAmb = new THREE.AmbientLight(0x182433, 1.2);
+      hangarScene.add(hAmb);
+
+      // Holographic Platform Grid
+      const grid = new THREE.GridHelper(12, 24, 0x3ef0ff, 0x1a334d);
+      grid.position.y = -0.6;
+      hangarScene.add(grid);
+
+      // Preview Ship Display Group
+      let previewShipGroup = new THREE.Group();
+      hangarScene.add(previewShipGroup);
+
+      function updatePreviewModel(type) {
+        // Clear previous
+        while (previewShipGroup.children.length > 0) {
+          previewShipGroup.remove(previewShipGroup.children[0]);
+        }
+
+        const tempShip = new Starfighter(previewShipGroup, THREE, type);
+        tempShip.group.position.set(0, 0, 0);
+
+        // Update Stat Meters
+        const cfg = SHIP_CONFIGS[type];
+        document.getElementById('stats-ship-title').textContent = `${cfg.name} // STATS`;
+        document.getElementById('stat-speed-val').textContent = `${cfg.stats.speed}%`;
+        document.getElementById('stat-speed-bar').style.width = `${cfg.stats.speed}%`;
+        document.getElementById('stat-agility-val').textContent = `${cfg.stats.agility}%`;
+        document.getElementById('stat-agility-bar').style.width = `${cfg.stats.agility}%`;
+        document.getElementById('stat-shields-val').textContent = `${cfg.stats.shields}%`;
+        document.getElementById('stat-shields-bar').style.width = `${cfg.stats.shields}%`;
+        document.getElementById('stat-hull-val').textContent = `${cfg.stats.hull}%`;
+        document.getElementById('stat-hull-bar').style.width = `${cfg.stats.hull}%`;
+        document.getElementById('stat-firepower-val').textContent = `${cfg.stats.firepower}%`;
+        document.getElementById('stat-firepower-bar').style.width = `${cfg.stats.firepower}%`;
+      }
+
+      updatePreviewModel('aether');
+
+      // Ship Card Click Handlers
+      ['aether', 'dreadnought', 'crimson'].forEach(id => {
+        const card = document.getElementById(`card-${id}`);
+        card.addEventListener('click', () => {
+          document.querySelectorAll('.ship-card').forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          selectedShip = id;
+          updatePreviewModel(id);
+        });
+      });
+
+      // Turntable Drag Interaction
+      let isDragging = false;
+      let prevMouseX = 0;
+      let autoRotate = true;
+
+      turntableCanvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        prevMouseX = e.clientX;
+        autoRotate = false;
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+        setTimeout(() => autoRotate = true, 2000);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          const deltaX = e.clientX - prevMouseX;
+          previewShipGroup.rotation.y += deltaX * 0.015;
+          prevMouseX = e.clientX;
         }
       });
 
-      // Touch controls
+      // Turntable Loop
+      let turntableRunning = true;
+      function animateTurntable() {
+        if (!turntableRunning) return;
+        requestAnimationFrame(animateTurntable);
+        if (autoRotate) {
+          previewShipGroup.rotation.y += 0.008;
+        }
+        hangarRenderer.render(hangarScene, hangarCamera);
+      }
+      animateTurntable();
+
+      // Launch Mission
+      btnLaunch.addEventListener('click', () => {
+        turntableRunning = false;
+        hangarOverlay.style.opacity = '0';
+        hangarOverlay.style.transition = 'opacity 0.5s ease-out';
+        setTimeout(() => hangarOverlay.style.display = 'none', 500);
+
+        if (!mainGame) {
+          mainGame = new CosmicGame(mainCanvas, hudContainer, THREE, selectedShip);
+          mainGame.start();
+        }
+      });
+
+      // Mobile touch stick
       const stick = document.getElementById('touch-stick-left');
       const knob = document.getElementById('stick-knob-left');
       const btnTouchBoost = document.getElementById('btn-touch-boost');
@@ -3640,7 +4833,7 @@ class CosmicGame {
           const rect = stick.getBoundingClientRect();
           startX = rect.left + rect.width / 2;
           startY = rect.top + rect.height / 2;
-          if (game) game.input.touch.active = true;
+          if (mainGame) mainGame.input.touch.active = true;
         });
 
         window.addEventListener('touchmove', (e) => {
@@ -3653,15 +4846,14 @@ class CosmicGame {
               const maxRadius = 45;
               const clampedDist = Math.min(maxRadius, dist);
               const angle = Math.atan2(dy, dx);
-
               const knobX = Math.cos(angle) * clampedDist;
               const knobY = Math.sin(angle) * clampedDist;
 
               knob.style.transform = 'translate(calc(-50% + ' + knobX + 'px), calc(-50% + ' + knobY + 'px))';
 
-              if (game) {
-                game.input.touch.thrust = -dy / maxRadius;
-                game.input.touch.steer = dx / maxRadius;
+              if (mainGame) {
+                mainGame.input.touch.thrust = -dy / maxRadius;
+                mainGame.input.touch.steer = dx / maxRadius;
               }
             }
           }
@@ -3672,9 +4864,9 @@ class CosmicGame {
             if (e.changedTouches[i].identifier === activeTouchId) {
               activeTouchId = null;
               knob.style.transform = 'translate(-50%, -50%)';
-              if (game) {
-                game.input.touch.thrust = 0;
-                game.input.touch.steer = 0;
+              if (mainGame) {
+                mainGame.input.touch.thrust = 0;
+                mainGame.input.touch.steer = 0;
               }
             }
           }
@@ -3684,16 +4876,15 @@ class CosmicGame {
         window.addEventListener('touchcancel', resetStick);
 
         if (btnTouchBoost) {
-          btnTouchBoost.addEventListener('touchstart', () => { if (game) game.input.touch.boost = true; });
-          btnTouchBoost.addEventListener('touchend', () => { if (game) game.input.touch.boost = false; });
+          btnTouchBoost.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.boost = true; });
+          btnTouchBoost.addEventListener('touchend', () => { if (mainGame) mainGame.input.touch.boost = false; });
         }
         if (btnTouchFire) {
-          btnTouchFire.addEventListener('touchstart', () => { if (game) game.input.touch.fire = true; });
-          btnTouchFire.addEventListener('touchend', () => { if (game) game.input.touch.fire = false; });
+          btnTouchFire.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.fire = true; });
+          btnTouchFire.addEventListener('touchend', () => { if (mainGame) mainGame.input.touch.fire = false; });
         }
       }
     });
-    
   </script>
 </body>
 </html>
