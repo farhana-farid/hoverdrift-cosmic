@@ -340,4 +340,148 @@ export class SoundEngine {
       osc.stop(t + 0.16);
     });
   }
+
+  missileLaunch() {
+    if (!this.ctx || this.muted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(580, now + 0.35);
+
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    osc.connect(gain).connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.5);
+
+    if (this.noiseBuffer) {
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = this.noiseBuffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(600, now);
+      filter.frequency.exponentialRampToValueAtTime(1400, now + 0.3);
+
+      const nGain = this.ctx.createGain();
+      nGain.gain.setValueAtTime(0.2, now);
+      nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+      noise.connect(filter).connect(nGain).connect(this.masterGain);
+      noise.start(now);
+      noise.stop(now + 0.45);
+    }
+  }
+
+  missileLock() {
+    if (!this.ctx || this.muted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1200, now);
+    osc.frequency.setValueAtTime(1600, now + 0.05);
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc.connect(gain).connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.13);
+  }
+
+  empBlast() {
+    if (!this.ctx || this.muted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const oscGain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.exponentialRampToValueAtTime(20, now + 1.2);
+
+    oscGain.gain.setValueAtTime(0.5, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+
+    osc.connect(oscGain).connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 1.5);
+
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(800, now);
+    osc2.frequency.exponentialRampToValueAtTime(80, now + 0.8);
+
+    gain2.gain.setValueAtTime(0.15, now);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+
+    osc2.connect(gain2).connect(this.masterGain);
+    osc2.start(now);
+    osc2.stop(now + 0.9);
+  }
+
+  startCosmicMusic() {
+    if (!this.ctx || this.musicInterval) return;
+    try {
+      const chordFrequencies = [
+        [110.00, 164.81, 196.00, 246.94], // A minor 9th
+        [98.00, 146.83, 174.61, 220.00],  // G sus
+        [87.31, 130.81, 164.81, 196.00],  // F maj 7
+        [98.00, 130.81, 164.81, 220.00]   // D minor
+      ];
+      let chordIndex = 0;
+
+      const musicGain = this.ctx.createGain();
+      musicGain.gain.value = 0.055;
+      musicGain.connect(this.masterGain);
+      this.musicGain = musicGain;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 450;
+      filter.Q.value = 2.0;
+      filter.connect(musicGain);
+
+      const playChord = () => {
+        if (!this.ctx || !this.musicGain) return;
+        const now = this.ctx.currentTime;
+        const chord = chordFrequencies[chordIndex];
+        chordIndex = (chordIndex + 1) % chordFrequencies.length;
+
+        chord.forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = i === 0 ? 'triangle' : 'sine';
+          osc.frequency.value = freq;
+
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.18, now + 2.0);
+          gain.gain.linearRampToValueAtTime(0.001, now + 6.8);
+
+          osc.connect(gain).connect(filter);
+          osc.start(now);
+          osc.stop(now + 7.0);
+        });
+
+        filter.frequency.setTargetAtTime(350 + Math.random() * 300, now, 2.5);
+      };
+
+      playChord();
+      this.musicInterval = setInterval(playChord, 6500);
+    } catch (e) {
+      console.warn('Cosmic music init error', e);
+    }
+  }
+
+  stopCosmicMusic() {
+    if (this.musicInterval) {
+      clearInterval(this.musicInterval);
+      this.musicInterval = null;
+    }
+    if (this.musicGain && this.ctx) {
+      this.musicGain.gain.setTargetAtTime(0.001, this.ctx.currentTime, 0.5);
+    }
+  }
 }

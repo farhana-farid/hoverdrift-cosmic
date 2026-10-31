@@ -236,6 +236,91 @@ export class ParticleSystem {
     }
   }
 
+  createMissileSmoke(pos) {
+    if (Math.random() < 0.6) {
+      this._addSpark({
+        x: pos.x + (Math.random() - 0.5) * 0.3,
+        y: pos.y + (Math.random() - 0.5) * 0.3,
+        z: pos.z + (Math.random() - 0.5) * 0.3,
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2,
+        vz: (Math.random() - 0.5) * 2,
+        r: 0.9,
+        g: 0.65,
+        b: 0.3,
+        life: 0.35 + Math.random() * 0.2,
+        maxLife: 0.55,
+        size: 3.5 + Math.random() * 2.5
+      });
+    }
+  }
+
+  createEMPShockwave(pos, radius = 140) {
+    const THREE = this.THREE;
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x3ef0ff,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const ring = new THREE.Mesh(this.ringGeom, ringMat);
+    ring.position.copy(pos);
+    ring.position.y = 0.5;
+    this.scene.add(ring);
+
+    this.shockwaves.push({
+      mesh: ring,
+      scale: 1,
+      maxScale: radius,
+      speed: 90,
+      life: 1.0,
+      decay: 0.8
+    });
+
+    for (let i = 0; i < 60; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 25 + Math.random() * 50;
+      this._addSpark({
+        x: pos.x,
+        y: pos.y + (Math.random() - 0.5) * 3,
+        z: pos.z,
+        vx: Math.sin(angle) * speed,
+        vy: (Math.random() - 0.5) * 10,
+        vz: Math.cos(angle) * speed,
+        r: 0.24,
+        g: 0.94,
+        b: 1.0,
+        life: 0.9 + Math.random() * 0.6,
+        maxLife: 1.5,
+        size: 3.8 + Math.random() * 3
+      });
+    }
+  }
+
+  createPowerupCollect(pos, type) {
+    const col = type === 'shield' ? { r: 0.36, g: 1.0, b: 0.61 } : (type === 'missile' ? { r: 0.24, g: 0.94, b: 1.0 } : { r: 1.0, g: 0.76, b: 0.28 });
+    for (let i = 0; i < 30; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 12 + Math.random() * 25;
+      this._addSpark({
+        x: pos.x,
+        y: pos.y,
+        z: pos.z,
+        vx: Math.sin(angle) * speed,
+        vy: (Math.random() - 0.5) * 10,
+        vz: Math.cos(angle) * speed,
+        r: col.r,
+        g: col.g,
+        b: col.b,
+        life: 0.6 + Math.random() * 0.5,
+        maxLife: 1.1,
+        size: 3.2
+      });
+    }
+  }
+
   _addSpark(spark) {
     if (this.activeSparks.length < this.maxSparks) {
       this.activeSparks.push(spark);

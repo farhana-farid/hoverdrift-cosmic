@@ -1,7 +1,12 @@
 /**
- * Advanced Drone AI, Dynamic Wave Spawner & Epic Boss Battles
- * Features Scout, Assault, and Interceptor drones, plus multi-stage Capital Bosses
- * and holographic power-up drops (Shield Overcharge, Weapon Upgrades, Overdrive Cores).
+ * Advanced Enemy Combat AI, 5 Distinct Spacecraft Classes & Capital Boss Battles
+ * 1. Interceptor ("Shadow Dart"): Small, agile, hit-and-run strafing passes.
+ * 2. Fighter ("Phantom Raider"): Balanced combat dogfighter with predictive aiming.
+ * 3. Heavy Gunship ("Goliath Fortress"): Armored weapons platform with dual turrets & frontal shields.
+ * 4. Elite Spacecraft ("Viper Ace"): Advanced stealth ace with barrel rolls, micro-missiles, and tactical shield retreats.
+ * 5. Capital Boss ("Leviathan Omega Dreadnought"): Massive 45m capital ship with 3 combat phases & cascading destruction.
+ *
+ * Also manages Player Homing Missiles, EMP Shockwaves, and Holographic Power-ups.
  */
 export class DroneManager {
   constructor(scene, THREE) {
@@ -12,14 +17,16 @@ export class DroneManager {
     this.boss = null;
     this.enemyLasers = [];
     this.enemyMissiles = [];
+    this.playerMissiles = [];
     this.powerups = [];
+    this.activeEMPWave = null;
 
     // Shared Geometries & Materials
-    this.laserGeom = new THREE.CylinderGeometry(0.14, 0.14, 2.0, 8);
+    this.laserGeom = new THREE.CylinderGeometry(0.14, 0.14, 2.2, 8);
     this.laserGeom.rotateX(Math.PI / 2);
 
     this.droneLaserMat = new THREE.MeshBasicMaterial({
-      color: 0xff1744,
+      color: 0xff2244,
       transparent: true,
       opacity: 0.95
     });
@@ -30,7 +37,14 @@ export class DroneManager {
       opacity: 0.98
     });
 
-    this.missileGeom = new THREE.ConeGeometry(0.35, 1.4, 8);
+    this.beamLaserMat = new THREE.MeshBasicMaterial({
+      color: 0xff0088,
+      transparent: true,
+      opacity: 0.95
+    });
+
+    // Missile Geometry
+    this.missileGeom = new THREE.ConeGeometry(0.28, 1.4, 8);
     this.missileGeom.rotateX(Math.PI / 2);
     this.missileMat = new THREE.MeshStandardMaterial({
       color: 0xff3b00,
@@ -38,31 +52,60 @@ export class DroneManager {
       emissiveIntensity: 3.0
     });
 
-    // Drone Materials
-    this.droneArmorMat = new THREE.MeshStandardMaterial({
+    this.playerMissileMat = new THREE.MeshStandardMaterial({
+      color: 0x3ef0ff,
+      emissive: 0x00c8ff,
+      emissiveIntensity: 3.5
+    });
+
+    // Spacecraft PBR Materials
+    this.armorDarkMat = new THREE.MeshStandardMaterial({
       color: 0x161a22,
       metalness: 0.88,
       roughness: 0.32
     });
 
-    this.crimsonGlowMat = new THREE.MeshStandardMaterial({
-      color: 0xff1744,
+    this.armorGunmetalMat = new THREE.MeshStandardMaterial({
+      color: 0x222a36,
+      metalness: 0.92,
+      roughness: 0.28,
+      envMapIntensity: 1.5
+    });
+
+    this.crimsonTrimMat = new THREE.MeshStandardMaterial({
+      color: 0xd90429,
       emissive: 0xff1744,
-      emissiveIntensity: 3.2,
+      emissiveIntensity: 2.2,
       roughness: 0.2
     });
 
+    this.amberGlowMat = new THREE.MeshStandardMaterial({
+      color: 0xff8800,
+      emissive: 0xff8800,
+      emissiveIntensity: 3.0,
+      roughness: 0.2
+    });
+
+    this.shieldMat = new THREE.MeshBasicMaterial({
+      color: 0xff2244,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
     this.bossArmorMat = new THREE.MeshStandardMaterial({
-      color: 0x0c0f16,
+      color: 0x0a0d14,
       metalness: 0.94,
       roughness: 0.26,
-      envMapIntensity: 1.4
+      envMapIntensity: 1.6
     });
 
     this.bossCoreMat = new THREE.MeshStandardMaterial({
-      color: 0x9400d3,
-      emissive: 0xbf00ff,
-      emissiveIntensity: 4.5,
+      color: 0xbf00ff,
+      emissive: 0xd946ef,
+      emissiveIntensity: 4.8,
       roughness: 0.1
     });
 
@@ -71,180 +114,202 @@ export class DroneManager {
     this.powerupRingGeom = new THREE.TorusGeometry(1.6, 0.08, 8, 24);
   }
 
-  spawnWave(sectorNumber, playerPos) {
+  /**
+   * Spawns structured waves tailored to the 5 Mission Levels
+   */
+  spawnLevelWave(levelNumber, playerPos) {
     this.clearAll();
 
-    // Every 3rd Sector is an EPIC CAPITAL SHIP BOSS BATTLE!
-    const isBossSector = (sectorNumber % 3 === 0);
-
-    if (isBossSector) {
-      this._spawnBoss(sectorNumber, playerPos);
-      // Spawn light escort squadron
-      for (let i = 0; i < 2; i++) {
-        this._createDrone('scout', playerPos, i * Math.PI);
+    if (levelNumber === 1) {
+      // Level 1: Deep-Space Patrol (Small Scout Interceptor Patrol)
+      for (let i = 0; i < 5; i++) {
+        this._createDrone('interceptor', playerPos, i * (Math.PI * 2 / 5), 180 + i * 20);
+      }
+    } else if (levelNumber === 2) {
+      // Level 2: Asteroid Field (Agile Interceptors + Balanced Fighters)
+      for (let i = 0; i < 4; i++) {
+        this._createDrone('interceptor', playerPos, i * (Math.PI / 2), 190);
+      }
+      for (let i = 0; i < 5; i++) {
+        this._createDrone('fighter', playerPos, (i + 0.5) * (Math.PI * 2 / 5), 210);
+      }
+    } else if (levelNumber === 3) {
+      // Level 3: Orbital Space Station Battle (Fighters + Heavy Gunships)
+      for (let i = 0; i < 6; i++) {
+        this._createDrone('fighter', playerPos, i * (Math.PI * 2 / 6), 200);
+      }
+      for (let i = 0; i < 3; i++) {
+        this._createDrone('gunship', playerPos, i * (Math.PI * 2 / 3), 230);
+      }
+    } else if (levelNumber === 4) {
+      // Level 4: Nebula Frontier (Heavy Gunships + Elite Viper Aces)
+      for (let i = 0; i < 4; i++) {
+        this._createDrone('gunship', playerPos, i * (Math.PI / 2), 220);
+      }
+      for (let i = 0; i < 4; i++) {
+        this._createDrone('elite', playerPos, (i + 0.5) * (Math.PI / 2), 240);
       }
     } else {
-      // Dynamic standard wave
-      const scoutCount = 3 + sectorNumber * 2;
-      const assaultCount = Math.floor(sectorNumber / 2);
-      const interceptorCount = Math.max(0, sectorNumber - 1);
-
-      for (let i = 0; i < scoutCount; i++) {
-        this._createDrone('scout', playerPos, i * (Math.PI * 2 / scoutCount));
+      // Level 5: Capital Ship Assault (Massive Capital Dreadnought + Escorts)
+      this._spawnBoss(levelNumber, playerPos);
+      for (let i = 0; i < 2; i++) {
+        this._createDrone('interceptor', playerPos, i * Math.PI, 180);
       }
-      for (let i = 0; i < assaultCount; i++) {
-        this._createDrone('assault', playerPos, (i + 0.5) * (Math.PI * 2 / assaultCount));
-      }
-      for (let i = 0; i < interceptorCount; i++) {
-        this._createDrone('interceptor', playerPos, Math.random() * Math.PI * 2);
+      for (let i = 0; i < 2; i++) {
+        this._createDrone('fighter', playerPos, (i + 0.5) * Math.PI, 210);
       }
     }
   }
 
-  _spawnBoss(sectorNumber, playerPos) {
+  _createDrone(type, playerPos, angle, spawnDist = 200) {
     const THREE = this.THREE;
-    const bossName = sectorNumber >= 6 ? 'VOID OMEGA CRUCIBLE' : 'LEVIATHAN DREADNOUGHT';
-    const maxHp = sectorNumber >= 6 ? 90 : 55;
-    const maxShield = sectorNumber >= 6 ? 60 : 40;
-
-    const spawnDist = 240;
-    const angle = Math.random() * Math.PI * 2;
     const x = playerPos.x + Math.sin(angle) * spawnDist;
     const z = playerPos.z + Math.cos(angle) * spawnDist;
 
     const group = new THREE.Group();
+    let hp, maxHp, shield = 0, maxShield = 0, speed, fireRate, points, radius, name;
+    let behavior = 'dogfight';
 
-    // 1. Massive Capital Ship Core Superstructure
-    const coreHull = new THREE.Mesh(new THREE.BoxGeometry(8.0, 3.2, 28.0), this.bossArmorMat);
-    coreHull.castShadow = true;
-    group.add(coreHull);
+    if (type === 'interceptor') {
+      // 1. INTERCEPTOR ("Shadow Dart")
+      name = 'SHADOW INTERCEPTOR';
+      hp = maxHp = 3;
+      speed = 58;
+      fireRate = 1.3;
+      points = 200;
+      radius = 2.2;
+      behavior = 'hit_and_run';
 
-    // Elevated command bridge
-    const bridge = new THREE.Mesh(new THREE.BoxGeometry(5.2, 2.2, 8.5), this.bossArmorMat);
-    bridge.position.set(0, 2.4, -4.0);
-    group.add(bridge);
+      const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.7, 3.4, 4), this.armorDarkMat);
+      fuselage.rotation.x = Math.PI / 2;
+      group.add(fuselage);
 
-    // Glowing alien hyper-matter core
-    const coreReactor = new THREE.Mesh(new THREE.SphereGeometry(2.4, 16, 16), this.bossCoreMat);
-    coreReactor.position.set(0, 0.4, 2.0);
-    group.add(coreReactor);
+      // Forward-swept razor wings
+      [-1, 1].forEach(s => {
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 1.2), this.crimsonTrimMat);
+        wing.position.set(s * 1.0, 0, -0.4);
+        wing.rotation.y = s * -0.35;
+        group.add(wing);
 
-    // 2. Outrigger Heavy Sponsons with Dual Weapon Batteries
-    [-5.8, 5.8].forEach(side => {
-      const sponson = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.2, 22.0), this.bossArmorMat);
-      sponson.position.set(side, 0, -1.0);
-      group.add(sponson);
-
-      // Heavy Cannon Barrels
-      [-4.0, 4.0].forEach(zOff => {
-        const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 4.8, 8), this.crimsonGlowMat);
+        const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.4, 8), this.armorGunmetalMat);
         cannon.rotation.x = Math.PI / 2;
-        cannon.position.set(side * 1.15, -0.2, zOff);
+        cannon.position.set(s * 1.5, 0, 0.5);
         group.add(cannon);
       });
 
-      // Lateral glowing crimson conduits
-      const conduit = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 18.0), this.crimsonGlowMat);
-      conduit.position.set(side * 1.25, 0.8, -1.0);
-      group.add(conduit);
-    });
-
-    // 3. Reactive Boss Shield Mesh
-    const bossShieldGeom = new THREE.IcosahedronGeometry(18.0, 2);
-    const bossShieldMat = new THREE.MeshBasicMaterial({
-      color: 0xbf00ff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.65,
-      blending: THREE.AdditiveBlending
-    });
-    const bossShield = new THREE.Mesh(bossShieldGeom, bossShieldMat);
-    bossShield.scale.set(1.1, 0.45, 1.3);
-    group.add(bossShield);
-
-    group.position.set(x, 0, z);
-    this.scene.add(group);
-
-    this.boss = {
-      name: bossName,
-      group,
-      shieldMesh: bossShield,
-      hp: maxHp,
-      maxHp,
-      shield: maxShield,
-      maxShield,
-      speed: 16,
-      heading: angle + Math.PI,
-      radius: 14.0,
-      lastFireTime: 0,
-      fireRate: 1.2,
-      lastMissileTime: 0,
-      missileRate: 4.8,
-      points: 8000
-    };
-  }
-
-  _createDrone(type, playerPos, angle) {
-    const THREE = this.THREE;
-    const spawnDist = 180 + Math.random() * 80;
-    const x = playerPos.x + Math.sin(angle) * spawnDist;
-    const z = playerPos.z + Math.cos(angle) * spawnDist;
-
-    const group = new THREE.Group();
-    let hp, maxHp, speed, fireRate, points, radius, name;
-
-    if (type === 'scout') {
-      name = 'SCOUT DRONE';
-      hp = maxHp = 2;
-      speed = 42;
-      fireRate = 1.6;
-      points = 150;
-      radius = 2.0;
-
-      const wingGeom = new THREE.ConeGeometry(1.8, 2.8, 3);
-      wingGeom.rotateX(Math.PI / 2);
-      wingGeom.rotateY(Math.PI);
-      const wing = new THREE.Mesh(wingGeom, this.droneArmorMat);
-      group.add(wing);
-
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 12), this.crimsonGlowMat);
-      eye.position.set(0, 0.15, 0.9);
+      const eye = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.08, 0.6), this.crimsonTrimMat);
+      eye.position.set(0, 0.16, 0.8);
       group.add(eye);
-    } else if (type === 'assault') {
-      name = 'ASSAULT CRUISER';
+    } else if (type === 'fighter') {
+      // 2. FIGHTER ("Phantom Raider")
+      name = 'PHANTOM FIGHTER';
       hp = maxHp = 8;
-      speed = 26;
+      speed = 38;
+      fireRate = 1.6;
+      points = 350;
+      radius = 2.8;
+      behavior = 'dogfight';
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.45, 3.2), this.armorDarkMat);
+      group.add(body);
+
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.65, 1.8, 4), this.armorGunmetalMat);
+      nose.rotation.x = Math.PI / 2;
+      nose.rotation.y = Math.PI / 4;
+      nose.position.set(0, 0.08, 2.2);
+      group.add(nose);
+
+      [-1, 1].forEach(s => {
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.12, 1.6), this.armorGunmetalMat);
+        wing.position.set(s * 1.3, 0, -0.3);
+        wing.rotation.y = s * 0.2;
+        group.add(wing);
+
+        const wingTrim = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 1.4), this.crimsonTrimMat);
+        wingTrim.position.set(s * 2.1, 0, -0.3);
+        group.add(wingTrim);
+
+        const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.0, 8), this.crimsonTrimMat);
+        gun.rotation.x = Math.PI / 2;
+        gun.position.set(s * 1.5, -0.06, 1.2);
+        group.add(gun);
+
+        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 0.9), this.armorDarkMat);
+        fin.position.set(s * 0.5, 0.5, -1.2);
+        fin.rotation.z = s * -0.22;
+        group.add(fin);
+      });
+    } else if (type === 'gunship') {
+      // 3. HEAVY GUNSHIP ("Goliath Fortress")
+      name = 'GOLIATH GUNSHIP';
+      hp = maxHp = 22;
+      shield = maxShield = 15;
+      speed = 22;
       fireRate = 2.2;
-      points = 450;
-      radius = 3.6;
+      points = 700;
+      radius = 4.2;
+      behavior = 'standoff_flak';
 
-      const hull = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.8, 1.1, 6), this.droneArmorMat);
-      hull.rotation.x = Math.PI / 2;
-      group.add(hull);
+      const mainHull = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 3.2, 1.4, 6), this.armorDarkMat);
+      mainHull.rotation.x = Math.PI / 2;
+      group.add(mainHull);
 
-      const gunL = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.6, 8), this.crimsonGlowMat);
-      gunL.rotation.x = Math.PI / 2;
-      gunL.position.set(-1.4, 0, 1.4);
-      group.add(gunL);
+      const topTurretArmor = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.6, 2.2), this.armorGunmetalMat);
+      topTurretArmor.position.set(0, 0.8, -0.2);
+      group.add(topTurretArmor);
 
-      const gunR = gunL.clone();
-      gunR.position.x = 1.4;
-      group.add(gunR);
-    } else {
-      name = 'SEEKER INTERCEPTOR';
-      hp = maxHp = 4;
-      speed = 54;
+      // Dual Twin Heavy Cannon Turrets
+      [-1.4, 1.4].forEach(s => {
+        const turret = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 3.4, 8), this.crimsonTrimMat);
+        turret.rotation.x = Math.PI / 2;
+        turret.position.set(s, 0.4, 1.8);
+        group.add(turret);
+
+        const muzzle = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.05, 8, 16), this.amberGlowMat);
+        muzzle.position.set(s, 0.4, 3.4);
+        group.add(muzzle);
+      });
+
+      // Frontal Shield Dish
+      const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(3.6, 16, 16), this.shieldMat);
+      shieldMesh.scale.set(1.2, 0.6, 1.2);
+      group.add(shieldMesh);
+      group.shieldMesh = shieldMesh;
+    } else if (type === 'elite') {
+      // 4. ELITE SPACECRAFT ("Viper Ace")
+      name = 'VIPER ACE';
+      hp = maxHp = 16;
+      shield = maxShield = 14;
+      speed = 48;
       fireRate = 1.4;
-      points = 280;
-      radius = 1.8;
+      points = 850;
+      radius = 3.0;
+      behavior = 'elite_ace';
 
-      const dart = new THREE.Mesh(new THREE.ConeGeometry(1.0, 3.6, 4), this.droneArmorMat);
-      dart.rotation.x = Math.PI / 2;
-      group.add(dart);
+      const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.85, 4.2, 5), this.armorDarkMat);
+      fuselage.rotation.x = Math.PI / 2;
+      fuselage.rotation.y = Math.PI / 5;
+      group.add(fuselage);
 
-      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.7, 2.0), this.crimsonGlowMat);
-      fin.position.set(0, 0.45, -0.4);
-      group.add(fin);
+      const cockpitVisor = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.18, 1.2), this.crimsonTrimMat);
+      cockpitVisor.position.set(0, 0.28, 0.6);
+      group.add(cockpitVisor);
+
+      [-1, 1].forEach(s => {
+        const sweptWing = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 1.8), this.armorGunmetalMat);
+        sweptWing.position.set(s * 1.5, 0, -0.6);
+        sweptWing.rotation.y = s * -0.3;
+        group.add(sweptWing);
+
+        // Micro-seeker missile pods
+        const pod = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 1.2), this.crimsonTrimMat);
+        pod.position.set(s * 1.8, -0.12, 0.2);
+        group.add(pod);
+      });
+
+      const shieldMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(3.2, 1), this.shieldMat);
+      group.add(shieldMesh);
+      group.shieldMesh = shieldMesh;
     }
 
     group.position.set(x, 0, z);
@@ -256,133 +321,447 @@ export class DroneManager {
       group,
       hp,
       maxHp,
+      shield,
+      maxShield,
       speed,
       fireRate,
       lastFireTime: Math.random() * fireRate,
+      lastMissileTime: 0,
       points,
       radius,
+      behavior,
       heading: angle + Math.PI,
-      strafeAngle: Math.random() * Math.PI * 2
+      targetHeading: angle + Math.PI,
+      vx: 0,
+      vz: 0,
+      roll: 0,
+      strafeAngle: Math.random() * Math.PI * 2,
+      evadeTimer: 0,
+      disabledTimer: 0 // for EMP
     });
   }
 
-  update(dt, player, time, audio) {
+  /**
+   * Spawns the massive Capital Dreadnought "Leviathan Omega" (Level 5 Boss)
+   */
+  _spawnBoss(levelNumber, playerPos) {
     const THREE = this.THREE;
+    const bossName = 'LEVIATHAN OMEGA CAPITAL DREADNOUGHT';
+    const maxHp = 120;
+    const maxShield = 80;
 
-    // 1. UPDATE BOSS (if active)
-    if (this.boss) {
-      const b = this.boss;
-      const dx = player.position.x - b.group.position.x;
-      const dz = player.position.z - b.group.position.z;
-      const dist = Math.hypot(dx, dz);
+    const spawnDist = 260;
+    const angle = Math.random() * Math.PI * 2;
+    const x = playerPos.x + Math.sin(angle) * spawnDist;
+    const z = playerPos.z + Math.cos(angle) * spawnDist;
 
-      // Smooth turning towards player
-      const angleToPlayer = Math.atan2(dx, dz);
-      let angleDiff = Math.atan2(Math.sin(angleToPlayer - b.heading), Math.cos(angleToPlayer - b.heading));
-      b.heading += angleDiff * Math.min(1.0, 1.2 * dt);
-      b.group.rotation.y = b.heading;
+    const group = new THREE.Group();
 
-      // Slow deliberate pursuit
-      if (dist > 80) {
-        b.group.position.x += Math.sin(b.heading) * b.speed * dt;
-        b.group.position.z += Math.cos(b.heading) * b.speed * dt;
-      }
+    // 1. Massive 45m Capital Ship Core Superstructure
+    const coreHull = new THREE.Mesh(new THREE.BoxGeometry(9.0, 3.8, 36.0), this.bossArmorMat);
+    coreHull.castShadow = true;
+    group.add(coreHull);
 
-      // Update Shield Mesh Opacity
-      if (b.shieldMesh) {
-        b.shieldMesh.material.opacity = (b.shield > 0) ? (0.35 + Math.sin(time * 4) * 0.15) : 0;
-      }
+    // Multi-Tiered Command Bridge
+    const bridgeTier1 = new THREE.Mesh(new THREE.BoxGeometry(6.4, 2.4, 12.0), this.bossArmorMat);
+    bridgeTier1.position.set(0, 2.8, -6.0);
+    group.add(bridgeTier1);
 
-      // Boss Weapon Battery Volley
-      if (dist < 220 && (time - b.lastFireTime >= b.fireRate)) {
-        b.lastFireTime = time;
-        this._bossFire(b, player, audio);
-      }
+    const bridgeTower = new THREE.Mesh(new THREE.BoxGeometry(4.0, 2.0, 6.0), this.armorGunmetalMat);
+    bridgeTower.position.set(0, 4.8, -7.0);
+    group.add(bridgeTower);
 
-      // Boss Homing Seeker Missiles
-      if (dist < 250 && (time - b.lastMissileTime >= b.missileRate)) {
-        b.lastMissileTime = time;
-        this._bossLaunchMissile(b, player, audio);
+    const bridgeVisor = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.4, 0.8), this.crimsonTrimMat);
+    bridgeVisor.position.set(0, 5.2, -4.0);
+    group.add(bridgeVisor);
+
+    // Glowing Alien Hyper-Matter Reactor Core
+    const coreReactor = new THREE.Mesh(new THREE.SphereGeometry(2.8, 24, 24), this.bossCoreMat);
+    coreReactor.position.set(0, 0.8, 3.0);
+    group.add(coreReactor);
+
+    // 2. Outrigger Battleship Sponsons with Dual Broadside Batteries
+    [-6.8, 6.8].forEach(side => {
+      const sponson = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.8, 28.0), this.bossArmorMat);
+      sponson.position.set(side, 0, -2.0);
+      group.add(sponson);
+
+      // Rotating Heavy Broadside Turrets
+      [-8.0, -1.0, 6.0].forEach(zOff => {
+        const turretBase = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 0.8, 12), this.armorGunmetalMat);
+        turretBase.position.set(side, 1.6, zOff);
+        group.add(turretBase);
+
+        const cannonL = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 4.2, 8), this.crimsonTrimMat);
+        cannonL.rotation.x = Math.PI / 2;
+        cannonL.position.set(side - 0.35, 1.8, zOff + 2.2);
+        group.add(cannonL);
+
+        const cannonR = cannonL.clone();
+        cannonR.position.x = side + 0.35;
+        group.add(cannonR);
+      });
+    });
+
+    // Rear Quad Engine Thruster Array
+    [-3.0, -1.0, 1.0, 3.0].forEach(xOff => {
+      const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 2.4, 16), this.armorGunmetalMat);
+      bell.rotation.x = Math.PI / 2;
+      bell.position.set(xOff, 0.4, -19.0);
+      group.add(bell);
+
+      const glow = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.15, 8, 16), this.bossCoreMat);
+      glow.position.set(xOff, 0.4, -20.2);
+      group.add(glow);
+    });
+
+    // Massive Ellipsoid Shield Bubble
+    const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(18.0, 24, 24), this.shieldMat);
+    shieldMesh.scale.set(1.4, 0.55, 1.8);
+    group.add(shieldMesh);
+
+    group.position.set(x, 0, z);
+    this.scene.add(group);
+
+    this.boss = {
+      name: bossName,
+      group,
+      hp: maxHp,
+      maxHp,
+      shield: maxShield,
+      maxShield,
+      speed: 14,
+      fireRate: 2.2,
+      lastFireTime: 0,
+      lastBeamTime: 0,
+      lastMissileTime: 0,
+      missileRate: 4.5,
+      heading: angle + Math.PI,
+      radius: 18.0,
+      points: 8000,
+      shieldMesh,
+      phase: 1, // Phase 1 (100-65%), Phase 2 (65-30%), Phase 3 (30-0%)
+      isDestroying: false,
+      destroyTimer: 0,
+      disabledTimer: 0
+    };
+  }
+
+  /**
+   * Player Fires a Homing Missile toward locked target
+   */
+  launchPlayerMissile(player, target) {
+    const THREE = this.THREE;
+    const spawnPos = player.getMissileSpawn();
+    const mesh = new THREE.Mesh(this.missileGeom, this.playerMissileMat);
+    mesh.position.copy(spawnPos);
+    mesh.rotation.y = player.heading;
+    this.scene.add(mesh);
+
+    this.playerMissiles.push({
+      mesh,
+      target,
+      heading: player.heading,
+      speed: 110,
+      life: 5.0,
+      damage: 16
+    });
+  }
+
+  /**
+   * Player Triggers EMP Shockwave Blast
+   */
+  triggerEMPBlast(pos, radius = 140, particles, audio) {
+    audio.empBlast();
+    particles.createEMPShockwave(pos, radius);
+
+    // Detonate all incoming enemy missiles
+    for (let i = this.enemyMissiles.length - 1; i >= 0; i--) {
+      const m = this.enemyMissiles[i];
+      if (m.mesh.position.distanceTo(pos) < radius) {
+        particles.createExplosion(m.mesh.position, 1.2, 0x3ef0ff);
+        this.scene.remove(m.mesh);
+        this.enemyMissiles.splice(i, 1);
       }
     }
 
-    // 2. UPDATE STANDARD DRONES
+    // Strip enemy shields & disable weapons
+    this.drones.forEach(d => {
+      if (d.group.position.distanceTo(pos) < radius) {
+        d.shield = 0;
+        d.disabledTimer = 4.5;
+        if (d.group.shieldMesh) d.group.shieldMesh.material.opacity = 0;
+        particles.createShieldHit(d.group.position, 0x3ef0ff);
+      }
+    });
+
+    if (this.boss && this.boss.group.position.distanceTo(pos) < radius) {
+      this.boss.shield = Math.max(0, this.boss.shield - 35);
+      this.boss.disabledTimer = 3.0;
+      particles.createShieldHit(this.boss.group.position, 0x3ef0ff);
+    }
+  }
+
+  update(dt, player, time, audio, particles) {
+    const THREE = this.THREE;
+
+    // =========================================================
+    // 1. UPDATE BOSS (Leviathan Omega)
+    // =========================================================
+    if (this.boss) {
+      const b = this.boss;
+
+      if (b.isDestroying) {
+        b.destroyTimer += dt;
+        // Cascading explosions along the capital hull
+        if (Math.random() < 0.45) {
+          const rx = b.group.position.x + (Math.random() - 0.5) * 16;
+          const rz = b.group.position.z + (Math.random() - 0.5) * 32;
+          particles.createExplosion(new THREE.Vector3(rx, (Math.random() - 0.5) * 4, rz), 2.2, 0xff5500);
+          audio.explode(false);
+        }
+        b.group.rotation.y += 0.08 * dt;
+        b.group.rotation.z += 0.05 * dt;
+
+        if (b.destroyTimer > 3.8) {
+          particles.createShipExplosion(b.group.position, true);
+          audio.explode(true);
+          this.scene.remove(b.group);
+          this.boss = null;
+        }
+      } else {
+        const dx = player.position.x - b.group.position.x;
+        const dz = player.position.z - b.group.position.z;
+        const dist = Math.hypot(dx, dz);
+
+        // Turn towards player
+        const angleToPlayer = Math.atan2(dx, dz);
+        let angleDiff = Math.atan2(Math.sin(angleToPlayer - b.heading), Math.cos(angleToPlayer - b.heading));
+        b.heading += angleDiff * Math.min(1.0, 0.9 * dt);
+        b.group.rotation.y = b.heading;
+
+        if (dist > 85) {
+          b.group.position.x += Math.sin(b.heading) * b.speed * dt;
+          b.group.position.z += Math.cos(b.heading) * b.speed * dt;
+        }
+
+        // Shield Mesh Opacity
+        if (b.shieldMesh) {
+          b.shieldMesh.material.opacity = (b.shield > 0) ? (0.35 + Math.sin(time * 5) * 0.15) : 0;
+        }
+
+        // Phase Transitions
+        const hpPercent = (b.hp + b.shield) / (b.maxHp + b.maxShield);
+        if (hpPercent < 0.35) b.phase = 3;
+        else if (hpPercent < 0.65) b.phase = 2;
+        else b.phase = 1;
+
+        if (b.disabledTimer > 0) {
+          b.disabledTimer -= dt;
+        } else {
+          // Broadside Volleys
+          if (dist < 260 && (time - b.lastFireTime >= (b.phase === 3 ? 1.4 : b.fireRate))) {
+            b.lastFireTime = time;
+            this._bossFire(b, player, audio);
+          }
+
+          // Seeker Missiles
+          if (dist < 280 && (time - b.lastMissileTime >= (b.phase >= 2 ? 3.0 : b.missileRate))) {
+            b.lastMissileTime = time;
+            this._bossLaunchMissile(b, player, audio);
+          }
+
+          // Phase 2/3 Sweeping Plasma Beam
+          if (b.phase >= 2 && dist < 220 && (time - b.lastBeamTime >= 6.5)) {
+            b.lastBeamTime = time;
+            this._bossSweepBeam(b, player, audio);
+          }
+        }
+      }
+    }
+
+    // =========================================================
+    // 2. UPDATE STANDARD DRONES (With 5 Class Behaviors)
+    // =========================================================
     for (let i = this.drones.length - 1; i >= 0; i--) {
       const drone = this.drones[i];
+      if (drone.disabledTimer > 0) drone.disabledTimer -= dt;
+
       const dx = player.position.x - drone.group.position.x;
       const dz = player.position.z - drone.group.position.z;
       const dist = Math.hypot(dx, dz);
 
       const angleToPlayer = Math.atan2(dx, dz);
       let angleDiff = Math.atan2(Math.sin(angleToPlayer - drone.heading), Math.cos(angleToPlayer - drone.heading));
-      drone.heading += angleDiff * Math.min(1.0, 4.0 * dt);
-      drone.group.rotation.y = drone.heading;
 
-      let forwardMove = 0;
+      let forwardMove = drone.speed;
       let strafeMove = 0;
 
-      if (drone.type === 'scout') {
-        if (dist > 75) forwardMove = drone.speed;
-        else if (dist < 40) forwardMove = -drone.speed * 0.6;
-        else forwardMove = drone.speed * 0.2;
-        strafeMove = Math.sin(time * 1.5 + drone.strafeAngle) * drone.speed * 0.65;
-      } else if (drone.type === 'assault') {
-        if (dist > 60) forwardMove = drone.speed;
-        else forwardMove = Math.sin(time) * 8;
-      } else {
-        forwardMove = drone.speed;
-        strafeMove = Math.sin(time * 3.0) * 14;
+      if (drone.behavior === 'hit_and_run') {
+        // Interceptor: Speeds in for high-speed strafe, then rolls and breaks away
+        if (drone.evadeTimer > 0) {
+          drone.evadeTimer -= dt;
+          forwardMove = drone.speed * 1.2;
+          drone.targetHeading = angleToPlayer + Math.PI * 0.7;
+          drone.roll += (1.4 - drone.roll) * 8 * dt;
+        } else {
+          drone.targetHeading = angleToPlayer;
+          drone.roll += (-angleDiff * 1.8 - drone.roll) * 6 * dt;
+          if (dist < 45) {
+            drone.evadeTimer = 2.4; // Trigger evasive breakaway!
+          }
+        }
+      } else if (drone.behavior === 'dogfight') {
+        // Fighter: Classic circling dogfight with predictive aiming
+        drone.targetHeading = angleToPlayer + (player.velocity.x * Math.cos(drone.heading) - player.velocity.z * Math.sin(drone.heading)) * 0.015;
+        if (dist > 80) forwardMove = drone.speed;
+        else if (dist < 42) forwardMove = -drone.speed * 0.4;
+        else forwardMove = drone.speed * 0.35;
+        strafeMove = Math.sin(time * 1.8 + drone.strafeAngle) * drone.speed * 0.55;
+        drone.roll += (-strafeMove * 0.04 - drone.roll) * 6 * dt;
+      } else if (drone.behavior === 'standoff_flak') {
+        // Heavy Gunship: Standoff firing platform, slow deliberate turns
+        drone.targetHeading = angleToPlayer;
+        if (dist > 110) forwardMove = drone.speed;
+        else if (dist < 60) forwardMove = -drone.speed * 0.5;
+        else forwardMove = Math.sin(time * 0.8) * 4;
+        strafeMove = Math.cos(time * 0.5) * 6;
+      } else if (drone.behavior === 'elite_ace') {
+        // Elite Ace: Barrel rolls when targeted, flanking maneuvers
+        drone.targetHeading = angleToPlayer;
+        if (dist < 50) drone.roll += Math.PI * 3 * dt; // Barrel roll!
+        else drone.roll += (-angleDiff * 2.2 - drone.roll) * 8 * dt;
+
+        if (dist > 70) forwardMove = drone.speed;
+        else forwardMove = drone.speed * 0.5;
+        strafeMove = Math.sin(time * 2.5) * 18;
+
+        // Elite Micro-Missiles
+        if (drone.disabledTimer <= 0 && dist < 160 && (time - drone.lastMissileTime >= 4.2)) {
+          drone.lastMissileTime = time;
+          this._droneLaunchMissile(drone, player, audio);
+        }
       }
 
+      // Smooth turning
+      let hDiff = Math.atan2(Math.sin(drone.targetHeading - drone.heading), Math.cos(drone.targetHeading - drone.heading));
+      drone.heading += hDiff * Math.min(1.0, 3.8 * dt);
+      drone.group.rotation.y = drone.heading;
+      drone.group.rotation.z = drone.roll;
+
+      // Position update
       const cosH = Math.cos(drone.heading);
       const sinH = Math.sin(drone.heading);
-      drone.group.position.x += (sinH * forwardMove + cosH * strafeMove) * dt;
-      drone.group.position.z += (cosH * forwardMove - sinH * strafeMove) * dt;
-      drone.group.rotation.z = -strafeMove * 0.02;
+      drone.vx = sinH * forwardMove + cosH * strafeMove;
+      drone.vz = cosH * forwardMove - sinH * strafeMove;
 
-      if (dist < 150 && (time - drone.lastFireTime >= drone.fireRate)) {
-        if (Math.abs(angleDiff) < 0.6) {
+      drone.group.position.x += drone.vx * dt;
+      drone.group.position.z += drone.vz * dt;
+
+      // Firing
+      if (drone.disabledTimer <= 0 && dist < 170 && (time - drone.lastFireTime >= drone.fireRate)) {
+        if (Math.abs(angleDiff) < 0.65) {
           drone.lastFireTime = time;
           this._droneFire(drone, player, audio);
         }
       }
     }
 
-    // 3. UPDATE HOMING MISSILES
+    // =========================================================
+    // 3. UPDATE PLAYER HOMING MISSILES
+    // =========================================================
+    for (let i = this.playerMissiles.length - 1; i >= 0; i--) {
+      const pm = this.playerMissiles[i];
+      pm.life -= dt;
+
+      // Guide toward target if still active
+      if (pm.target && (pm.target.hp > 0 || (pm.target.group && pm.target.group.parent))) {
+        const tPos = pm.target.group.position;
+        const dx = tPos.x - pm.mesh.position.x;
+        const dz = tPos.z - pm.mesh.position.z;
+        const targetAngle = Math.atan2(dx, dz);
+        let angleDiff = Math.atan2(Math.sin(targetAngle - pm.heading), Math.cos(targetAngle - pm.heading));
+        pm.heading += angleDiff * Math.min(1.0, 4.5 * dt);
+      }
+
+      pm.mesh.rotation.y = pm.heading;
+      pm.mesh.position.x += Math.sin(pm.heading) * pm.speed * dt;
+      pm.mesh.position.z += Math.cos(pm.heading) * pm.speed * dt;
+
+      particles.createMissileSmoke(pm.mesh.position);
+
+      // Check collision with any hostile
+      let detonated = false;
+
+      // Boss check
+      if (this.boss && !this.boss.isDestroying) {
+        if (pm.mesh.position.distanceTo(this.boss.group.position) < this.boss.radius) {
+          this._applyDamageToTarget(this.boss, pm.damage, particles, audio);
+          detonated = true;
+        }
+      }
+
+      // Standard drones check
+      if (!detonated) {
+        for (let j = this.drones.length - 1; j >= 0; j--) {
+          const d = this.drones[j];
+          if (pm.mesh.position.distanceTo(d.group.position) < d.radius + 1.2) {
+            this._applyDamageToTarget(d, pm.damage, particles, audio);
+            detonated = true;
+            break;
+          }
+        }
+      }
+
+      if (detonated || pm.life <= 0) {
+        particles.createExplosion(pm.mesh.position, 1.8, 0x3ef0ff);
+        audio.explode(false);
+        this.scene.remove(pm.mesh);
+        this.playerMissiles.splice(i, 1);
+      }
+    }
+
+    // =========================================================
+    // 4. UPDATE ENEMY HOMING MISSILES
+    // =========================================================
     for (let i = this.enemyMissiles.length - 1; i >= 0; i--) {
       const m = this.enemyMissiles[i];
       m.life -= dt;
 
-      // Homing tracking towards player
       const dx = player.position.x - m.mesh.position.x;
       const dz = player.position.z - m.mesh.position.z;
       const dist = Math.hypot(dx, dz);
 
       const targetAngle = Math.atan2(dx, dz);
       let angleDiff = Math.atan2(Math.sin(targetAngle - m.heading), Math.cos(targetAngle - m.heading));
-      m.heading += angleDiff * Math.min(1.0, 3.2 * dt);
+      m.heading += angleDiff * Math.min(1.0, 3.4 * dt);
 
       m.mesh.rotation.y = m.heading;
-      const speed = 75;
+      const speed = 76;
       m.mesh.position.x += Math.sin(m.heading) * speed * dt;
       m.mesh.position.z += Math.cos(m.heading) * speed * dt;
 
-      // Hit Player
-      if (dist < 3.2) {
+      particles.createMissileSmoke(m.mesh.position);
+
+      if (dist < 3.4) {
         player.takeDamage(m.damage, time);
         audio.explode(false);
+        particles.createExplosion(m.mesh.position, 1.6, 0xff5500);
         this.scene.remove(m.mesh);
         this.enemyMissiles.splice(i, 1);
         continue;
       }
 
       if (m.life <= 0) {
+        particles.createExplosion(m.mesh.position, 0.8, 0xff3b00);
         this.scene.remove(m.mesh);
         this.enemyMissiles.splice(i, 1);
       }
     }
 
-    // 4. UPDATE ENEMY LASER PROJECTILES
+    // =========================================================
+    // 5. UPDATE ENEMY LASER PROJECTILES
+    // =========================================================
     for (let i = this.enemyLasers.length - 1; i >= 0; i--) {
       const laser = this.enemyLasers[i];
       laser.mesh.position.x += laser.vx * dt;
@@ -391,9 +770,10 @@ export class DroneManager {
 
       const pDx = player.position.x - laser.mesh.position.x;
       const pDz = player.position.z - laser.mesh.position.z;
-      if (Math.hypot(pDx, pDz) < 2.5) {
+      if (Math.hypot(pDx, pDz) < 2.6) {
         player.takeDamage(laser.damage, time);
         audio.shieldHit();
+        particles.createShieldHit(laser.mesh.position, 0xff1744);
 
         this.scene.remove(laser.mesh);
         this.enemyLasers.splice(i, 1);
@@ -406,27 +786,28 @@ export class DroneManager {
       }
     }
 
-    // 5. UPDATE HOLOGRAPHIC POWER-UP PICKUPS
+    // =========================================================
+    // 6. UPDATE HOLOGRAPHIC POWER-UP PICKUPS
+    // =========================================================
     for (let i = this.powerups.length - 1; i >= 0; i--) {
       const p = this.powerups[i];
       p.life -= dt;
       p.group.rotation.y += 2.8 * dt;
       p.group.rotation.x += 1.4 * dt;
 
-      // Magnetize towards player if within 42m
       const dx = player.position.x - p.group.position.x;
       const dz = player.position.z - p.group.position.z;
       const dist = Math.hypot(dx, dz);
 
-      if (dist < 42) {
-        const pull = 50 * (1 - dist / 42);
+      if (dist < 45) {
+        const pull = 55 * (1 - dist / 45);
         p.group.position.x += (dx / dist) * pull * dt;
         p.group.position.z += (dz / dist) * pull * dt;
       }
 
-      // Collect Power-up
-      if (dist < 4.0) {
+      if (dist < 4.2) {
         this._applyPowerup(p.type, player, audio);
+        particles.createPowerupCollect(p.group.position, p.type);
         this.scene.remove(p.group);
         this.powerups.splice(i, 1);
         continue;
@@ -441,263 +822,326 @@ export class DroneManager {
 
   _bossFire(boss, player, audio) {
     const THREE = this.THREE;
-    // Quad broadside plasma volley
-    [-3.5, -1.2, 1.2, 3.5].forEach(offset => {
+    [-4.5, -1.8, 1.8, 4.5].forEach(offset => {
       const mesh = new THREE.Mesh(this.laserGeom, this.bossLaserMat);
-      mesh.scale.set(1.6, 1.6, 1.6);
+      mesh.scale.set(1.8, 1.8, 1.8);
       mesh.position.copy(boss.group.position);
       mesh.position.x += Math.cos(boss.heading) * offset;
       mesh.position.z -= Math.sin(boss.heading) * offset;
-      mesh.rotation.y = boss.heading;
 
-      const speed = 135;
-      this.scene.add(mesh);
+      const dx = player.position.x - mesh.position.x;
+      const dz = player.position.z - mesh.position.z;
+      const aimHeading = Math.atan2(dx, dz);
+      mesh.rotation.y = aimHeading;
+
+      const speed = 125;
       this.enemyLasers.push({
         mesh,
-        vx: Math.sin(boss.heading) * speed,
-        vz: Math.cos(boss.heading) * speed,
-        damage: 18,
-        life: 2.5
+        vx: Math.sin(aimHeading) * speed,
+        vz: Math.cos(aimHeading) * speed,
+        life: 2.8,
+        damage: 14
       });
+      this.scene.add(mesh);
     });
-    audio.enemyShoot();
+    audio.enemyLaser();
   }
 
   _bossLaunchMissile(boss, player, audio) {
     const THREE = this.THREE;
     const mesh = new THREE.Mesh(this.missileGeom, this.missileMat);
     mesh.position.copy(boss.group.position);
-    mesh.position.y = 1.0;
+    mesh.position.y += 1.5;
     mesh.rotation.y = boss.heading;
-
     this.scene.add(mesh);
+
     this.enemyMissiles.push({
       mesh,
       heading: boss.heading,
-      damage: 28,
-      life: 7.0
+      life: 6.5,
+      damage: 24
     });
-    audio.waveAlert();
+    audio.missileLaunch();
+  }
+
+  _bossSweepBeam(boss, player, audio) {
+    const THREE = this.THREE;
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 4.5, 8), this.beamLaserMat);
+    mesh.rotation.x = Math.PI / 2;
+    mesh.position.copy(boss.group.position);
+    mesh.position.y += 0.8;
+
+    const dx = player.position.x - mesh.position.x;
+    const dz = player.position.z - mesh.position.z;
+    const aimHeading = Math.atan2(dx, dz);
+    mesh.rotation.y = aimHeading;
+
+    const speed = 160;
+    this.enemyLasers.push({
+      mesh,
+      vx: Math.sin(aimHeading) * speed,
+      vz: Math.cos(aimHeading) * speed,
+      life: 3.0,
+      damage: 20
+    });
+    this.scene.add(mesh);
+    audio.enemyLaser();
   }
 
   _droneFire(drone, player, audio) {
     const THREE = this.THREE;
     const mesh = new THREE.Mesh(this.laserGeom, this.droneLaserMat);
     mesh.position.copy(drone.group.position);
-    mesh.rotation.y = drone.heading;
+    mesh.position.y += 0.1;
 
-    const speed = 125;
-    this.scene.add(mesh);
+    // Lead player velocity slightly
+    const dx = (player.position.x + player.velocity.x * 0.25) - mesh.position.x;
+    const dz = (player.position.z + player.velocity.z * 0.25) - mesh.position.z;
+    const aimHeading = Math.atan2(dx, dz);
+    mesh.rotation.y = aimHeading;
+
+    const speed = drone.type === 'gunship' ? 140 : 130;
+    const damage = drone.type === 'gunship' ? 12 : 8;
+
     this.enemyLasers.push({
       mesh,
-      vx: Math.sin(drone.heading) * speed,
-      vz: Math.cos(drone.heading) * speed,
-      damage: drone.type === 'assault' ? 16 : 10,
-      life: 2.2
+      vx: Math.sin(aimHeading) * speed,
+      vz: Math.cos(aimHeading) * speed,
+      life: 2.2,
+      damage
     });
-    audio.enemyShoot();
+    this.scene.add(mesh);
+    audio.enemyLaser();
   }
 
-  checkPlayerLaserCollisions(laser, damage, particles, audio) {
-    // 1. Check against Capital Boss
-    if (this.boss) {
+  _droneLaunchMissile(drone, player, audio) {
+    const THREE = this.THREE;
+    const mesh = new THREE.Mesh(this.missileGeom, this.missileMat);
+    mesh.position.copy(drone.group.position);
+    mesh.rotation.y = drone.heading;
+    this.scene.add(mesh);
+
+    this.enemyMissiles.push({
+      mesh,
+      heading: drone.heading,
+      life: 5.0,
+      damage: 18
+    });
+    audio.missileLaunch();
+  }
+
+  _applyDamageToTarget(target, damage, particles, audio) {
+    if (target.shield > 0) {
+      target.shield = Math.max(0, target.shield - damage);
+      particles.createShieldHit(target.group.position, 0xff1744);
+      audio.shieldHit();
+    } else {
+      target.hp -= damage;
+      particles.createExplosion(target.group.position, 0.8, 0xff5500);
+      audio.hit();
+    }
+
+    if (target.hp <= 0) {
+      if (target === this.boss) {
+        target.isDestroying = true;
+      } else {
+        this._destroyDrone(target, particles, audio);
+      }
+    }
+  }
+
+  checkPlayerLaserCollisions(laserMesh, damage, particles, audio) {
+    // 1. Check Boss
+    if (this.boss && !this.boss.isDestroying) {
       const b = this.boss;
-      const dx = laser.position.x - b.group.position.x;
-      const dz = laser.position.z - b.group.position.z;
-      if (Math.hypot(dx, dz) < b.radius) {
-        // Damage Shield first
+      const dist = laserMesh.position.distanceTo(b.group.position);
+      if (dist < b.radius) {
         if (b.shield > 0) {
           b.shield -= damage;
-          particles.createSparks(laser.position, 10, 0xbf00ff);
+          particles.createShieldHit(laserMesh.position, 0xbf00ff);
           audio.shieldHit();
         } else {
           b.hp -= damage;
-          particles.createSparks(laser.position, 12, 0xff0055);
+          particles.createExplosion(laserMesh.position, 0.6, 0xff1744);
           audio.hit();
         }
 
         if (b.hp <= 0) {
-          // Boss Destroyed!
-          const pos = b.group.position.clone();
-          const points = b.points;
-          const name = b.name;
-
-          particles.createShipExplosion(pos, true);
-          audio.explode(true);
-
-          // Drop massive power-up cache
-          this._spawnPowerup(pos, 'shield_boost');
-          this._spawnPowerup(pos, 'weapon_upgrade');
-          this._spawnPowerup(pos, 'overdrive');
-
-          this.scene.remove(b.group);
-          this.boss = null;
-          return { hit: true, destroyed: true, isBoss: true, points, name, pos };
+          b.isDestroying = true;
+          this._spawnPowerup(b.group.position, 'weapon');
+          return { hit: true, destroyed: true, name: b.name, points: b.points, isBoss: true };
         }
-        return { hit: true, destroyed: false, isBoss: true };
+        return { hit: true, destroyed: false, name: b.name, isBoss: true };
       }
     }
 
-    // 2. Check against Standard Drones
-    for (let i = 0; i < this.drones.length; i++) {
+    // 2. Check Standard Drones
+    for (let i = this.drones.length - 1; i >= 0; i--) {
       const drone = this.drones[i];
-      const dx = laser.position.x - drone.group.position.x;
-      const dz = laser.position.z - drone.group.position.z;
-
-      if (dx * dx + dz * dz < drone.radius * drone.radius) {
-        drone.hp -= damage;
-        particles.createSparks(drone.group.position, 8, 0xff1744);
+      const dist = laserMesh.position.distanceTo(drone.group.position);
+      if (dist < drone.radius) {
+        if (drone.shield > 0) {
+          drone.shield -= damage;
+          particles.createShieldHit(laserMesh.position, 0xff1744);
+          audio.shieldHit();
+        } else {
+          drone.hp -= damage;
+          particles.createExplosion(laserMesh.position, 0.5, 0xffaa00);
+          audio.hit();
+        }
 
         if (drone.hp <= 0) {
-          const pos = drone.group.position.clone();
-          const points = drone.points;
-          const name = drone.name;
-
-          particles.createShipExplosion(pos, drone.type === 'assault');
-          audio.explode(true);
-
-          // Chance to drop powerup (35%)
-          if (Math.random() < 0.35) {
-            const types = ['shield_boost', 'weapon_upgrade', 'overdrive'];
-            this._spawnPowerup(pos, types[Math.floor(Math.random() * types.length)]);
-          }
-
-          this.scene.remove(drone.group);
-          this.drones.splice(i, 1);
-
-          return { hit: true, destroyed: true, isBoss: false, points, name, pos };
-        } else {
-          audio.hit();
-          return { hit: true, destroyed: false };
+          this._destroyDrone(drone, particles, audio);
+          return { hit: true, destroyed: true, name: drone.name, points: drone.points, isBoss: false };
         }
+        return { hit: true, destroyed: false, name: drone.name, isBoss: false };
       }
     }
+
     return { hit: false };
+  }
+
+  _destroyDrone(drone, particles, audio) {
+    particles.createShipExplosion(drone.group.position, drone.type === 'gunship');
+    audio.explode(false);
+
+    // Chance to spawn holographic power-up drop
+    if (Math.random() < 0.45) {
+      const roll = Math.random();
+      const pType = roll > 0.6 ? 'missile' : (roll > 0.3 ? 'shield' : 'weapon');
+      this._spawnPowerup(drone.group.position, pType);
+    }
+
+    this.scene.remove(drone.group);
+    const idx = this.drones.indexOf(drone);
+    if (idx !== -1) this.drones.splice(idx, 1);
   }
 
   _spawnPowerup(pos, type) {
     const THREE = this.THREE;
     const group = new THREE.Group();
 
-    let color = 0x5cff9d;
-    if (type === 'weapon_upgrade') color = 0xffc247;
-    if (type === 'overdrive') color = 0x3ef0ff;
+    const colors = {
+      shield: 0x5cff9d,
+      weapon: 0xffaa00,
+      missile: 0x3ef0ff
+    };
+    const col = colors[type] || 0x3ef0ff;
 
-    const core = new THREE.Mesh(this.powerupGeom, new THREE.MeshBasicMaterial({ color }));
+    const core = new THREE.Mesh(this.powerupGeom, new THREE.MeshBasicMaterial({ color: col }));
     group.add(core);
 
-    const ring = new THREE.Mesh(this.powerupRingGeom, new THREE.MeshBasicMaterial({ color, wireframe: true }));
-    ring.rotation.x = Math.PI / 2;
+    const ring = new THREE.Mesh(this.powerupRingGeom, new THREE.MeshBasicMaterial({ color: col, wireframe: true }));
     group.add(ring);
 
     group.position.copy(pos);
-    group.position.x += (Math.random() - 0.5) * 6;
-    group.position.z += (Math.random() - 0.5) * 6;
-
     this.scene.add(group);
-    this.powerups.push({ group, type, life: 25.0 });
+
+    this.powerups.push({
+      group,
+      type,
+      life: 25.0
+    });
   }
 
   _applyPowerup(type, player, audio) {
     audio.pickup(type);
-    if (type === 'shield_boost') {
-      player.applyOvercharge();
-    } else if (type === 'weapon_upgrade') {
-      player.upgradeWeapons();
-    } else if (type === 'overdrive') {
-      player.energy = player.maxEnergy;
-      player.isBoosting = true;
+    if (type === 'shield') {
+      player.repairShield(45);
+      player.repairHull(25);
+    } else if (type === 'weapon') {
+      player.upgradeWeapon(2, 18.0);
+    } else if (type === 'missile') {
+      player.reloadMissiles(4);
     }
   }
 
+  /**
+   * Calculates Target Tracking & Predictive Dogfight Lead Pip
+   */
   getTargetTrackingInfo(player, camera, canvasWidth, canvasHeight) {
-    let bestTarget = null;
-    let minScore = Infinity;
-    const targets = [];
+    const THREE = this.THREE;
+    const candidates = [];
 
-    // Boss target priority
-    if (this.boss) {
-      const b = this.boss;
-      const dx = b.group.position.x - player.position.x;
-      const dz = b.group.position.z - player.position.z;
-      const dist = Math.hypot(dx, dz);
-
-      const screenPos = b.group.position.clone();
-      screenPos.project(camera);
-      const isBehind = screenPos.z > 1;
-      const screenX = (screenPos.x * 0.5 + 0.5) * canvasWidth;
-      const screenY = (-screenPos.y * 0.5 + 0.5) * canvasHeight;
-
-      const bossTarget = {
-        name: b.name,
-        dist: Math.round(dist),
-        hpRatio: b.hp / b.maxHp,
-        shieldRatio: b.shield / b.maxShield,
-        screenX,
-        screenY,
-        isBehind,
-        isInView: !isBehind && screenX >= 0 && screenX <= canvasWidth && screenY >= 0 && screenY <= canvasHeight,
-        isBoss: true
-      };
-      targets.push(bossTarget);
-      bestTarget = bossTarget;
+    if (this.boss && !this.boss.isDestroying) {
+      candidates.push({ ...this.boss, isBoss: true });
     }
+    this.drones.forEach(d => candidates.push({ ...d, isBoss: false }));
 
-    this.drones.forEach(drone => {
-      const dx = drone.group.position.x - player.position.x;
-      const dz = drone.group.position.z - player.position.z;
-      const dist = Math.hypot(dx, dz);
+    if (candidates.length === 0) return null;
 
-      const angleToDrone = Math.atan2(dx, dz);
-      const angleDiff = Math.abs(Math.atan2(Math.sin(angleToDrone - player.heading), Math.cos(angleToDrone - player.heading)));
-      const trackingScore = dist + angleDiff * 50;
+    // Find closest target in front of player
+    let bestTarget = null;
+    let minDist = Infinity;
 
-      const screenPos = drone.group.position.clone();
-      screenPos.project(camera);
-      const isBehind = screenPos.z > 1;
-      const screenX = (screenPos.x * 0.5 + 0.5) * canvasWidth;
-      const screenY = (-screenPos.y * 0.5 + 0.5) * canvasHeight;
+    const pPos = player.position;
+    const pHeadingVec = new THREE.Vector3(Math.sin(player.heading), 0, Math.cos(player.heading));
 
-      const targetData = {
-        name: drone.name,
-        dist: Math.round(dist),
-        hpRatio: drone.hp / drone.maxHp,
-        screenX,
-        screenY,
-        isBehind,
-        isInView: !isBehind && screenX >= 0 && screenX <= canvasWidth && screenY >= 0 && screenY <= canvasHeight,
-        isBoss: false
-      };
-      targets.push(targetData);
+    candidates.forEach(c => {
+      const cPos = c.group.position;
+      const toVec = new THREE.Vector3().subVectors(cPos, pPos);
+      const dist = toVec.length();
 
-      if (!this.boss && trackingScore < minScore && !isBehind) {
-        minScore = trackingScore;
-        bestTarget = targetData;
+      // Dot product to check if candidate is in front
+      const forwardDot = toVec.clone().normalize().dot(pHeadingVec);
+      const score = dist - forwardDot * 60;
+
+      if (score < minDist) {
+        minDist = score;
+        bestTarget = { candidate: c, dist };
       }
     });
 
-    const activeCount = (this.boss ? 1 : 0) + this.drones.length;
+    if (!bestTarget) return null;
+
+    const target = bestTarget.candidate;
+    const tPos = target.group.position.clone();
+
+    // Screen Space Projection of Target
+    const screenPos = tPos.clone().project(camera);
+    const sx = (screenPos.x * 0.5 + 0.5) * canvasWidth;
+    const sy = (-screenPos.y * 0.5 + 0.5) * canvasHeight;
+
+    // Calculate Dogfight Lead Pip (Where to aim)
+    const laserSpeed = 210;
+    const timeToHit = bestTarget.dist / laserSpeed;
+    const leadWorldPos = tPos.clone();
+    leadWorldPos.x += (target.vx || 0) * timeToHit;
+    leadWorldPos.z += (target.vz || 0) * timeToHit;
+
+    const leadScreenPos = leadWorldPos.clone().project(camera);
+    const lx = (leadScreenPos.x * 0.5 + 0.5) * canvasWidth;
+    const ly = (-leadScreenPos.y * 0.5 + 0.5) * canvasHeight;
+
     return {
-      primaryTarget: bestTarget,
-      allTargets: targets,
-      remainingDrones: activeCount,
-      bossData: this.boss ? { name: this.boss.name, hp: this.boss.hp, maxHp: this.boss.maxHp, shield: this.boss.shield, maxShield: this.boss.maxShield } : null
+      target,
+      screenX: sx,
+      screenY: sy,
+      leadScreenX: lx,
+      leadScreenY: ly,
+      distance: Math.round(bestTarget.dist),
+      inFront: screenPos.z < 1.0,
+      isLocked: bestTarget.dist < 180
     };
   }
 
   clearAll() {
+    this.drones.forEach(d => this.scene.remove(d.group));
+    this.drones = [];
+
     if (this.boss) {
       this.scene.remove(this.boss.group);
       this.boss = null;
     }
-    this.drones.forEach(d => this.scene.remove(d.group));
-    this.drones = [];
 
     this.enemyLasers.forEach(l => this.scene.remove(l.mesh));
     this.enemyLasers = [];
 
     this.enemyMissiles.forEach(m => this.scene.remove(m.mesh));
     this.enemyMissiles = [];
+
+    this.playerMissiles.forEach(pm => this.scene.remove(pm.mesh));
+    this.playerMissiles = [];
 
     this.powerups.forEach(p => this.scene.remove(p.group));
     this.powerups = [];

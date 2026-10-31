@@ -1,79 +1,82 @@
 /**
  * Photorealistic Starfighter Models & Flight Controller
- * Sculpted with high-detail extruded aerospace geometries, chamfered beveled armor,
- * authentic PBR materials, and faithful 1:1 engineering based on user reference designs:
- * 1. Void Dreadnought: Heavy Armored Stealth Twin-Hull Warship
- * 2. Aether Vanguard: High-Agility Cranked-Delta Interceptor
- * 3. Crimson Interceptor: Tactical Strike Fighter with Dual VTOL Turbine Rings
+ * AAA Engineered Spacecraft with high-detail extruded aerospace geometries,
+ * beveled armor plating, transparent cockpit glass with interior consoles,
+ * mechanical VTOL rotors, RCS maneuvering thruster blocks, navigation strobes,
+ * and multi-weapon hardpoints (Dual Plasma Cannons, Rapid Gatling, Homing Missiles, EMP).
+ *
+ * Ship 1: Crimson Interceptor (Flagship Reference 1 Design - Brushed Titanium, Red Accents)
+ * Ship 2: Void Dreadnought (Heavy Armored Stealth Twin-Hull Warship)
+ * Ship 3: Aether Vanguard (Reference 2 Blue Cosmic Interceptor)
  */
 import { SHIP_IMAGES, createProceduralPanelTexture, createProceduralNormalMap, createProceduralRoughnessMap } from './textures.js';
 
 export const SHIP_CONFIGS = {
+  crimson: {
+    id: 'crimson',
+    name: 'CRIMSON VALKYRIE',
+    type: 'Tactical Strike Fighter (Ref 1)',
+    image: SHIP_IMAGES.crimson,
+    description: 'Advanced strike fighter crafted with brushed titanium armor, racing crimson cowlings, twin circular VTOL turbine rings, dual heavy wing cannons, and homing missile racks.',
+    maxSpeed: 58,
+    boostSpeed: 128,
+    accelRate: 64,
+    turnRate: 7.2,
+    rollRate: 9.6,
+    maxShield: 110,
+    maxHull: 110,
+    shieldRegenRate: 22,
+    boostDrainRate: 26,
+    fireInterval: 0.12,
+    primaryColor: 0xff1744,
+    engineGlow: 0xff2244,
+    laserColor: 0xff2244,
+    weaponType: 'triple_pulse',
+    stats: { speed: 88, agility: 90, shields: 88, hull: 88, firepower: 94 }
+  },
   dreadnought: {
     id: 'dreadnought',
     name: 'VOID DREADNOUGHT',
     type: 'Heavy Twin-Hull Warship',
     image: SHIP_IMAGES.dreadnought,
     description: 'Monolithic stealth combat warship with multi-tiered composite armor plating, dual outboard catamaran hulls, and forward-facing heavy kinetic railguns.',
-    maxSpeed: 45,
-    boostSpeed: 100,
+    maxSpeed: 46,
+    boostSpeed: 102,
     accelRate: 48,
-    turnRate: 5.4,
-    rollRate: 7.2,
-    maxShield: 140,
-    maxHull: 160,
-    shieldRegenRate: 16,
+    turnRate: 5.6,
+    rollRate: 7.4,
+    maxShield: 150,
+    maxHull: 170,
+    shieldRegenRate: 18,
     boostDrainRate: 32,
     fireInterval: 0.16,
     primaryColor: 0xff7700,
     engineGlow: 0xff5500,
     laserColor: 0xff8800,
     weaponType: 'heavy_dual',
-    stats: { speed: 70, agility: 62, shields: 98, hull: 100, firepower: 96 }
+    stats: { speed: 70, agility: 64, shields: 100, hull: 100, firepower: 98 }
   },
   aether: {
     id: 'aether',
     name: 'AETHER VANGUARD',
-    type: 'High-Agility Interceptor',
+    type: 'High-Agility Interceptor (Ref 2)',
     image: SHIP_IMAGES.aether,
     description: 'Sleek aerodynamic spaceframe with cranked-arrow delta wings, canted dorsal stabilizers, downturned winglet fences, and twin blue plasma bolters.',
-    maxSpeed: 64,
-    boostSpeed: 136,
-    accelRate: 68,
-    turnRate: 7.8,
-    rollRate: 11.0,
-    maxShield: 85,
-    maxHull: 80,
-    shieldRegenRate: 24,
-    boostDrainRate: 26,
-    fireInterval: 0.10,
+    maxSpeed: 66,
+    boostSpeed: 140,
+    accelRate: 72,
+    turnRate: 8.2,
+    rollRate: 11.5,
+    maxShield: 90,
+    maxHull: 85,
+    shieldRegenRate: 26,
+    boostDrainRate: 24,
+    fireInterval: 0.09,
     primaryColor: 0x3ef0ff,
     engineGlow: 0x3ef0ff,
     laserColor: 0x3ef0ff,
     weaponType: 'dual_rapid',
-    stats: { speed: 95, agility: 98, shields: 75, hull: 70, firepower: 82 }
-  },
-  crimson: {
-    id: 'crimson',
-    name: 'CRIMSON INTERCEPTOR',
-    type: 'Tactical Strike Fighter',
-    image: SHIP_IMAGES.crimson,
-    description: 'Advanced strike fighter crafted with brushed titanium armor, racing crimson cowlings, twin circular VTOL turbine rings, and triple pulse lasers.',
-    maxSpeed: 55,
-    boostSpeed: 120,
-    accelRate: 58,
-    turnRate: 6.8,
-    rollRate: 9.2,
-    maxShield: 105,
-    maxHull: 105,
-    shieldRegenRate: 20,
-    boostDrainRate: 28,
-    fireInterval: 0.12,
-    primaryColor: 0xff1744,
-    engineGlow: 0xff2244,
-    laserColor: 0xff2244,
-    weaponType: 'triple_pulse',
-    stats: { speed: 85, agility: 86, shields: 85, hull: 85, firepower: 90 }
+    stats: { speed: 98, agility: 100, shields: 78, hull: 74, firepower: 86 }
   }
 };
 
@@ -106,10 +109,10 @@ function createSymmetricExtrudedMesh(THREE, halfPoints, options, material) {
 }
 
 export class Starfighter {
-  constructor(scene, THREE, shipType = 'dreadnought') {
+  constructor(scene, THREE, shipType = 'crimson') {
     this.scene = scene;
     this.THREE = THREE;
-    this.config = SHIP_CONFIGS[shipType] || SHIP_CONFIGS.dreadnought;
+    this.config = SHIP_CONFIGS[shipType] || SHIP_CONFIGS.crimson;
     this.shipType = shipType;
 
     // Movement & Physics State
@@ -125,7 +128,7 @@ export class Starfighter {
     this.hull = this.maxHull;
     this.maxShield = this.config.maxShield;
     this.shield = this.maxShield;
-    this.shieldRegenDelay = 3.0;
+    this.shieldRegenDelay = 2.8;
     this.lastDamageTime = 0;
     this.shieldRegenRate = this.config.shieldRegenRate;
 
@@ -133,25 +136,40 @@ export class Starfighter {
     this.maxEnergy = 100;
     this.energy = 100;
     this.boostDrainRate = this.config.boostDrainRate;
-    this.energyRegenRate = 22;
+    this.energyRegenRate = 24;
     this.isBoosting = false;
     this.invulnerableTimer = 0;
 
-    // Weapon Upgrades
+    // Weapons & Ordnance
+    this.selectedWeapon = 'cannons'; // 'cannons' | 'rapid' | 'missiles'
     this.weaponLevel = 1;
     this.weaponLevelTimer = 0;
     this.fireInterval = this.config.fireInterval;
     this.lastFireTime = 0;
     this.heat = 0;
     this.overheated = false;
-    this.coolRate = 0.38;
+    this.coolRate = 0.42;
+
+    // Secondary Homing Missiles
+    this.missiles = 8;
+    this.maxMissiles = 8;
+    this.lastMissileTime = 0;
+    this.missileCooldown = 1.0;
+
+    // Special Weapon: EMP Pulse
+    this.empCooldown = 0;
+    this.empMaxCooldown = 20.0; // seconds
 
     // 3D Objects & FX
     this.group = new THREE.Group();
     this.shipMesh = null;
     this.thrusterFlames = [];
     this.laserMuzzleOffsets = [];
+    this.missileHardpoints = [];
+    this.missileMeshes = [];
+    this.strobeLights = [];
     this.shieldMesh = null;
+    this.cockpitAnchor = new THREE.Vector3(0, 0.45, 0.6);
 
     this._buildShipModel();
     this.scene.add(this.group);
@@ -170,7 +188,7 @@ export class Starfighter {
     }
 
     // Reactive Holographic Shield Bubble
-    const shieldGeom = new THREE.IcosahedronGeometry(3.6, 2);
+    const shieldGeom = new THREE.IcosahedronGeometry(3.8, 2);
     const shieldMat = new THREE.MeshBasicMaterial({
       color: this.config.primaryColor,
       wireframe: true,
@@ -185,17 +203,297 @@ export class Starfighter {
   }
 
   /**
-   * SHIP 1: VOID DREADNOUGHT (Ref Image 1)
+   * SHIP 1: CRIMSON VALKYRIE (Reference 1 Signature Starfighter)
+   * Detailed metallic silver & gunmetal hull, crimson accent cowlings,
+   * realistic transparent reflective glass cockpit with interior pilot tub,
+   * dual VTOL turbine rings with 8-blade rotating rotors, maneuvering RCS thrusters,
+   * navigation lights, forward wing cannon pylons, and underwing missile racks.
+   */
+  _buildCrimsonInterceptor() {
+    const THREE = this.THREE;
+    const shipRoot = new THREE.Group();
+
+    const panelTex = createProceduralPanelTexture(THREE, '#b0bcc9', '#788698', '#c4d1de');
+    const normalMap = createProceduralNormalMap(THREE);
+    const roughnessMap = createProceduralRoughnessMap(THREE, 0.22);
+
+    // 1. High-Quality PBR Materials
+    const titaniumSilverMat = new THREE.MeshStandardMaterial({
+      color: 0xc4d1de,
+      map: panelTex,
+      normalMap: normalMap,
+      roughnessMap: roughnessMap,
+      metalness: 0.92,
+      roughness: 0.22,
+      envMapIntensity: 2.0
+    });
+
+    const gunmetalDarkMat = new THREE.MeshStandardMaterial({
+      color: 0x1e2430,
+      map: panelTex,
+      normalMap: normalMap,
+      metalness: 0.88,
+      roughness: 0.35,
+      envMapIntensity: 1.6
+    });
+
+    const crimsonAccentMat = new THREE.MeshStandardMaterial({
+      color: 0xd90429,
+      emissive: 0xff1744,
+      emissiveIntensity: 1.4,
+      metalness: 0.70,
+      roughness: 0.18,
+      envMapIntensity: 1.8
+    });
+
+    const glassCanopyMat = new THREE.MeshPhysicalMaterial({
+      color: 0x0f151e,
+      metalness: 0.95,
+      roughness: 0.03,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.02,
+      emissive: 0x4a0a16,
+      emissiveIntensity: 0.3,
+      transparent: true,
+      opacity: 0.88
+    });
+
+    const cyanHoloMat = new THREE.MeshBasicMaterial({
+      color: 0x3ef0ff
+    });
+
+    const rcsBurnishMat = new THREE.MeshStandardMaterial({
+      color: 0x2d323b,
+      metalness: 0.95,
+      roughness: 0.4
+    });
+
+    // 2. Main Titanium Swept Wings & Carapace
+    const wingProfile = [
+      [0, 2.7],
+      [0.75, 1.5],
+      [1.6, 0.45],
+      [2.3, 0.25],
+      [2.9, -0.65],
+      [1.7, -1.35],
+      [0.65, -2.15],
+      [0, -1.95]
+    ];
+    const mainWings = createSymmetricExtrudedMesh(THREE, wingProfile, {
+      depth: 0.32,
+      bevelThickness: 0.06,
+      bevelSize: 0.06,
+      bevelSegments: 3
+    }, titaniumSilverMat);
+    mainWings.position.y = 0.02;
+    shipRoot.add(mainWings);
+
+    // Raised Spine Armor Plates
+    const spineArmor = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.18, 2.6), gunmetalDarkMat);
+    spineArmor.position.set(0, 0.24, -0.2);
+    shipRoot.add(spineArmor);
+
+    // Heat Radiator Gills along the spine
+    for (let g = 0; g < 4; g++) {
+      const gill = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.04, 0.12), crimsonAccentMat);
+      gill.position.set(0, 0.34, -0.6 + g * 0.35);
+      shipRoot.add(gill);
+    }
+
+    // 3. Elongated Chisel Needle Nose & Center Rotary Cannon
+    const noseProfile = [
+      [0, 3.6],
+      [0.32, 2.3],
+      [0.62, 0.85],
+      [0, 0.85]
+    ];
+    const needleNose = createSymmetricExtrudedMesh(THREE, noseProfile, {
+      depth: 0.28,
+      bevelThickness: 0.05,
+      bevelSize: 0.05,
+      bevelSegments: 3
+    }, titaniumSilverMat);
+    needleNose.position.y = 0.12;
+    shipRoot.add(needleNose);
+
+    // Centerline Rotary Cannon
+    const noseGun = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.8, 8), gunmetalDarkMat);
+    noseGun.rotation.x = Math.PI / 2;
+    noseGun.position.set(0, -0.06, 3.5);
+    shipRoot.add(noseGun);
+
+    const gunMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.35, 8), gunmetalDarkMat);
+    gunMuzzle.rotation.x = Math.PI / 2;
+    gunMuzzle.position.set(0, -0.06, 4.8);
+    shipRoot.add(gunMuzzle);
+
+    this.laserMuzzleOffsets.push({ side: 0, x: 0, y: -0.06, z: 4.9 });
+
+    // 4. Detailed Transparent Cockpit with Interior Pilot Tub
+    const canopyGeom = new THREE.ConeGeometry(0.42, 1.8, 4);
+    canopyGeom.rotateX(Math.PI / 2);
+    canopyGeom.rotateY(Math.PI / 4);
+    const canopy = new THREE.Mesh(canopyGeom, glassCanopyMat);
+    canopy.position.set(0, 0.36, 0.5);
+    canopy.scale.set(0.85, 0.48, 1.25);
+    shipRoot.add(canopy);
+
+    // Cockpit Tub & Pilot Seat
+    const pilotSeat = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.32, 0.35), gunmetalDarkMat);
+    pilotSeat.position.set(0, 0.26, 0.35);
+    shipRoot.add(pilotSeat);
+
+    // Glowing Holographic Flight HUD Console
+    const flightConsole = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.08), cyanHoloMat);
+    flightConsole.position.set(0, 0.32, 0.75);
+    flightConsole.rotation.x = -0.35;
+    shipRoot.add(flightConsole);
+
+    // 5. Side Air Intake Cowlings with Crimson Trims
+    [-1, 1].forEach(side => {
+      const intake = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.24, 1.3), crimsonAccentMat);
+      intake.position.set(side * 0.60, 0.22, 0.6);
+      intake.rotation.y = side * 0.12;
+      shipRoot.add(intake);
+
+      const intakeDuct = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.16, 0.2), gunmetalDarkMat);
+      intakeDuct.position.set(side * 0.60, 0.22, 1.25);
+      shipRoot.add(intakeDuct);
+    });
+
+    // 6. Dual VTOL Lift Turbine Rings with 8-Blade Rotors (Ref 1 Iconic Feature)
+    [-1, 1].forEach(side => {
+      const vtolGroup = new THREE.Group();
+      vtolGroup.position.set(side * 1.50, 0.20, -0.7);
+
+      // Outer Crimson Ring Cowling
+      const ringCowling = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.09, 16, 32), crimsonAccentMat);
+      ringCowling.rotation.x = Math.PI / 2;
+      vtolGroup.add(ringCowling);
+
+      // Gunmetal Duct Wall
+      const innerDuct = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0.50, 0.24, 24, 1, true), gunmetalDarkMat);
+      vtolGroup.add(innerDuct);
+
+      // Center Hub Axle Spinner
+      const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.28, 16), gunmetalDarkMat);
+      vtolGroup.add(axle);
+
+      // 8 Real 3D Fan Rotor Blades inside Ring
+      for (let b = 0; b < 8; b++) {
+        const theta = (b / 8) * Math.PI * 2;
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.34), gunmetalDarkMat);
+        blade.position.set(Math.cos(theta) * 0.30, 0, Math.sin(theta) * 0.30);
+        blade.rotation.y = -theta + 0.35;
+        blade.rotation.x = 0.4;
+        vtolGroup.add(blade);
+      }
+
+      shipRoot.add(vtolGroup);
+
+      // 7. Forward Wing Cannon Pylons
+      const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.24, 2.4), titaniumSilverMat);
+      pylon.position.set(side * 1.90, 0.08, 1.3);
+      shipRoot.add(pylon);
+
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 2.5, 8), gunmetalDarkMat);
+      barrel.rotation.x = Math.PI / 2;
+      barrel.position.set(side * 1.90, 0.08, 2.3);
+      shipRoot.add(barrel);
+
+      const redMuzzle = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.03, 8, 16), crimsonAccentMat);
+      redMuzzle.position.set(side * 1.90, 0.08, 3.4);
+      shipRoot.add(redMuzzle);
+
+      this.laserMuzzleOffsets.push({ side, x: side * 1.90, y: 0.08, z: 3.5 });
+
+      // 8. Underwing Homing Missile Ordnance Racks (3D Missiles Mounted!)
+      const missilePylon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 1.6), gunmetalDarkMat);
+      missilePylon.position.set(side * 1.15, -0.16, 0.2);
+      shipRoot.add(missilePylon);
+
+      // 3D Missile Model
+      const missileGroup = new THREE.Group();
+      missileGroup.position.set(side * 1.15, -0.26, 0.2);
+
+      const missileBody = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.3, 8), titaniumSilverMat);
+      missileBody.rotation.x = Math.PI / 2;
+      missileGroup.add(missileBody);
+
+      const missileTip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.3, 8), crimsonAccentMat);
+      missileTip.rotation.x = Math.PI / 2;
+      missileTip.position.set(0, 0, 0.75);
+      missileGroup.add(missileTip);
+
+      shipRoot.add(missileGroup);
+      this.missileMeshes.push(missileGroup);
+      this.missileHardpoints.push({ side, x: side * 1.15, y: -0.26, z: 0.8 });
+
+      // 9. Maneuvering RCS Blocks (Forward & Wingtips)
+      const rcsBlock = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.08, 0.16), rcsBurnishMat);
+      rcsBlock.position.set(side * 2.85, 0.06, -0.5);
+      shipRoot.add(rcsBlock);
+
+      // 10. Navigation Strobe Lights (Port = Red, Starboard = Green)
+      const navLightColor = side < 0 ? 0xff0033 : 0x00ff66;
+      const navLight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: navLightColor }));
+      navLight.position.set(side * 2.95, 0.06, -0.6);
+      shipRoot.add(navLight);
+      this.strobeLights.push({ mesh: navLight, color: navLightColor, type: 'nav' });
+
+      // 11. Canted Angular Twin Tailfins
+      const tailFin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.20, 0.95), titaniumSilverMat);
+      tailFin.position.set(side * 0.46, 0.72, -1.35);
+      tailFin.rotation.z = side * -0.28;
+      tailFin.rotation.x = -0.24;
+      shipRoot.add(tailFin);
+
+      const finCap = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.22, 0.75), crimsonAccentMat);
+      finCap.position.set(side * 0.64, 1.22, -1.45);
+      finCap.rotation.z = side * -0.28;
+      finCap.rotation.x = -0.24;
+      shipRoot.add(finCap);
+
+      // 12. Rear Jet Exhaust Nozzle
+      const thrusterBell = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 0.75, 16), gunmetalDarkMat);
+      thrusterBell.rotation.x = Math.PI / 2;
+      thrusterBell.position.set(side * 0.40, 0.1, -2.1);
+      shipRoot.add(thrusterBell);
+
+      const glowRing = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.04, 8, 16), crimsonAccentMat);
+      glowRing.position.set(side * 0.40, 0.1, -2.4);
+      shipRoot.add(glowRing);
+
+      const outerFlame = this._createFlameMesh(0.24, 2.2, 0xff1744);
+      outerFlame.position.set(side * 0.40, 0.1, -2.45);
+      shipRoot.add(outerFlame);
+
+      const innerFlame = this._createFlameMesh(0.12, 1.4, 0xffffff);
+      innerFlame.position.set(side * 0.40, 0.1, -2.45);
+      shipRoot.add(innerFlame);
+
+      this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
+    });
+
+    // Dorsal White Strobe Beacon
+    const whiteStrobe = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    whiteStrobe.position.set(0, 0.44, -1.2);
+    shipRoot.add(whiteStrobe);
+    this.strobeLights.push({ mesh: whiteStrobe, color: 0xffffff, type: 'beacon' });
+
+    this.cockpitAnchor.set(0, 0.42, 0.6);
+    this.shipMesh = shipRoot;
+    this.group.add(shipRoot);
+  }
+
+  /**
+   * SHIP 2: VOID DREADNOUGHT
    * Heavy Armored Stealth Twin-Hull Warship
-   * - Stealth beveled multi-facet fuselage
-   * - Catamaran outboard sponsons with kinetic railguns
-   * - Canted outer stabilizers & obsidian faceted canopy
    */
   _buildVoidDreadnought() {
     const THREE = this.THREE;
     const shipRoot = new THREE.Group();
 
-    // PBR Textures
     const panelTex = createProceduralPanelTexture(THREE, '#151b24', '#090d13', '#1c2635');
     const normalMap = createProceduralNormalMap(THREE);
     const roughnessMap = createProceduralRoughnessMap(THREE, 0.32);
@@ -244,7 +542,7 @@ export class Starfighter {
       roughness: 0.15
     });
 
-    // 1. Center Fuselage Lifting Body (Extruded Chamfered Armor)
+    // Main Lifting Body
     const centerProfile = [
       [0, 2.8],
       [0.6, 1.8],
@@ -263,7 +561,7 @@ export class Starfighter {
     mainHull.position.y = 0.02;
     shipRoot.add(mainHull);
 
-    // 2. Chiseled Stealth Beak / Prow Wedge
+    // Stealth Beak Prow
     const beakProfile = [
       [0, 3.4],
       [0.45, 2.0],
@@ -279,12 +577,10 @@ export class Starfighter {
     prow.position.y = 0.14;
     shipRoot.add(prow);
 
-    // 3. Raised Dorsal Spine Armor
     const spine = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.22, 2.8), armorPlatesMat);
     spine.position.set(0, 0.32, -0.1);
     shipRoot.add(spine);
 
-    // 4. Faceted Cockpit Canopy Glass
     const canopyGeom = new THREE.ConeGeometry(0.42, 1.8, 4);
     canopyGeom.rotateX(Math.PI / 2);
     canopyGeom.rotateY(Math.PI / 4);
@@ -293,12 +589,7 @@ export class Starfighter {
     canopy.scale.set(0.85, 0.42, 1.3);
     shipRoot.add(canopy);
 
-    // Canopy armored frame
-    const canopyFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 1.6), darkTrimMat);
-    canopyFrame.position.set(0, 0.42, 1.0);
-    shipRoot.add(canopyFrame);
-
-    // 5. Outboard Catamaran Sponsons & Forward Railguns (Left & Right)
+    // Outboard Catamaran Hulls with Railguns
     [-1, 1].forEach(side => {
       const outriggerGroup = new THREE.Group();
       outriggerGroup.position.set(side * 1.9, 0, 0);
@@ -307,17 +598,10 @@ export class Starfighter {
       sponson.position.set(0, 0.1, -0.2);
       outriggerGroup.add(sponson);
 
-      // Upper armored sponson ridge
       const ridge = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.18, 3.4), armorPlatesMat);
       ridge.position.set(0, 0.32, -0.3);
       outriggerGroup.add(ridge);
 
-      // Kinetic Railgun Barrel Housing
-      const railgunBody = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.28, 2.6), darkTrimMat);
-      railgunBody.position.set(0, 0.1, 1.8);
-      outriggerGroup.add(railgunBody);
-
-      // Twin Railgun Barrels
       const rail1 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 8), darkTrimMat);
       rail1.rotation.x = Math.PI / 2;
       rail1.position.set(-0.09, 0.1, 2.6);
@@ -328,7 +612,6 @@ export class Starfighter {
       rail2.position.set(0.09, 0.1, 2.6);
       outriggerGroup.add(rail2);
 
-      // Amber magnetic charging coils
       [1.8, 2.4, 3.0].forEach(zPos => {
         const coil = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.03, 8, 16), amberEnergyMat);
         coil.position.set(0, 0.1, zPos);
@@ -337,22 +620,19 @@ export class Starfighter {
 
       this.laserMuzzleOffsets.push({ side, x: side * 1.9, y: 0.1, z: 3.9 });
 
-      // Canted Outer Stealth Fin
+      // Missile hardpoint under sponson
+      this.missileHardpoints.push({ side, x: side * 1.9, y: -0.15, z: 0.5 });
+
       const fin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 1.2), armorPlatesMat);
       fin.position.set(side * 0.42, 0.65, -1.5);
       fin.rotation.z = side * -0.32;
       fin.rotation.x = -0.22;
       outriggerGroup.add(fin);
 
-      // Amber navigation indicator
-      const navGlow = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.4), amberEnergyMat);
-      navGlow.position.set(side * 0.46, 0.1, 0.2);
-      outriggerGroup.add(navGlow);
-
       shipRoot.add(outriggerGroup);
     });
 
-    // 6. Rear Engine Exhaust Nozzles
+    // Rear Exhausts
     [-0.55, 0.55].forEach(xOffset => {
       const exhaustBell = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.36, 0.8, 16), darkTrimMat);
       exhaustBell.rotation.x = Math.PI / 2;
@@ -363,7 +643,6 @@ export class Starfighter {
       interiorGlow.position.set(xOffset, 0.1, -2.6);
       shipRoot.add(interiorGlow);
 
-      // Exhaust Flames (Hidden while idle/in hangar, trailing backward to -Z)
       const outerFlame = this._createFlameMesh(0.26, 2.2, 0xff6600);
       outerFlame.position.set(xOffset, 0.1, -2.6);
       shipRoot.add(outerFlame);
@@ -375,16 +654,14 @@ export class Starfighter {
       this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
     });
 
+    this.cockpitAnchor.set(0, 0.44, 1.1);
     this.shipMesh = shipRoot;
     this.group.add(shipRoot);
   }
 
   /**
-   * SHIP 2: AETHER VANGUARD (Ref Image 2)
+   * SHIP 3: AETHER VANGUARD (Reference 2 Blue Cosmic Interceptor)
    * High-Agility Cranked-Delta Interceptor
-   * - Swept cranked-arrow delta wings with downturned anhedral winglets
-   * - Supersonic needle prow & blended lifting body
-   * - Cobalt bubble canopy & dual cyan plasma ion engines
    */
   _buildAetherVanguard() {
     const THREE = this.THREE;
@@ -438,7 +715,7 @@ export class Starfighter {
       opacity: 0.90
     });
 
-    // 1. Cranked-Arrow Delta Wing Planform
+    // Cranked-Arrow Delta Wings
     const wingProfile = [
       [0, 3.4],
       [0.6, 2.0],
@@ -457,7 +734,7 @@ export class Starfighter {
     mainWings.position.y = 0.02;
     shipRoot.add(mainWings);
 
-    // 2. Supersonic Needle Nose & Center Chine Body
+    // Supersonic Needle Nose
     const noseProfile = [
       [0, 3.8],
       [0.35, 2.4],
@@ -473,18 +750,15 @@ export class Starfighter {
     needleNose.position.y = 0.14;
     shipRoot.add(needleNose);
 
-    // Forward Pitot Probe / Vane
     const pitot = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 1.2, 8), darkTrimMat);
     pitot.rotation.x = Math.PI / 2;
     pitot.position.set(0, 0.14, 4.2);
     shipRoot.add(pitot);
 
-    // 3. Blended Dorsal Spine
     const spine = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.22, 3.2), navalBlueMat);
     spine.position.set(0, 0.28, -0.2);
     shipRoot.add(spine);
 
-    // 4. Cobalt Glass Teardrop Canopy
     const canopyGeom = new THREE.ConeGeometry(0.38, 1.9, 5);
     canopyGeom.rotateX(Math.PI / 2);
     canopyGeom.rotateY(Math.PI / 5);
@@ -493,23 +767,19 @@ export class Starfighter {
     canopy.scale.set(0.85, 0.48, 1.3);
     shipRoot.add(canopy);
 
-    // 5. Down-Turned Anhedral Winglet Fences & Outboard Plasma Bolters
     [-1, 1].forEach(side => {
-      // Down-turned winglet fence
       const winglet = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.75, 1.4), navalBlueMat);
       winglet.position.set(side * 3.2, -0.15, -0.9);
       winglet.rotation.z = side * 0.25;
       winglet.rotation.x = -0.15;
       shipRoot.add(winglet);
 
-      // Canted Dorsal Stabilizer
       const fin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.15, 1.3), aeroWhiteMat);
       fin.position.set(side * 0.65, 0.75, -1.3);
       fin.rotation.z = side * -0.25;
       fin.rotation.x = -0.22;
       shipRoot.add(fin);
 
-      // Under-wing Plasma Bolter Pylon
       const pylon = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.2, 8), darkTrimMat);
       pylon.rotation.x = Math.PI / 2;
       pylon.position.set(side * 1.6, 0.04, 1.4);
@@ -521,9 +791,9 @@ export class Starfighter {
       shipRoot.add(emitter);
 
       this.laserMuzzleOffsets.push({ side, x: side * 1.6, y: 0.04, z: 2.6 });
+      this.missileHardpoints.push({ side, x: side * 1.2, y: -0.14, z: 0.4 });
     });
 
-    // 6. Dual Ion Turbine Exhausts
     [-0.42, 0.42].forEach(xOffset => {
       const engineBell = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 0.8, 16), darkTrimMat);
       engineBell.rotation.x = Math.PI / 2;
@@ -545,210 +815,7 @@ export class Starfighter {
       this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
     });
 
-    this.shipMesh = shipRoot;
-    this.group.add(shipRoot);
-  }
-
-  /**
-   * SHIP 3: CRIMSON INTERCEPTOR (Ref Image 3)
-   * Tactical Strike Fighter with Brushed Titanium & Dual VTOL Rings
-   * - Swept titanium wings with beveled chamfers
-   * - Twin circular VTOL lift turbine rings with 8-blade rotors & red cowlings
-   * - Long needle nose with underslung rotary cannon
-   * - Stepped ruby cockpit & canted tailfins
-   */
-  _buildCrimsonInterceptor() {
-    const THREE = this.THREE;
-    const shipRoot = new THREE.Group();
-
-    const panelTex = createProceduralPanelTexture(THREE, '#9ba8b8', '#647280', '#afbac8');
-    const normalMap = createProceduralNormalMap(THREE);
-    const roughnessMap = createProceduralRoughnessMap(THREE, 0.24);
-
-    const silverAlloyMat = new THREE.MeshStandardMaterial({
-      color: 0xabb8c6,
-      map: panelTex,
-      normalMap: normalMap,
-      roughnessMap: roughnessMap,
-      metalness: 0.88,
-      roughness: 0.26,
-      envMapIntensity: 1.8
-    });
-
-    const crimsonRacingMat = new THREE.MeshStandardMaterial({
-      color: 0xd90429,
-      emissive: 0xff1744,
-      emissiveIntensity: 1.4,
-      metalness: 0.65,
-      roughness: 0.20,
-      envMapIntensity: 1.5
-    });
-
-    const darkTrimMat = new THREE.MeshStandardMaterial({
-      color: 0x1f232b,
-      metalness: 0.86,
-      roughness: 0.40
-    });
-
-    const cockpitMat = new THREE.MeshPhysicalMaterial({
-      color: 0x181014,
-      metalness: 0.94,
-      roughness: 0.06,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.05,
-      emissive: 0x4a0a16,
-      emissiveIntensity: 0.35,
-      transparent: true,
-      opacity: 0.92
-    });
-
-    // 1. Tactical Swept Wings & Main Chassis
-    const wingProfile = [
-      [0, 2.6],
-      [0.7, 1.4],
-      [1.5, 0.4],
-      [2.2, 0.2],
-      [2.8, -0.6],
-      [1.6, -1.3],
-      [0.6, -2.1],
-      [0, -1.9]
-    ];
-    const mainWings = createSymmetricExtrudedMesh(THREE, wingProfile, {
-      depth: 0.30,
-      bevelThickness: 0.06,
-      bevelSize: 0.06,
-      bevelSegments: 3
-    }, silverAlloyMat);
-    mainWings.position.y = 0.02;
-    shipRoot.add(mainWings);
-
-    // 2. Elongated Chisel Needle Nose (Ref Image 3)
-    const noseProfile = [
-      [0, 3.4],
-      [0.32, 2.2],
-      [0.6, 0.8],
-      [0, 0.8]
-    ];
-    const needleNose = createSymmetricExtrudedMesh(THREE, noseProfile, {
-      depth: 0.26,
-      bevelThickness: 0.05,
-      bevelSize: 0.05,
-      bevelSegments: 3
-    }, silverAlloyMat);
-    needleNose.position.y = 0.12;
-    shipRoot.add(needleNose);
-
-    // Underslung Centerline Rotary Cannon
-    const noseGun = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.6, 8), darkTrimMat);
-    noseGun.rotation.x = Math.PI / 2;
-    noseGun.position.set(0, -0.06, 3.4);
-    shipRoot.add(noseGun);
-
-    const gunMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.35, 8), darkTrimMat);
-    gunMuzzle.rotation.x = Math.PI / 2;
-    gunMuzzle.position.set(0, -0.06, 4.6);
-    shipRoot.add(gunMuzzle);
-
-    this.laserMuzzleOffsets.push({ side: 0, x: 0, y: -0.06, z: 4.7 });
-
-    // 3. Side Air Intake Cowlings with Crimson Trims
-    [-1, 1].forEach(side => {
-      const intake = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.22, 1.2), crimsonRacingMat);
-      intake.position.set(side * 0.58, 0.20, 0.6);
-      intake.rotation.y = side * 0.12;
-      shipRoot.add(intake);
-    });
-
-    // 4. Stepped Cockpit Canopy
-    const canopyGeom = new THREE.ConeGeometry(0.40, 1.7, 4);
-    canopyGeom.rotateX(Math.PI / 2);
-    canopyGeom.rotateY(Math.PI / 4);
-    const canopy = new THREE.Mesh(canopyGeom, cockpitMat);
-    canopy.position.set(0, 0.36, 0.5);
-    canopy.scale.set(0.85, 0.48, 1.2);
-    shipRoot.add(canopy);
-
-    // 5. THE DUAL CIRCULAR VTOL TURBINE RINGS (Direct Match to Ref Image 3!)
-    [-1, 1].forEach(side => {
-      const vtolGroup = new THREE.Group();
-      vtolGroup.position.set(side * 1.45, 0.18, -0.7);
-
-      // Outer Crimson Aerodynamic Ring Cowling
-      const ringCowling = new THREE.Mesh(new THREE.TorusGeometry(0.50, 0.09, 16, 32), crimsonRacingMat);
-      ringCowling.rotation.x = Math.PI / 2;
-      vtolGroup.add(ringCowling);
-
-      // Dark Interior Duct Shroud
-      const innerDuct = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.22, 24, 1, true), darkTrimMat);
-      vtolGroup.add(innerDuct);
-
-      // Center Hub Axle Spinner
-      const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.26, 16), darkTrimMat);
-      vtolGroup.add(axle);
-
-      // 8 Real 3D Fan Rotor Blades inside the Ring!
-      for (let b = 0; b < 8; b++) {
-        const theta = (b / 8) * Math.PI * 2;
-        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.16, 0.32), darkTrimMat);
-        blade.position.set(Math.cos(theta) * 0.28, 0, Math.sin(theta) * 0.28);
-        blade.rotation.y = -theta + 0.35;
-        blade.rotation.x = 0.4;
-        vtolGroup.add(blade);
-      }
-
-      shipRoot.add(vtolGroup);
-
-      // Forward Wing Cannon Pylons (Ref Image 3)
-      const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 2.2), silverAlloyMat);
-      pylon.position.set(side * 1.85, 0.08, 1.2);
-      shipRoot.add(pylon);
-
-      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.4, 8), darkTrimMat);
-      barrel.rotation.x = Math.PI / 2;
-      barrel.position.set(side * 1.85, 0.08, 2.2);
-      shipRoot.add(barrel);
-
-      const redMuzzle = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.03, 8, 16), crimsonRacingMat);
-      redMuzzle.position.set(side * 1.85, 0.08, 3.3);
-      shipRoot.add(redMuzzle);
-
-      this.laserMuzzleOffsets.push({ side, x: side * 1.85, y: 0.08, z: 3.4 });
-
-      // Canted Angular Twin Tailfins
-      const tailFin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.15, 0.9), silverAlloyMat);
-      tailFin.position.set(side * 0.45, 0.70, -1.3);
-      tailFin.rotation.z = side * -0.28;
-      tailFin.rotation.x = -0.24;
-      shipRoot.add(tailFin);
-
-      // Crimson fin cap
-      const finCap = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.22, 0.7), crimsonRacingMat);
-      finCap.position.set(side * 0.62, 1.18, -1.4);
-      finCap.rotation.z = side * -0.28;
-      finCap.rotation.x = -0.24;
-      shipRoot.add(finCap);
-
-      // Rear Jet Exhaust Nozzle
-      const thrusterBell = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.30, 0.7, 16), darkTrimMat);
-      thrusterBell.rotation.x = Math.PI / 2;
-      thrusterBell.position.set(side * 0.38, 0.1, -2.0);
-      shipRoot.add(thrusterBell);
-
-      const glowRing = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.04, 8, 16), crimsonRacingMat);
-      glowRing.position.set(side * 0.38, 0.1, -2.3);
-      shipRoot.add(glowRing);
-
-      const outerFlame = this._createFlameMesh(0.24, 2.0, 0xff1744);
-      outerFlame.position.set(side * 0.38, 0.1, -2.35);
-      shipRoot.add(outerFlame);
-
-      const innerFlame = this._createFlameMesh(0.12, 1.3, 0xffffff);
-      innerFlame.position.set(side * 0.38, 0.1, -2.35);
-      shipRoot.add(innerFlame);
-
-      this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
-    });
-
+    this.cockpitAnchor.set(0, 0.42, 0.9);
     this.shipMesh = shipRoot;
     this.group.add(shipRoot);
   }
@@ -756,7 +823,6 @@ export class Starfighter {
   _createFlameMesh(radius, length, colorCore) {
     const THREE = this.THREE;
     const geom = new THREE.ConeGeometry(radius, length, 16);
-    // Exhaust cone points backward towards -Z!
     geom.rotateX(-Math.PI / 2);
     geom.translate(0, 0, -length / 2);
 
@@ -770,22 +836,21 @@ export class Starfighter {
     });
 
     const mesh = new THREE.Mesh(geom, mat);
-    mesh.visible = false; // Idle in hangar, ignited in flight!
+    mesh.visible = false;
     return mesh;
   }
 
-  update(dt, inputState, worldBounds = null) {
+  update(dt, inputState, time) {
     const THREE = this.THREE;
-    const time = performance.now() * 0.001;
 
-    // Recharge Shield Delay
+    // 1. Shield Recharge
     if (time - this.lastDamageTime > this.shieldRegenDelay && this.shield < this.maxShield) {
       this.shield = Math.min(this.maxShield, this.shield + this.shieldRegenRate * dt);
     }
 
-    // Energy / Boost Handling
+    // 2. Boost & Energy
     const boostRequested = (inputState.boost || inputState.shift) && this.energy > 5;
-    if (boostRequested && (inputState.forward || inputState.backward || inputState.mouseSteering)) {
+    if (boostRequested && (inputState.forward || inputState.backward || inputState.hasMouseTarget)) {
       this.isBoosting = true;
       this.energy = Math.max(0, this.energy - this.boostDrainRate * dt);
     } else {
@@ -793,15 +858,17 @@ export class Starfighter {
       this.energy = Math.min(this.maxEnergy, this.energy + this.energyRegenRate * dt);
     }
 
-    // Cooling weapons
+    // 3. Weapon Cooling & EMP Cooldown
     if (this.heat > 0) {
       this.heat = Math.max(0, this.heat - this.coolRate * dt);
       if (this.overheated && this.heat < 0.25) {
         this.overheated = false;
       }
     }
+    if (this.empCooldown > 0) {
+      this.empCooldown = Math.max(0, this.empCooldown - dt);
+    }
 
-    // Weapon upgrade timer countdown
     if (this.weaponLevel > 1) {
       this.weaponLevelTimer -= dt;
       if (this.weaponLevelTimer <= 0) {
@@ -809,7 +876,6 @@ export class Starfighter {
       }
     }
 
-    // Invulnerability timer countdown
     if (this.invulnerableTimer > 0) {
       this.invulnerableTimer -= dt;
       this.shipMesh.visible = Math.floor(time * 20) % 2 === 0;
@@ -817,12 +883,21 @@ export class Starfighter {
       this.shipMesh.visible = true;
     }
 
-    // Arcade Flight Physics
+    // 4. Navigation Strobe Light Blinking
+    this.strobeLights.forEach(strobe => {
+      if (strobe.type === 'beacon') {
+        strobe.mesh.visible = (time % 1.2) < 0.15;
+      } else {
+        strobe.mesh.visible = (time % 2.0) < 1.6;
+      }
+    });
+
+    // 5. Arcade Flight Physics
     const targetSpeed = this.isBoosting ? this.config.boostSpeed : this.config.maxSpeed;
     const accel = this.config.accelRate;
 
     let forwardThrust = 0;
-    if (inputState.forward) forwardThrust += 1;
+    if (inputState.forward) forwardThrust += 1.0;
     if (inputState.backward) forwardThrust -= 0.6;
 
     if (inputState.hasMouseTarget) {
@@ -830,9 +905,9 @@ export class Starfighter {
       const dz = inputState.targetWorldZ - this.position.z;
       const dist = Math.hypot(dx, dz);
 
-      if (dist > 1.5) {
+      if (dist > 1.8) {
         this.targetHeading = Math.atan2(dx, dz);
-        forwardThrust = Math.min(1.0, Math.max(0.2, dist / 20));
+        forwardThrust = Math.min(1.0, Math.max(0.25, dist / 22));
       }
     } else if (inputState.left || inputState.right) {
       const turnDir = (inputState.left ? 1 : 0) - (inputState.right ? 1 : 0);
@@ -840,38 +915,37 @@ export class Starfighter {
       this.targetHeading = this.heading;
     }
 
-    // Smooth heading interpolation (no gimbal lock)
+    // Smooth heading (zero gimbal lock)
     let headingDiff = this.targetHeading - this.heading;
     while (headingDiff > Math.PI) headingDiff -= Math.PI * 2;
     while (headingDiff < -Math.PI) headingDiff += Math.PI * 2;
     this.heading += headingDiff * Math.min(1.0, this.config.turnRate * dt);
 
-    // Aerodynamic Banking / Roll
-    const targetRoll = -headingDiff * 2.2;
+    // Aerodynamic Banking Roll & Pitch
+    const targetRoll = -headingDiff * 2.4;
     this.roll += (targetRoll - this.roll) * Math.min(1.0, this.config.rollRate * dt);
 
-    // Pitch on acceleration/deceleration
-    const targetPitch = forwardThrust * -0.08;
+    const targetPitch = forwardThrust * -0.09;
     this.pitch += (targetPitch - this.pitch) * 10 * dt;
 
-    // Velocity update
+    // Linear Velocity Update
     const forwardVec = new THREE.Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
     const desiredVel = forwardVec.clone().multiplyScalar(forwardThrust * targetSpeed);
-    this.velocity.lerp(desiredVel, Math.min(1.0, accel * dt * 0.12));
+    this.velocity.lerp(desiredVel, Math.min(1.0, accel * dt * 0.14));
 
     this.position.addScaledVector(this.velocity, dt);
     this.group.position.copy(this.position);
 
-    // Apply rotations
+    // Apply 3D Orientation
     this.group.rotation.y = this.heading;
     this.shipMesh.rotation.z = this.roll;
     this.shipMesh.rotation.x = this.pitch;
 
-    // Thruster Flames Scaling (Ignited only upon thrust/boost)
+    // Thruster Dynamic Plume Scaling
     const currentSpeed = this.velocity.length();
     const speedRatio = Math.min(1.0, currentSpeed / this.config.maxSpeed);
     const boostActive = this.isBoosting;
-    const flameScale = 0.4 + speedRatio * 0.9 + (boostActive ? 1.4 : 0) + Math.sin(time * 40) * 0.12;
+    const flameScale = 0.35 + speedRatio * 0.95 + (boostActive ? 1.5 : 0) + Math.sin(time * 40) * 0.12;
 
     this.thrusterFlames.forEach(({ outer, inner }) => {
       outer.scale.set(1.0 + (boostActive ? 0.35 : 0), 1.0 + (boostActive ? 0.35 : 0), flameScale);
@@ -881,10 +955,8 @@ export class Starfighter {
     });
 
     // Reactive Shield Bubble Fade
-    if (this.shieldMesh) {
-      if (this.shieldMesh.material.opacity > 0) {
-        this.shieldMesh.material.opacity = Math.max(0, this.shieldMesh.material.opacity - dt * 2.5);
-      }
+    if (this.shieldMesh && this.shieldMesh.material.opacity > 0) {
+      this.shieldMesh.material.opacity = Math.max(0, this.shieldMesh.material.opacity - dt * 2.5);
     }
   }
 
@@ -892,7 +964,6 @@ export class Starfighter {
     if (this.invulnerableTimer > 0) return false;
     this.lastDamageTime = performance.now() * 0.001;
 
-    // Flash shield
     if (this.shieldMesh) {
       this.shieldMesh.material.opacity = 0.85;
     }
@@ -912,33 +983,69 @@ export class Starfighter {
 
     if (this.hull <= 0) {
       this.hull = 0;
-      return true; // Destroyed
+      return true;
     }
     return false;
   }
 
-  canFire(time) {
+  canFire(time, weaponType = 'cannons') {
     if (this.overheated) return false;
-    return time - this.lastFireTime >= this.fireInterval;
+    const interval = weaponType === 'rapid' ? this.fireInterval * 0.55 : this.fireInterval;
+    return time - this.lastFireTime >= interval;
   }
 
-  recordFire(time) {
+  recordShot(time, weaponType = 'cannons') {
     this.lastFireTime = time;
-    this.heat = Math.min(1.0, this.heat + 0.07);
+    const heatCost = weaponType === 'rapid' ? 0.055 : 0.085;
+    this.heat = Math.min(1.0, this.heat + heatCost);
     if (this.heat >= 1.0) {
       this.overheated = true;
     }
   }
 
-  getMuzzlePositions() {
-    const THREE = this.THREE;
-    return this.laserMuzzleOffsets.map(offset => {
-      const v = new THREE.Vector3(offset.x, offset.y, offset.z);
-      v.applyEuler(this.shipMesh.rotation);
-      v.applyEuler(this.group.rotation);
-      v.add(this.position);
-      return v;
-    });
+  canLaunchMissile(time) {
+    return this.missiles > 0 && (time - this.lastMissileTime >= this.missileCooldown);
+  }
+
+  recordMissileLaunch(time) {
+    if (this.missiles > 0) {
+      this.missiles--;
+      this.lastMissileTime = time;
+      // Hide visible wing missile mesh if inventory depleting
+      if (this.missileMeshes.length > 0) {
+        const idx = this.missiles % this.missileMeshes.length;
+        if (this.missileMeshes[idx]) {
+          this.missileMeshes[idx].visible = this.missiles > 2;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+  canTriggerEMP() {
+    return this.empCooldown <= 0;
+  }
+
+  triggerEMP() {
+    if (this.canTriggerEMP()) {
+      this.empCooldown = this.empMaxCooldown;
+      return true;
+    }
+    return false;
+  }
+
+  reloadMissiles(count = 4) {
+    this.missiles = Math.min(this.maxMissiles, this.missiles + count);
+    this.missileMeshes.forEach(m => m.visible = true);
+  }
+
+  repairShield(amount) {
+    this.shield = Math.min(this.maxShield, this.shield + amount);
+  }
+
+  repairHull(amount) {
+    this.hull = Math.min(this.maxHull, this.hull + amount);
   }
 
   upgradeWeapon(level = 2, duration = 15.0) {
@@ -946,9 +1053,47 @@ export class Starfighter {
     this.weaponLevelTimer = duration;
   }
 
-  repair(hullAmount, shieldAmount) {
-    this.hull = Math.min(this.maxHull, this.hull + hullAmount);
-    this.shield = Math.min(this.maxShield, this.shield + shieldAmount);
+  getLaserSpawns() {
+    const THREE = this.THREE;
+    const isUpgraded = this.weaponLevel >= 2;
+    const speed = 210;
+
+    return this.laserMuzzleOffsets.map(offset => {
+      const v = new THREE.Vector3(offset.x, offset.y, offset.z);
+      v.applyEuler(this.shipMesh.rotation);
+      v.applyEuler(this.group.rotation);
+      v.add(this.position);
+
+      const forwardVec = new THREE.Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
+      return {
+        x: v.x,
+        y: v.y,
+        z: v.z,
+        vx: forwardVec.x * speed + this.velocity.x * 0.4,
+        vz: forwardVec.z * speed + this.velocity.z * 0.4,
+        heading: this.heading,
+        color: isUpgraded ? 0xffaa00 : this.config.laserColor
+      };
+    });
+  }
+
+  getMissileSpawn() {
+    const THREE = this.THREE;
+    const hardpoint = this.missileHardpoints[this.missiles % Math.max(1, this.missileHardpoints.length)] || { x: 0, y: -0.2, z: 0.8 };
+    const v = new THREE.Vector3(hardpoint.x, hardpoint.y, hardpoint.z);
+    v.applyEuler(this.shipMesh.rotation);
+    v.applyEuler(this.group.rotation);
+    v.add(this.position);
+    return v;
+  }
+
+  getCockpitWorldPosition() {
+    const THREE = this.THREE;
+    const v = this.cockpitAnchor.clone();
+    v.applyEuler(this.shipMesh.rotation);
+    v.applyEuler(this.group.rotation);
+    v.add(this.position);
+    return v;
   }
 
   reset(shipType = null) {
@@ -960,6 +1105,9 @@ export class Starfighter {
       }
       this.thrusterFlames = [];
       this.laserMuzzleOffsets = [];
+      this.missileHardpoints = [];
+      this.missileMeshes = [];
+      this.strobeLights = [];
       this._buildShipModel();
     }
     this.maxHull = this.config.maxHull;
@@ -967,6 +1115,8 @@ export class Starfighter {
     this.maxShield = this.config.maxShield;
     this.shield = this.maxShield;
     this.energy = this.maxEnergy;
+    this.missiles = this.maxMissiles;
+    this.empCooldown = 0;
     this.position.set(0, 0, 0);
     this.velocity.set(0, 0, 0);
     this.heading = 0;
@@ -980,5 +1130,6 @@ export class Starfighter {
     this.group.position.copy(this.position);
     this.group.rotation.set(0, 0, 0);
     if (this.shipMesh) this.shipMesh.rotation.set(0, 0, 0);
+    this.missileMeshes.forEach(m => m.visible = true);
   }
 }

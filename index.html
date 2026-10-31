@@ -459,6 +459,319 @@
       font-weight: 700;
     }
 
+    /* Mission Objectives, Weapons Rack, Cockpit Overlay & Modals */
+    .hud-mission-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      background: rgba(6, 14, 24, 0.75);
+      border: 1px solid var(--panel-line);
+      border-left: 3px solid var(--cyan);
+      padding: 6px 14px;
+      border-radius: 2px;
+    }
+
+    .mission-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      color: #fff;
+    }
+
+    .mission-objective {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.12em;
+      color: var(--cyan);
+    }
+
+    .cockpit-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .cockpit-frame-left {
+      width: 140px;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(12, 16, 24, 0.95) 0%, rgba(12, 16, 24, 0.6) 70%, transparent 100%);
+      border-right: 2px solid rgba(62, 240, 255, 0.2);
+      clip-path: polygon(0 0, 100% 15%, 80% 85%, 0 100%);
+    }
+
+    .cockpit-frame-right {
+      width: 140px;
+      height: 100%;
+      background: linear-gradient(270deg, rgba(12, 16, 24, 0.95) 0%, rgba(12, 16, 24, 0.6) 70%, transparent 100%);
+      border-left: 2px solid rgba(62, 240, 255, 0.2);
+      clip-path: polygon(100% 0, 0 15%, 20% 85%, 100% 100%);
+    }
+
+    .cockpit-hud-glass {
+      position: absolute;
+      inset: 10%;
+      border: 1px solid rgba(62, 240, 255, 0.12);
+      border-radius: 24px;
+      box-shadow: inset 0 0 40px rgba(62, 240, 255, 0.05);
+      background: radial-gradient(circle at 50% 50%, rgba(62, 240, 255, 0.02) 0%, transparent 80%);
+    }
+
+    .weapons-rack {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px solid var(--panel-line);
+    }
+
+    .w-slot {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      background: rgba(10, 20, 32, 0.6);
+      border: 1px solid var(--panel-line);
+      padding: 4px 6px;
+      border-radius: 2px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .w-slot.active {
+      color: #fff;
+      border-color: var(--cyan);
+      background: rgba(62, 240, 255, 0.2);
+      box-shadow: 0 0 10px rgba(62, 240, 255, 0.3);
+    }
+
+    .w-slot.emp-slot.ready {
+      color: var(--purple);
+      border-color: var(--purple);
+      background: rgba(191, 0, 255, 0.2);
+      box-shadow: 0 0 12px rgba(191, 0, 255, 0.4);
+      animation: alertPulse 1.5s infinite alternate;
+    }
+
+    .w-key {
+      display: inline-block;
+      color: var(--cyan);
+      font-weight: 700;
+      margin-right: 2px;
+    }
+
+    .cam-badge {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.16em;
+      color: var(--cyan);
+      background: rgba(14, 28, 46, 0.85);
+      border: 1px solid var(--cyan);
+      padding: 4px 10px;
+      border-radius: 2px;
+      box-shadow: 0 0 12px var(--cyan-glow);
+    }
+
+    .missile-btn {
+      color: #fff;
+      background: radial-gradient(circle, #ff5500, #b31d00);
+      box-shadow: 0 0 20px rgba(255, 85, 0, 0.5);
+    }
+
+    .hud-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2, 4, 10, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .modal-card {
+      width: 90%;
+      max-width: 520px;
+      background: rgba(8, 18, 30, 0.94);
+      border: 1.5px solid var(--panel-line);
+      border-radius: 6px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(62, 240, 255, 0.2);
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      color: #fff;
+      text-shadow: 0 0 16px var(--cyan);
+    }
+
+    .modal-sub {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      margin-top: -8px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .modal-btn {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      color: #c0daf0;
+      background: rgba(14, 26, 42, 0.8);
+      border: 1px solid var(--panel-line);
+      padding: 10px 18px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .modal-btn:hover {
+      background: rgba(24, 44, 70, 0.9);
+      border-color: var(--cyan);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(62, 240, 255, 0.3);
+    }
+
+    .modal-btn.primary {
+      color: #02040a;
+      background: linear-gradient(90deg, #3ef0ff, #82f6ff);
+      border: none;
+      box-shadow: 0 0 20px var(--cyan-glow);
+    }
+
+    .modal-btn.primary:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 30px rgba(62, 240, 255, 0.8);
+    }
+
+    .modal-btn.small {
+      padding: 6px 12px;
+      font-size: 9px;
+    }
+
+    .modal-section-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--panel-line);
+      padding-bottom: 4px;
+      text-align: left;
+    }
+
+    .level-select-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .lvl-select-btn {
+      font-family: var(--mono);
+      font-size: 8.5px;
+      letter-spacing: 0.1em;
+      background: rgba(10, 22, 36, 0.8);
+      border: 1px solid var(--panel-line);
+      color: #a0c2de;
+      padding: 8px 4px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .lvl-select-btn:hover, .lvl-select-btn.active {
+      background: rgba(62, 240, 255, 0.25);
+      border-color: var(--cyan);
+      color: #fff;
+      box-shadow: 0 0 12px var(--cyan-glow);
+    }
+
+    .modal-settings {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(5, 12, 20, 0.6);
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--panel-line);
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--muted);
+    }
+
+    .setting-item input[type="range"] {
+      accent-color: var(--cyan);
+      cursor: pointer;
+    }
+
+    .victory-card {
+      border-color: var(--green);
+      box-shadow: 0 0 45px rgba(92, 255, 157, 0.35);
+    }
+
+    .victory-glow {
+      color: #fff;
+      text-shadow: 0 0 20px rgba(92, 255, 157, 0.8), 0 0 40px rgba(92, 255, 157, 0.4);
+    }
+
+    .victory-rank-badge {
+      font-family: var(--mono);
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      color: var(--amber);
+      text-shadow: 0 0 25px var(--orange-glow);
+      padding: 8px;
+    }
+
+    .vic-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      background: rgba(4, 10, 18, 0.7);
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid var(--panel-line);
+    }
+
+    .v-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    .v-stat b {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: #fff;
+    }
+
     /* =========================================================
        SCI-FI HANGAR & REFERENCE SHIP SELECTION UI
        ========================================================= */
@@ -1381,83 +1694,230 @@ class SoundEngine {
       osc.stop(t + 0.16);
     });
   }
+
+  missileLaunch() {
+    if (!this.ctx || this.muted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(580, now + 0.35);
+
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    osc.connect(gain).connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.5);
+
+    if (this.noiseBuffer) {
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = this.noiseBuffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(600, now);
+      filter.frequency.exponentialRampToValueAtTime(1400, now + 0.3);
+
+      const nGain = this.ctx.createGain();
+      nGain.gain.setValueAtTime(0.2, now);
+      nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+      noise.connect(filter).connect(nGain).connect(this.masterGain);
+      noise.start(now);
+      noise.stop(now + 0.45);
+    }
+  }
+
+  missileLock() {
+    if (!this.ctx || this.muted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1200, now);
+    osc.frequency.setValueAtTime(1600, now + 0.05);
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc.connect(gain).connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.13);
+  }
+
+  empBlast() {
+    if (!this.ctx || this.muted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const oscGain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.exponentialRampToValueAtTime(20, now + 1.2);
+
+    oscGain.gain.setValueAtTime(0.5, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+
+    osc.connect(oscGain).connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 1.5);
+
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(800, now);
+    osc2.frequency.exponentialRampToValueAtTime(80, now + 0.8);
+
+    gain2.gain.setValueAtTime(0.15, now);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+
+    osc2.connect(gain2).connect(this.masterGain);
+    osc2.start(now);
+    osc2.stop(now + 0.9);
+  }
+
+  startCosmicMusic() {
+    if (!this.ctx || this.musicInterval) return;
+    try {
+      const chordFrequencies = [
+        [110.00, 164.81, 196.00, 246.94], // A minor 9th
+        [98.00, 146.83, 174.61, 220.00],  // G sus
+        [87.31, 130.81, 164.81, 196.00],  // F maj 7
+        [98.00, 130.81, 164.81, 220.00]   // D minor
+      ];
+      let chordIndex = 0;
+
+      const musicGain = this.ctx.createGain();
+      musicGain.gain.value = 0.055;
+      musicGain.connect(this.masterGain);
+      this.musicGain = musicGain;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 450;
+      filter.Q.value = 2.0;
+      filter.connect(musicGain);
+
+      const playChord = () => {
+        if (!this.ctx || !this.musicGain) return;
+        const now = this.ctx.currentTime;
+        const chord = chordFrequencies[chordIndex];
+        chordIndex = (chordIndex + 1) % chordFrequencies.length;
+
+        chord.forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = i === 0 ? 'triangle' : 'sine';
+          osc.frequency.value = freq;
+
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.18, now + 2.0);
+          gain.gain.linearRampToValueAtTime(0.001, now + 6.8);
+
+          osc.connect(gain).connect(filter);
+          osc.start(now);
+          osc.stop(now + 7.0);
+        });
+
+        filter.frequency.setTargetAtTime(350 + Math.random() * 300, now, 2.5);
+      };
+
+      playChord();
+      this.musicInterval = setInterval(playChord, 6500);
+    } catch (e) {
+      console.warn('Cosmic music init error', e);
+    }
+  }
+
+  stopCosmicMusic() {
+    if (this.musicInterval) {
+      clearInterval(this.musicInterval);
+      this.musicInterval = null;
+    }
+    if (this.musicGain && this.ctx) {
+      this.musicGain.gain.setTargetAtTime(0.001, this.ctx.currentTime, 0.5);
+    }
+  }
 }
 
     /**
  * Photorealistic Starfighter Models & Flight Controller
- * Sculpted with high-detail extruded aerospace geometries, chamfered beveled armor,
- * authentic PBR materials, and faithful 1:1 engineering based on user reference designs:
- * 1. Void Dreadnought: Heavy Armored Stealth Twin-Hull Warship
- * 2. Aether Vanguard: High-Agility Cranked-Delta Interceptor
- * 3. Crimson Interceptor: Tactical Strike Fighter with Dual VTOL Turbine Rings
+ * AAA Engineered Spacecraft with high-detail extruded aerospace geometries,
+ * beveled armor plating, transparent cockpit glass with interior consoles,
+ * mechanical VTOL rotors, RCS maneuvering thruster blocks, navigation strobes,
+ * and multi-weapon hardpoints (Dual Plasma Cannons, Rapid Gatling, Homing Missiles, EMP).
+ *
+ * Ship 1: Crimson Interceptor (Flagship Reference 1 Design - Brushed Titanium, Red Accents)
+ * Ship 2: Void Dreadnought (Heavy Armored Stealth Twin-Hull Warship)
+ * Ship 3: Aether Vanguard (Reference 2 Blue Cosmic Interceptor)
  */
 
 const SHIP_CONFIGS = {
+  crimson: {
+    id: 'crimson',
+    name: 'CRIMSON VALKYRIE',
+    type: 'Tactical Strike Fighter (Ref 1)',
+    image: SHIP_IMAGES.crimson,
+    description: 'Advanced strike fighter crafted with brushed titanium armor, racing crimson cowlings, twin circular VTOL turbine rings, dual heavy wing cannons, and homing missile racks.',
+    maxSpeed: 58,
+    boostSpeed: 128,
+    accelRate: 64,
+    turnRate: 7.2,
+    rollRate: 9.6,
+    maxShield: 110,
+    maxHull: 110,
+    shieldRegenRate: 22,
+    boostDrainRate: 26,
+    fireInterval: 0.12,
+    primaryColor: 0xff1744,
+    engineGlow: 0xff2244,
+    laserColor: 0xff2244,
+    weaponType: 'triple_pulse',
+    stats: { speed: 88, agility: 90, shields: 88, hull: 88, firepower: 94 }
+  },
   dreadnought: {
     id: 'dreadnought',
     name: 'VOID DREADNOUGHT',
     type: 'Heavy Twin-Hull Warship',
     image: SHIP_IMAGES.dreadnought,
     description: 'Monolithic stealth combat warship with multi-tiered composite armor plating, dual outboard catamaran hulls, and forward-facing heavy kinetic railguns.',
-    maxSpeed: 45,
-    boostSpeed: 100,
+    maxSpeed: 46,
+    boostSpeed: 102,
     accelRate: 48,
-    turnRate: 5.4,
-    rollRate: 7.2,
-    maxShield: 140,
-    maxHull: 160,
-    shieldRegenRate: 16,
+    turnRate: 5.6,
+    rollRate: 7.4,
+    maxShield: 150,
+    maxHull: 170,
+    shieldRegenRate: 18,
     boostDrainRate: 32,
     fireInterval: 0.16,
     primaryColor: 0xff7700,
     engineGlow: 0xff5500,
     laserColor: 0xff8800,
     weaponType: 'heavy_dual',
-    stats: { speed: 70, agility: 62, shields: 98, hull: 100, firepower: 96 }
+    stats: { speed: 70, agility: 64, shields: 100, hull: 100, firepower: 98 }
   },
   aether: {
     id: 'aether',
     name: 'AETHER VANGUARD',
-    type: 'High-Agility Interceptor',
+    type: 'High-Agility Interceptor (Ref 2)',
     image: SHIP_IMAGES.aether,
     description: 'Sleek aerodynamic spaceframe with cranked-arrow delta wings, canted dorsal stabilizers, downturned winglet fences, and twin blue plasma bolters.',
-    maxSpeed: 64,
-    boostSpeed: 136,
-    accelRate: 68,
-    turnRate: 7.8,
-    rollRate: 11.0,
-    maxShield: 85,
-    maxHull: 80,
-    shieldRegenRate: 24,
-    boostDrainRate: 26,
-    fireInterval: 0.10,
+    maxSpeed: 66,
+    boostSpeed: 140,
+    accelRate: 72,
+    turnRate: 8.2,
+    rollRate: 11.5,
+    maxShield: 90,
+    maxHull: 85,
+    shieldRegenRate: 26,
+    boostDrainRate: 24,
+    fireInterval: 0.09,
     primaryColor: 0x3ef0ff,
     engineGlow: 0x3ef0ff,
     laserColor: 0x3ef0ff,
     weaponType: 'dual_rapid',
-    stats: { speed: 95, agility: 98, shields: 75, hull: 70, firepower: 82 }
-  },
-  crimson: {
-    id: 'crimson',
-    name: 'CRIMSON INTERCEPTOR',
-    type: 'Tactical Strike Fighter',
-    image: SHIP_IMAGES.crimson,
-    description: 'Advanced strike fighter crafted with brushed titanium armor, racing crimson cowlings, twin circular VTOL turbine rings, and triple pulse lasers.',
-    maxSpeed: 55,
-    boostSpeed: 120,
-    accelRate: 58,
-    turnRate: 6.8,
-    rollRate: 9.2,
-    maxShield: 105,
-    maxHull: 105,
-    shieldRegenRate: 20,
-    boostDrainRate: 28,
-    fireInterval: 0.12,
-    primaryColor: 0xff1744,
-    engineGlow: 0xff2244,
-    laserColor: 0xff2244,
-    weaponType: 'triple_pulse',
-    stats: { speed: 85, agility: 86, shields: 85, hull: 85, firepower: 90 }
+    stats: { speed: 98, agility: 100, shields: 78, hull: 74, firepower: 86 }
   }
 };
 
@@ -1490,10 +1950,10 @@ function createSymmetricExtrudedMesh(THREE, halfPoints, options, material) {
 }
 
 class Starfighter {
-  constructor(scene, THREE, shipType = 'dreadnought') {
+  constructor(scene, THREE, shipType = 'crimson') {
     this.scene = scene;
     this.THREE = THREE;
-    this.config = SHIP_CONFIGS[shipType] || SHIP_CONFIGS.dreadnought;
+    this.config = SHIP_CONFIGS[shipType] || SHIP_CONFIGS.crimson;
     this.shipType = shipType;
 
     // Movement & Physics State
@@ -1509,7 +1969,7 @@ class Starfighter {
     this.hull = this.maxHull;
     this.maxShield = this.config.maxShield;
     this.shield = this.maxShield;
-    this.shieldRegenDelay = 3.0;
+    this.shieldRegenDelay = 2.8;
     this.lastDamageTime = 0;
     this.shieldRegenRate = this.config.shieldRegenRate;
 
@@ -1517,25 +1977,40 @@ class Starfighter {
     this.maxEnergy = 100;
     this.energy = 100;
     this.boostDrainRate = this.config.boostDrainRate;
-    this.energyRegenRate = 22;
+    this.energyRegenRate = 24;
     this.isBoosting = false;
     this.invulnerableTimer = 0;
 
-    // Weapon Upgrades
+    // Weapons & Ordnance
+    this.selectedWeapon = 'cannons'; // 'cannons' | 'rapid' | 'missiles'
     this.weaponLevel = 1;
     this.weaponLevelTimer = 0;
     this.fireInterval = this.config.fireInterval;
     this.lastFireTime = 0;
     this.heat = 0;
     this.overheated = false;
-    this.coolRate = 0.38;
+    this.coolRate = 0.42;
+
+    // Secondary Homing Missiles
+    this.missiles = 8;
+    this.maxMissiles = 8;
+    this.lastMissileTime = 0;
+    this.missileCooldown = 1.0;
+
+    // Special Weapon: EMP Pulse
+    this.empCooldown = 0;
+    this.empMaxCooldown = 20.0; // seconds
 
     // 3D Objects & FX
     this.group = new THREE.Group();
     this.shipMesh = null;
     this.thrusterFlames = [];
     this.laserMuzzleOffsets = [];
+    this.missileHardpoints = [];
+    this.missileMeshes = [];
+    this.strobeLights = [];
     this.shieldMesh = null;
+    this.cockpitAnchor = new THREE.Vector3(0, 0.45, 0.6);
 
     this._buildShipModel();
     this.scene.add(this.group);
@@ -1554,7 +2029,7 @@ class Starfighter {
     }
 
     // Reactive Holographic Shield Bubble
-    const shieldGeom = new THREE.IcosahedronGeometry(3.6, 2);
+    const shieldGeom = new THREE.IcosahedronGeometry(3.8, 2);
     const shieldMat = new THREE.MeshBasicMaterial({
       color: this.config.primaryColor,
       wireframe: true,
@@ -1569,17 +2044,297 @@ class Starfighter {
   }
 
   /**
-   * SHIP 1: VOID DREADNOUGHT (Ref Image 1)
+   * SHIP 1: CRIMSON VALKYRIE (Reference 1 Signature Starfighter)
+   * Detailed metallic silver & gunmetal hull, crimson accent cowlings,
+   * realistic transparent reflective glass cockpit with interior pilot tub,
+   * dual VTOL turbine rings with 8-blade rotating rotors, maneuvering RCS thrusters,
+   * navigation lights, forward wing cannon pylons, and underwing missile racks.
+   */
+  _buildCrimsonInterceptor() {
+    const THREE = this.THREE;
+    const shipRoot = new THREE.Group();
+
+    const panelTex = createProceduralPanelTexture(THREE, '#b0bcc9', '#788698', '#c4d1de');
+    const normalMap = createProceduralNormalMap(THREE);
+    const roughnessMap = createProceduralRoughnessMap(THREE, 0.22);
+
+    // 1. High-Quality PBR Materials
+    const titaniumSilverMat = new THREE.MeshStandardMaterial({
+      color: 0xc4d1de,
+      map: panelTex,
+      normalMap: normalMap,
+      roughnessMap: roughnessMap,
+      metalness: 0.92,
+      roughness: 0.22,
+      envMapIntensity: 2.0
+    });
+
+    const gunmetalDarkMat = new THREE.MeshStandardMaterial({
+      color: 0x1e2430,
+      map: panelTex,
+      normalMap: normalMap,
+      metalness: 0.88,
+      roughness: 0.35,
+      envMapIntensity: 1.6
+    });
+
+    const crimsonAccentMat = new THREE.MeshStandardMaterial({
+      color: 0xd90429,
+      emissive: 0xff1744,
+      emissiveIntensity: 1.4,
+      metalness: 0.70,
+      roughness: 0.18,
+      envMapIntensity: 1.8
+    });
+
+    const glassCanopyMat = new THREE.MeshPhysicalMaterial({
+      color: 0x0f151e,
+      metalness: 0.95,
+      roughness: 0.03,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.02,
+      emissive: 0x4a0a16,
+      emissiveIntensity: 0.3,
+      transparent: true,
+      opacity: 0.88
+    });
+
+    const cyanHoloMat = new THREE.MeshBasicMaterial({
+      color: 0x3ef0ff
+    });
+
+    const rcsBurnishMat = new THREE.MeshStandardMaterial({
+      color: 0x2d323b,
+      metalness: 0.95,
+      roughness: 0.4
+    });
+
+    // 2. Main Titanium Swept Wings & Carapace
+    const wingProfile = [
+      [0, 2.7],
+      [0.75, 1.5],
+      [1.6, 0.45],
+      [2.3, 0.25],
+      [2.9, -0.65],
+      [1.7, -1.35],
+      [0.65, -2.15],
+      [0, -1.95]
+    ];
+    const mainWings = createSymmetricExtrudedMesh(THREE, wingProfile, {
+      depth: 0.32,
+      bevelThickness: 0.06,
+      bevelSize: 0.06,
+      bevelSegments: 3
+    }, titaniumSilverMat);
+    mainWings.position.y = 0.02;
+    shipRoot.add(mainWings);
+
+    // Raised Spine Armor Plates
+    const spineArmor = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.18, 2.6), gunmetalDarkMat);
+    spineArmor.position.set(0, 0.24, -0.2);
+    shipRoot.add(spineArmor);
+
+    // Heat Radiator Gills along the spine
+    for (let g = 0; g < 4; g++) {
+      const gill = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.04, 0.12), crimsonAccentMat);
+      gill.position.set(0, 0.34, -0.6 + g * 0.35);
+      shipRoot.add(gill);
+    }
+
+    // 3. Elongated Chisel Needle Nose & Center Rotary Cannon
+    const noseProfile = [
+      [0, 3.6],
+      [0.32, 2.3],
+      [0.62, 0.85],
+      [0, 0.85]
+    ];
+    const needleNose = createSymmetricExtrudedMesh(THREE, noseProfile, {
+      depth: 0.28,
+      bevelThickness: 0.05,
+      bevelSize: 0.05,
+      bevelSegments: 3
+    }, titaniumSilverMat);
+    needleNose.position.y = 0.12;
+    shipRoot.add(needleNose);
+
+    // Centerline Rotary Cannon
+    const noseGun = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.8, 8), gunmetalDarkMat);
+    noseGun.rotation.x = Math.PI / 2;
+    noseGun.position.set(0, -0.06, 3.5);
+    shipRoot.add(noseGun);
+
+    const gunMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.35, 8), gunmetalDarkMat);
+    gunMuzzle.rotation.x = Math.PI / 2;
+    gunMuzzle.position.set(0, -0.06, 4.8);
+    shipRoot.add(gunMuzzle);
+
+    this.laserMuzzleOffsets.push({ side: 0, x: 0, y: -0.06, z: 4.9 });
+
+    // 4. Detailed Transparent Cockpit with Interior Pilot Tub
+    const canopyGeom = new THREE.ConeGeometry(0.42, 1.8, 4);
+    canopyGeom.rotateX(Math.PI / 2);
+    canopyGeom.rotateY(Math.PI / 4);
+    const canopy = new THREE.Mesh(canopyGeom, glassCanopyMat);
+    canopy.position.set(0, 0.36, 0.5);
+    canopy.scale.set(0.85, 0.48, 1.25);
+    shipRoot.add(canopy);
+
+    // Cockpit Tub & Pilot Seat
+    const pilotSeat = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.32, 0.35), gunmetalDarkMat);
+    pilotSeat.position.set(0, 0.26, 0.35);
+    shipRoot.add(pilotSeat);
+
+    // Glowing Holographic Flight HUD Console
+    const flightConsole = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.08), cyanHoloMat);
+    flightConsole.position.set(0, 0.32, 0.75);
+    flightConsole.rotation.x = -0.35;
+    shipRoot.add(flightConsole);
+
+    // 5. Side Air Intake Cowlings with Crimson Trims
+    [-1, 1].forEach(side => {
+      const intake = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.24, 1.3), crimsonAccentMat);
+      intake.position.set(side * 0.60, 0.22, 0.6);
+      intake.rotation.y = side * 0.12;
+      shipRoot.add(intake);
+
+      const intakeDuct = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.16, 0.2), gunmetalDarkMat);
+      intakeDuct.position.set(side * 0.60, 0.22, 1.25);
+      shipRoot.add(intakeDuct);
+    });
+
+    // 6. Dual VTOL Lift Turbine Rings with 8-Blade Rotors (Ref 1 Iconic Feature)
+    [-1, 1].forEach(side => {
+      const vtolGroup = new THREE.Group();
+      vtolGroup.position.set(side * 1.50, 0.20, -0.7);
+
+      // Outer Crimson Ring Cowling
+      const ringCowling = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.09, 16, 32), crimsonAccentMat);
+      ringCowling.rotation.x = Math.PI / 2;
+      vtolGroup.add(ringCowling);
+
+      // Gunmetal Duct Wall
+      const innerDuct = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0.50, 0.24, 24, 1, true), gunmetalDarkMat);
+      vtolGroup.add(innerDuct);
+
+      // Center Hub Axle Spinner
+      const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.28, 16), gunmetalDarkMat);
+      vtolGroup.add(axle);
+
+      // 8 Real 3D Fan Rotor Blades inside Ring
+      for (let b = 0; b < 8; b++) {
+        const theta = (b / 8) * Math.PI * 2;
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.34), gunmetalDarkMat);
+        blade.position.set(Math.cos(theta) * 0.30, 0, Math.sin(theta) * 0.30);
+        blade.rotation.y = -theta + 0.35;
+        blade.rotation.x = 0.4;
+        vtolGroup.add(blade);
+      }
+
+      shipRoot.add(vtolGroup);
+
+      // 7. Forward Wing Cannon Pylons
+      const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.24, 2.4), titaniumSilverMat);
+      pylon.position.set(side * 1.90, 0.08, 1.3);
+      shipRoot.add(pylon);
+
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 2.5, 8), gunmetalDarkMat);
+      barrel.rotation.x = Math.PI / 2;
+      barrel.position.set(side * 1.90, 0.08, 2.3);
+      shipRoot.add(barrel);
+
+      const redMuzzle = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.03, 8, 16), crimsonAccentMat);
+      redMuzzle.position.set(side * 1.90, 0.08, 3.4);
+      shipRoot.add(redMuzzle);
+
+      this.laserMuzzleOffsets.push({ side, x: side * 1.90, y: 0.08, z: 3.5 });
+
+      // 8. Underwing Homing Missile Ordnance Racks (3D Missiles Mounted!)
+      const missilePylon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 1.6), gunmetalDarkMat);
+      missilePylon.position.set(side * 1.15, -0.16, 0.2);
+      shipRoot.add(missilePylon);
+
+      // 3D Missile Model
+      const missileGroup = new THREE.Group();
+      missileGroup.position.set(side * 1.15, -0.26, 0.2);
+
+      const missileBody = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.3, 8), titaniumSilverMat);
+      missileBody.rotation.x = Math.PI / 2;
+      missileGroup.add(missileBody);
+
+      const missileTip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.3, 8), crimsonAccentMat);
+      missileTip.rotation.x = Math.PI / 2;
+      missileTip.position.set(0, 0, 0.75);
+      missileGroup.add(missileTip);
+
+      shipRoot.add(missileGroup);
+      this.missileMeshes.push(missileGroup);
+      this.missileHardpoints.push({ side, x: side * 1.15, y: -0.26, z: 0.8 });
+
+      // 9. Maneuvering RCS Blocks (Forward & Wingtips)
+      const rcsBlock = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.08, 0.16), rcsBurnishMat);
+      rcsBlock.position.set(side * 2.85, 0.06, -0.5);
+      shipRoot.add(rcsBlock);
+
+      // 10. Navigation Strobe Lights (Port = Red, Starboard = Green)
+      const navLightColor = side < 0 ? 0xff0033 : 0x00ff66;
+      const navLight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: navLightColor }));
+      navLight.position.set(side * 2.95, 0.06, -0.6);
+      shipRoot.add(navLight);
+      this.strobeLights.push({ mesh: navLight, color: navLightColor, type: 'nav' });
+
+      // 11. Canted Angular Twin Tailfins
+      const tailFin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.20, 0.95), titaniumSilverMat);
+      tailFin.position.set(side * 0.46, 0.72, -1.35);
+      tailFin.rotation.z = side * -0.28;
+      tailFin.rotation.x = -0.24;
+      shipRoot.add(tailFin);
+
+      const finCap = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.22, 0.75), crimsonAccentMat);
+      finCap.position.set(side * 0.64, 1.22, -1.45);
+      finCap.rotation.z = side * -0.28;
+      finCap.rotation.x = -0.24;
+      shipRoot.add(finCap);
+
+      // 12. Rear Jet Exhaust Nozzle
+      const thrusterBell = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 0.75, 16), gunmetalDarkMat);
+      thrusterBell.rotation.x = Math.PI / 2;
+      thrusterBell.position.set(side * 0.40, 0.1, -2.1);
+      shipRoot.add(thrusterBell);
+
+      const glowRing = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.04, 8, 16), crimsonAccentMat);
+      glowRing.position.set(side * 0.40, 0.1, -2.4);
+      shipRoot.add(glowRing);
+
+      const outerFlame = this._createFlameMesh(0.24, 2.2, 0xff1744);
+      outerFlame.position.set(side * 0.40, 0.1, -2.45);
+      shipRoot.add(outerFlame);
+
+      const innerFlame = this._createFlameMesh(0.12, 1.4, 0xffffff);
+      innerFlame.position.set(side * 0.40, 0.1, -2.45);
+      shipRoot.add(innerFlame);
+
+      this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
+    });
+
+    // Dorsal White Strobe Beacon
+    const whiteStrobe = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    whiteStrobe.position.set(0, 0.44, -1.2);
+    shipRoot.add(whiteStrobe);
+    this.strobeLights.push({ mesh: whiteStrobe, color: 0xffffff, type: 'beacon' });
+
+    this.cockpitAnchor.set(0, 0.42, 0.6);
+    this.shipMesh = shipRoot;
+    this.group.add(shipRoot);
+  }
+
+  /**
+   * SHIP 2: VOID DREADNOUGHT
    * Heavy Armored Stealth Twin-Hull Warship
-   * - Stealth beveled multi-facet fuselage
-   * - Catamaran outboard sponsons with kinetic railguns
-   * - Canted outer stabilizers & obsidian faceted canopy
    */
   _buildVoidDreadnought() {
     const THREE = this.THREE;
     const shipRoot = new THREE.Group();
 
-    // PBR Textures
     const panelTex = createProceduralPanelTexture(THREE, '#151b24', '#090d13', '#1c2635');
     const normalMap = createProceduralNormalMap(THREE);
     const roughnessMap = createProceduralRoughnessMap(THREE, 0.32);
@@ -1628,7 +2383,7 @@ class Starfighter {
       roughness: 0.15
     });
 
-    // 1. Center Fuselage Lifting Body (Extruded Chamfered Armor)
+    // Main Lifting Body
     const centerProfile = [
       [0, 2.8],
       [0.6, 1.8],
@@ -1647,7 +2402,7 @@ class Starfighter {
     mainHull.position.y = 0.02;
     shipRoot.add(mainHull);
 
-    // 2. Chiseled Stealth Beak / Prow Wedge
+    // Stealth Beak Prow
     const beakProfile = [
       [0, 3.4],
       [0.45, 2.0],
@@ -1663,12 +2418,10 @@ class Starfighter {
     prow.position.y = 0.14;
     shipRoot.add(prow);
 
-    // 3. Raised Dorsal Spine Armor
     const spine = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.22, 2.8), armorPlatesMat);
     spine.position.set(0, 0.32, -0.1);
     shipRoot.add(spine);
 
-    // 4. Faceted Cockpit Canopy Glass
     const canopyGeom = new THREE.ConeGeometry(0.42, 1.8, 4);
     canopyGeom.rotateX(Math.PI / 2);
     canopyGeom.rotateY(Math.PI / 4);
@@ -1677,12 +2430,7 @@ class Starfighter {
     canopy.scale.set(0.85, 0.42, 1.3);
     shipRoot.add(canopy);
 
-    // Canopy armored frame
-    const canopyFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 1.6), darkTrimMat);
-    canopyFrame.position.set(0, 0.42, 1.0);
-    shipRoot.add(canopyFrame);
-
-    // 5. Outboard Catamaran Sponsons & Forward Railguns (Left & Right)
+    // Outboard Catamaran Hulls with Railguns
     [-1, 1].forEach(side => {
       const outriggerGroup = new THREE.Group();
       outriggerGroup.position.set(side * 1.9, 0, 0);
@@ -1691,17 +2439,10 @@ class Starfighter {
       sponson.position.set(0, 0.1, -0.2);
       outriggerGroup.add(sponson);
 
-      // Upper armored sponson ridge
       const ridge = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.18, 3.4), armorPlatesMat);
       ridge.position.set(0, 0.32, -0.3);
       outriggerGroup.add(ridge);
 
-      // Kinetic Railgun Barrel Housing
-      const railgunBody = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.28, 2.6), darkTrimMat);
-      railgunBody.position.set(0, 0.1, 1.8);
-      outriggerGroup.add(railgunBody);
-
-      // Twin Railgun Barrels
       const rail1 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 8), darkTrimMat);
       rail1.rotation.x = Math.PI / 2;
       rail1.position.set(-0.09, 0.1, 2.6);
@@ -1712,7 +2453,6 @@ class Starfighter {
       rail2.position.set(0.09, 0.1, 2.6);
       outriggerGroup.add(rail2);
 
-      // Amber magnetic charging coils
       [1.8, 2.4, 3.0].forEach(zPos => {
         const coil = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.03, 8, 16), amberEnergyMat);
         coil.position.set(0, 0.1, zPos);
@@ -1721,22 +2461,19 @@ class Starfighter {
 
       this.laserMuzzleOffsets.push({ side, x: side * 1.9, y: 0.1, z: 3.9 });
 
-      // Canted Outer Stealth Fin
+      // Missile hardpoint under sponson
+      this.missileHardpoints.push({ side, x: side * 1.9, y: -0.15, z: 0.5 });
+
       const fin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 1.2), armorPlatesMat);
       fin.position.set(side * 0.42, 0.65, -1.5);
       fin.rotation.z = side * -0.32;
       fin.rotation.x = -0.22;
       outriggerGroup.add(fin);
 
-      // Amber navigation indicator
-      const navGlow = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.4), amberEnergyMat);
-      navGlow.position.set(side * 0.46, 0.1, 0.2);
-      outriggerGroup.add(navGlow);
-
       shipRoot.add(outriggerGroup);
     });
 
-    // 6. Rear Engine Exhaust Nozzles
+    // Rear Exhausts
     [-0.55, 0.55].forEach(xOffset => {
       const exhaustBell = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.36, 0.8, 16), darkTrimMat);
       exhaustBell.rotation.x = Math.PI / 2;
@@ -1747,7 +2484,6 @@ class Starfighter {
       interiorGlow.position.set(xOffset, 0.1, -2.6);
       shipRoot.add(interiorGlow);
 
-      // Exhaust Flames (Hidden while idle/in hangar, trailing backward to -Z)
       const outerFlame = this._createFlameMesh(0.26, 2.2, 0xff6600);
       outerFlame.position.set(xOffset, 0.1, -2.6);
       shipRoot.add(outerFlame);
@@ -1759,16 +2495,14 @@ class Starfighter {
       this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
     });
 
+    this.cockpitAnchor.set(0, 0.44, 1.1);
     this.shipMesh = shipRoot;
     this.group.add(shipRoot);
   }
 
   /**
-   * SHIP 2: AETHER VANGUARD (Ref Image 2)
+   * SHIP 3: AETHER VANGUARD (Reference 2 Blue Cosmic Interceptor)
    * High-Agility Cranked-Delta Interceptor
-   * - Swept cranked-arrow delta wings with downturned anhedral winglets
-   * - Supersonic needle prow & blended lifting body
-   * - Cobalt bubble canopy & dual cyan plasma ion engines
    */
   _buildAetherVanguard() {
     const THREE = this.THREE;
@@ -1822,7 +2556,7 @@ class Starfighter {
       opacity: 0.90
     });
 
-    // 1. Cranked-Arrow Delta Wing Planform
+    // Cranked-Arrow Delta Wings
     const wingProfile = [
       [0, 3.4],
       [0.6, 2.0],
@@ -1841,7 +2575,7 @@ class Starfighter {
     mainWings.position.y = 0.02;
     shipRoot.add(mainWings);
 
-    // 2. Supersonic Needle Nose & Center Chine Body
+    // Supersonic Needle Nose
     const noseProfile = [
       [0, 3.8],
       [0.35, 2.4],
@@ -1857,18 +2591,15 @@ class Starfighter {
     needleNose.position.y = 0.14;
     shipRoot.add(needleNose);
 
-    // Forward Pitot Probe / Vane
     const pitot = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 1.2, 8), darkTrimMat);
     pitot.rotation.x = Math.PI / 2;
     pitot.position.set(0, 0.14, 4.2);
     shipRoot.add(pitot);
 
-    // 3. Blended Dorsal Spine
     const spine = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.22, 3.2), navalBlueMat);
     spine.position.set(0, 0.28, -0.2);
     shipRoot.add(spine);
 
-    // 4. Cobalt Glass Teardrop Canopy
     const canopyGeom = new THREE.ConeGeometry(0.38, 1.9, 5);
     canopyGeom.rotateX(Math.PI / 2);
     canopyGeom.rotateY(Math.PI / 5);
@@ -1877,23 +2608,19 @@ class Starfighter {
     canopy.scale.set(0.85, 0.48, 1.3);
     shipRoot.add(canopy);
 
-    // 5. Down-Turned Anhedral Winglet Fences & Outboard Plasma Bolters
     [-1, 1].forEach(side => {
-      // Down-turned winglet fence
       const winglet = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.75, 1.4), navalBlueMat);
       winglet.position.set(side * 3.2, -0.15, -0.9);
       winglet.rotation.z = side * 0.25;
       winglet.rotation.x = -0.15;
       shipRoot.add(winglet);
 
-      // Canted Dorsal Stabilizer
       const fin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.15, 1.3), aeroWhiteMat);
       fin.position.set(side * 0.65, 0.75, -1.3);
       fin.rotation.z = side * -0.25;
       fin.rotation.x = -0.22;
       shipRoot.add(fin);
 
-      // Under-wing Plasma Bolter Pylon
       const pylon = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.2, 8), darkTrimMat);
       pylon.rotation.x = Math.PI / 2;
       pylon.position.set(side * 1.6, 0.04, 1.4);
@@ -1905,9 +2632,9 @@ class Starfighter {
       shipRoot.add(emitter);
 
       this.laserMuzzleOffsets.push({ side, x: side * 1.6, y: 0.04, z: 2.6 });
+      this.missileHardpoints.push({ side, x: side * 1.2, y: -0.14, z: 0.4 });
     });
 
-    // 6. Dual Ion Turbine Exhausts
     [-0.42, 0.42].forEach(xOffset => {
       const engineBell = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 0.8, 16), darkTrimMat);
       engineBell.rotation.x = Math.PI / 2;
@@ -1929,210 +2656,7 @@ class Starfighter {
       this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
     });
 
-    this.shipMesh = shipRoot;
-    this.group.add(shipRoot);
-  }
-
-  /**
-   * SHIP 3: CRIMSON INTERCEPTOR (Ref Image 3)
-   * Tactical Strike Fighter with Brushed Titanium & Dual VTOL Rings
-   * - Swept titanium wings with beveled chamfers
-   * - Twin circular VTOL lift turbine rings with 8-blade rotors & red cowlings
-   * - Long needle nose with underslung rotary cannon
-   * - Stepped ruby cockpit & canted tailfins
-   */
-  _buildCrimsonInterceptor() {
-    const THREE = this.THREE;
-    const shipRoot = new THREE.Group();
-
-    const panelTex = createProceduralPanelTexture(THREE, '#9ba8b8', '#647280', '#afbac8');
-    const normalMap = createProceduralNormalMap(THREE);
-    const roughnessMap = createProceduralRoughnessMap(THREE, 0.24);
-
-    const silverAlloyMat = new THREE.MeshStandardMaterial({
-      color: 0xabb8c6,
-      map: panelTex,
-      normalMap: normalMap,
-      roughnessMap: roughnessMap,
-      metalness: 0.88,
-      roughness: 0.26,
-      envMapIntensity: 1.8
-    });
-
-    const crimsonRacingMat = new THREE.MeshStandardMaterial({
-      color: 0xd90429,
-      emissive: 0xff1744,
-      emissiveIntensity: 1.4,
-      metalness: 0.65,
-      roughness: 0.20,
-      envMapIntensity: 1.5
-    });
-
-    const darkTrimMat = new THREE.MeshStandardMaterial({
-      color: 0x1f232b,
-      metalness: 0.86,
-      roughness: 0.40
-    });
-
-    const cockpitMat = new THREE.MeshPhysicalMaterial({
-      color: 0x181014,
-      metalness: 0.94,
-      roughness: 0.06,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.05,
-      emissive: 0x4a0a16,
-      emissiveIntensity: 0.35,
-      transparent: true,
-      opacity: 0.92
-    });
-
-    // 1. Tactical Swept Wings & Main Chassis
-    const wingProfile = [
-      [0, 2.6],
-      [0.7, 1.4],
-      [1.5, 0.4],
-      [2.2, 0.2],
-      [2.8, -0.6],
-      [1.6, -1.3],
-      [0.6, -2.1],
-      [0, -1.9]
-    ];
-    const mainWings = createSymmetricExtrudedMesh(THREE, wingProfile, {
-      depth: 0.30,
-      bevelThickness: 0.06,
-      bevelSize: 0.06,
-      bevelSegments: 3
-    }, silverAlloyMat);
-    mainWings.position.y = 0.02;
-    shipRoot.add(mainWings);
-
-    // 2. Elongated Chisel Needle Nose (Ref Image 3)
-    const noseProfile = [
-      [0, 3.4],
-      [0.32, 2.2],
-      [0.6, 0.8],
-      [0, 0.8]
-    ];
-    const needleNose = createSymmetricExtrudedMesh(THREE, noseProfile, {
-      depth: 0.26,
-      bevelThickness: 0.05,
-      bevelSize: 0.05,
-      bevelSegments: 3
-    }, silverAlloyMat);
-    needleNose.position.y = 0.12;
-    shipRoot.add(needleNose);
-
-    // Underslung Centerline Rotary Cannon
-    const noseGun = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.6, 8), darkTrimMat);
-    noseGun.rotation.x = Math.PI / 2;
-    noseGun.position.set(0, -0.06, 3.4);
-    shipRoot.add(noseGun);
-
-    const gunMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.35, 8), darkTrimMat);
-    gunMuzzle.rotation.x = Math.PI / 2;
-    gunMuzzle.position.set(0, -0.06, 4.6);
-    shipRoot.add(gunMuzzle);
-
-    this.laserMuzzleOffsets.push({ side: 0, x: 0, y: -0.06, z: 4.7 });
-
-    // 3. Side Air Intake Cowlings with Crimson Trims
-    [-1, 1].forEach(side => {
-      const intake = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.22, 1.2), crimsonRacingMat);
-      intake.position.set(side * 0.58, 0.20, 0.6);
-      intake.rotation.y = side * 0.12;
-      shipRoot.add(intake);
-    });
-
-    // 4. Stepped Cockpit Canopy
-    const canopyGeom = new THREE.ConeGeometry(0.40, 1.7, 4);
-    canopyGeom.rotateX(Math.PI / 2);
-    canopyGeom.rotateY(Math.PI / 4);
-    const canopy = new THREE.Mesh(canopyGeom, cockpitMat);
-    canopy.position.set(0, 0.36, 0.5);
-    canopy.scale.set(0.85, 0.48, 1.2);
-    shipRoot.add(canopy);
-
-    // 5. THE DUAL CIRCULAR VTOL TURBINE RINGS (Direct Match to Ref Image 3!)
-    [-1, 1].forEach(side => {
-      const vtolGroup = new THREE.Group();
-      vtolGroup.position.set(side * 1.45, 0.18, -0.7);
-
-      // Outer Crimson Aerodynamic Ring Cowling
-      const ringCowling = new THREE.Mesh(new THREE.TorusGeometry(0.50, 0.09, 16, 32), crimsonRacingMat);
-      ringCowling.rotation.x = Math.PI / 2;
-      vtolGroup.add(ringCowling);
-
-      // Dark Interior Duct Shroud
-      const innerDuct = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.22, 24, 1, true), darkTrimMat);
-      vtolGroup.add(innerDuct);
-
-      // Center Hub Axle Spinner
-      const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.26, 16), darkTrimMat);
-      vtolGroup.add(axle);
-
-      // 8 Real 3D Fan Rotor Blades inside the Ring!
-      for (let b = 0; b < 8; b++) {
-        const theta = (b / 8) * Math.PI * 2;
-        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.16, 0.32), darkTrimMat);
-        blade.position.set(Math.cos(theta) * 0.28, 0, Math.sin(theta) * 0.28);
-        blade.rotation.y = -theta + 0.35;
-        blade.rotation.x = 0.4;
-        vtolGroup.add(blade);
-      }
-
-      shipRoot.add(vtolGroup);
-
-      // Forward Wing Cannon Pylons (Ref Image 3)
-      const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 2.2), silverAlloyMat);
-      pylon.position.set(side * 1.85, 0.08, 1.2);
-      shipRoot.add(pylon);
-
-      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.4, 8), darkTrimMat);
-      barrel.rotation.x = Math.PI / 2;
-      barrel.position.set(side * 1.85, 0.08, 2.2);
-      shipRoot.add(barrel);
-
-      const redMuzzle = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.03, 8, 16), crimsonRacingMat);
-      redMuzzle.position.set(side * 1.85, 0.08, 3.3);
-      shipRoot.add(redMuzzle);
-
-      this.laserMuzzleOffsets.push({ side, x: side * 1.85, y: 0.08, z: 3.4 });
-
-      // Canted Angular Twin Tailfins
-      const tailFin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.15, 0.9), silverAlloyMat);
-      tailFin.position.set(side * 0.45, 0.70, -1.3);
-      tailFin.rotation.z = side * -0.28;
-      tailFin.rotation.x = -0.24;
-      shipRoot.add(tailFin);
-
-      // Crimson fin cap
-      const finCap = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.22, 0.7), crimsonRacingMat);
-      finCap.position.set(side * 0.62, 1.18, -1.4);
-      finCap.rotation.z = side * -0.28;
-      finCap.rotation.x = -0.24;
-      shipRoot.add(finCap);
-
-      // Rear Jet Exhaust Nozzle
-      const thrusterBell = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.30, 0.7, 16), darkTrimMat);
-      thrusterBell.rotation.x = Math.PI / 2;
-      thrusterBell.position.set(side * 0.38, 0.1, -2.0);
-      shipRoot.add(thrusterBell);
-
-      const glowRing = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.04, 8, 16), crimsonRacingMat);
-      glowRing.position.set(side * 0.38, 0.1, -2.3);
-      shipRoot.add(glowRing);
-
-      const outerFlame = this._createFlameMesh(0.24, 2.0, 0xff1744);
-      outerFlame.position.set(side * 0.38, 0.1, -2.35);
-      shipRoot.add(outerFlame);
-
-      const innerFlame = this._createFlameMesh(0.12, 1.3, 0xffffff);
-      innerFlame.position.set(side * 0.38, 0.1, -2.35);
-      shipRoot.add(innerFlame);
-
-      this.thrusterFlames.push({ outer: outerFlame, inner: innerFlame });
-    });
-
+    this.cockpitAnchor.set(0, 0.42, 0.9);
     this.shipMesh = shipRoot;
     this.group.add(shipRoot);
   }
@@ -2140,7 +2664,6 @@ class Starfighter {
   _createFlameMesh(radius, length, colorCore) {
     const THREE = this.THREE;
     const geom = new THREE.ConeGeometry(radius, length, 16);
-    // Exhaust cone points backward towards -Z!
     geom.rotateX(-Math.PI / 2);
     geom.translate(0, 0, -length / 2);
 
@@ -2154,22 +2677,21 @@ class Starfighter {
     });
 
     const mesh = new THREE.Mesh(geom, mat);
-    mesh.visible = false; // Idle in hangar, ignited in flight!
+    mesh.visible = false;
     return mesh;
   }
 
-  update(dt, inputState, worldBounds = null) {
+  update(dt, inputState, time) {
     const THREE = this.THREE;
-    const time = performance.now() * 0.001;
 
-    // Recharge Shield Delay
+    // 1. Shield Recharge
     if (time - this.lastDamageTime > this.shieldRegenDelay && this.shield < this.maxShield) {
       this.shield = Math.min(this.maxShield, this.shield + this.shieldRegenRate * dt);
     }
 
-    // Energy / Boost Handling
+    // 2. Boost & Energy
     const boostRequested = (inputState.boost || inputState.shift) && this.energy > 5;
-    if (boostRequested && (inputState.forward || inputState.backward || inputState.mouseSteering)) {
+    if (boostRequested && (inputState.forward || inputState.backward || inputState.hasMouseTarget)) {
       this.isBoosting = true;
       this.energy = Math.max(0, this.energy - this.boostDrainRate * dt);
     } else {
@@ -2177,15 +2699,17 @@ class Starfighter {
       this.energy = Math.min(this.maxEnergy, this.energy + this.energyRegenRate * dt);
     }
 
-    // Cooling weapons
+    // 3. Weapon Cooling & EMP Cooldown
     if (this.heat > 0) {
       this.heat = Math.max(0, this.heat - this.coolRate * dt);
       if (this.overheated && this.heat < 0.25) {
         this.overheated = false;
       }
     }
+    if (this.empCooldown > 0) {
+      this.empCooldown = Math.max(0, this.empCooldown - dt);
+    }
 
-    // Weapon upgrade timer countdown
     if (this.weaponLevel > 1) {
       this.weaponLevelTimer -= dt;
       if (this.weaponLevelTimer <= 0) {
@@ -2193,7 +2717,6 @@ class Starfighter {
       }
     }
 
-    // Invulnerability timer countdown
     if (this.invulnerableTimer > 0) {
       this.invulnerableTimer -= dt;
       this.shipMesh.visible = Math.floor(time * 20) % 2 === 0;
@@ -2201,12 +2724,21 @@ class Starfighter {
       this.shipMesh.visible = true;
     }
 
-    // Arcade Flight Physics
+    // 4. Navigation Strobe Light Blinking
+    this.strobeLights.forEach(strobe => {
+      if (strobe.type === 'beacon') {
+        strobe.mesh.visible = (time % 1.2) < 0.15;
+      } else {
+        strobe.mesh.visible = (time % 2.0) < 1.6;
+      }
+    });
+
+    // 5. Arcade Flight Physics
     const targetSpeed = this.isBoosting ? this.config.boostSpeed : this.config.maxSpeed;
     const accel = this.config.accelRate;
 
     let forwardThrust = 0;
-    if (inputState.forward) forwardThrust += 1;
+    if (inputState.forward) forwardThrust += 1.0;
     if (inputState.backward) forwardThrust -= 0.6;
 
     if (inputState.hasMouseTarget) {
@@ -2214,9 +2746,9 @@ class Starfighter {
       const dz = inputState.targetWorldZ - this.position.z;
       const dist = Math.hypot(dx, dz);
 
-      if (dist > 1.5) {
+      if (dist > 1.8) {
         this.targetHeading = Math.atan2(dx, dz);
-        forwardThrust = Math.min(1.0, Math.max(0.2, dist / 20));
+        forwardThrust = Math.min(1.0, Math.max(0.25, dist / 22));
       }
     } else if (inputState.left || inputState.right) {
       const turnDir = (inputState.left ? 1 : 0) - (inputState.right ? 1 : 0);
@@ -2224,38 +2756,37 @@ class Starfighter {
       this.targetHeading = this.heading;
     }
 
-    // Smooth heading interpolation (no gimbal lock)
+    // Smooth heading (zero gimbal lock)
     let headingDiff = this.targetHeading - this.heading;
     while (headingDiff > Math.PI) headingDiff -= Math.PI * 2;
     while (headingDiff < -Math.PI) headingDiff += Math.PI * 2;
     this.heading += headingDiff * Math.min(1.0, this.config.turnRate * dt);
 
-    // Aerodynamic Banking / Roll
-    const targetRoll = -headingDiff * 2.2;
+    // Aerodynamic Banking Roll & Pitch
+    const targetRoll = -headingDiff * 2.4;
     this.roll += (targetRoll - this.roll) * Math.min(1.0, this.config.rollRate * dt);
 
-    // Pitch on acceleration/deceleration
-    const targetPitch = forwardThrust * -0.08;
+    const targetPitch = forwardThrust * -0.09;
     this.pitch += (targetPitch - this.pitch) * 10 * dt;
 
-    // Velocity update
+    // Linear Velocity Update
     const forwardVec = new THREE.Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
     const desiredVel = forwardVec.clone().multiplyScalar(forwardThrust * targetSpeed);
-    this.velocity.lerp(desiredVel, Math.min(1.0, accel * dt * 0.12));
+    this.velocity.lerp(desiredVel, Math.min(1.0, accel * dt * 0.14));
 
     this.position.addScaledVector(this.velocity, dt);
     this.group.position.copy(this.position);
 
-    // Apply rotations
+    // Apply 3D Orientation
     this.group.rotation.y = this.heading;
     this.shipMesh.rotation.z = this.roll;
     this.shipMesh.rotation.x = this.pitch;
 
-    // Thruster Flames Scaling (Ignited only upon thrust/boost)
+    // Thruster Dynamic Plume Scaling
     const currentSpeed = this.velocity.length();
     const speedRatio = Math.min(1.0, currentSpeed / this.config.maxSpeed);
     const boostActive = this.isBoosting;
-    const flameScale = 0.4 + speedRatio * 0.9 + (boostActive ? 1.4 : 0) + Math.sin(time * 40) * 0.12;
+    const flameScale = 0.35 + speedRatio * 0.95 + (boostActive ? 1.5 : 0) + Math.sin(time * 40) * 0.12;
 
     this.thrusterFlames.forEach(({ outer, inner }) => {
       outer.scale.set(1.0 + (boostActive ? 0.35 : 0), 1.0 + (boostActive ? 0.35 : 0), flameScale);
@@ -2265,10 +2796,8 @@ class Starfighter {
     });
 
     // Reactive Shield Bubble Fade
-    if (this.shieldMesh) {
-      if (this.shieldMesh.material.opacity > 0) {
-        this.shieldMesh.material.opacity = Math.max(0, this.shieldMesh.material.opacity - dt * 2.5);
-      }
+    if (this.shieldMesh && this.shieldMesh.material.opacity > 0) {
+      this.shieldMesh.material.opacity = Math.max(0, this.shieldMesh.material.opacity - dt * 2.5);
     }
   }
 
@@ -2276,7 +2805,6 @@ class Starfighter {
     if (this.invulnerableTimer > 0) return false;
     this.lastDamageTime = performance.now() * 0.001;
 
-    // Flash shield
     if (this.shieldMesh) {
       this.shieldMesh.material.opacity = 0.85;
     }
@@ -2296,33 +2824,69 @@ class Starfighter {
 
     if (this.hull <= 0) {
       this.hull = 0;
-      return true; // Destroyed
+      return true;
     }
     return false;
   }
 
-  canFire(time) {
+  canFire(time, weaponType = 'cannons') {
     if (this.overheated) return false;
-    return time - this.lastFireTime >= this.fireInterval;
+    const interval = weaponType === 'rapid' ? this.fireInterval * 0.55 : this.fireInterval;
+    return time - this.lastFireTime >= interval;
   }
 
-  recordFire(time) {
+  recordShot(time, weaponType = 'cannons') {
     this.lastFireTime = time;
-    this.heat = Math.min(1.0, this.heat + 0.07);
+    const heatCost = weaponType === 'rapid' ? 0.055 : 0.085;
+    this.heat = Math.min(1.0, this.heat + heatCost);
     if (this.heat >= 1.0) {
       this.overheated = true;
     }
   }
 
-  getMuzzlePositions() {
-    const THREE = this.THREE;
-    return this.laserMuzzleOffsets.map(offset => {
-      const v = new THREE.Vector3(offset.x, offset.y, offset.z);
-      v.applyEuler(this.shipMesh.rotation);
-      v.applyEuler(this.group.rotation);
-      v.add(this.position);
-      return v;
-    });
+  canLaunchMissile(time) {
+    return this.missiles > 0 && (time - this.lastMissileTime >= this.missileCooldown);
+  }
+
+  recordMissileLaunch(time) {
+    if (this.missiles > 0) {
+      this.missiles--;
+      this.lastMissileTime = time;
+      // Hide visible wing missile mesh if inventory depleting
+      if (this.missileMeshes.length > 0) {
+        const idx = this.missiles % this.missileMeshes.length;
+        if (this.missileMeshes[idx]) {
+          this.missileMeshes[idx].visible = this.missiles > 2;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+  canTriggerEMP() {
+    return this.empCooldown <= 0;
+  }
+
+  triggerEMP() {
+    if (this.canTriggerEMP()) {
+      this.empCooldown = this.empMaxCooldown;
+      return true;
+    }
+    return false;
+  }
+
+  reloadMissiles(count = 4) {
+    this.missiles = Math.min(this.maxMissiles, this.missiles + count);
+    this.missileMeshes.forEach(m => m.visible = true);
+  }
+
+  repairShield(amount) {
+    this.shield = Math.min(this.maxShield, this.shield + amount);
+  }
+
+  repairHull(amount) {
+    this.hull = Math.min(this.maxHull, this.hull + amount);
   }
 
   upgradeWeapon(level = 2, duration = 15.0) {
@@ -2330,9 +2894,47 @@ class Starfighter {
     this.weaponLevelTimer = duration;
   }
 
-  repair(hullAmount, shieldAmount) {
-    this.hull = Math.min(this.maxHull, this.hull + hullAmount);
-    this.shield = Math.min(this.maxShield, this.shield + shieldAmount);
+  getLaserSpawns() {
+    const THREE = this.THREE;
+    const isUpgraded = this.weaponLevel >= 2;
+    const speed = 210;
+
+    return this.laserMuzzleOffsets.map(offset => {
+      const v = new THREE.Vector3(offset.x, offset.y, offset.z);
+      v.applyEuler(this.shipMesh.rotation);
+      v.applyEuler(this.group.rotation);
+      v.add(this.position);
+
+      const forwardVec = new THREE.Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
+      return {
+        x: v.x,
+        y: v.y,
+        z: v.z,
+        vx: forwardVec.x * speed + this.velocity.x * 0.4,
+        vz: forwardVec.z * speed + this.velocity.z * 0.4,
+        heading: this.heading,
+        color: isUpgraded ? 0xffaa00 : this.config.laserColor
+      };
+    });
+  }
+
+  getMissileSpawn() {
+    const THREE = this.THREE;
+    const hardpoint = this.missileHardpoints[this.missiles % Math.max(1, this.missileHardpoints.length)] || { x: 0, y: -0.2, z: 0.8 };
+    const v = new THREE.Vector3(hardpoint.x, hardpoint.y, hardpoint.z);
+    v.applyEuler(this.shipMesh.rotation);
+    v.applyEuler(this.group.rotation);
+    v.add(this.position);
+    return v;
+  }
+
+  getCockpitWorldPosition() {
+    const THREE = this.THREE;
+    const v = this.cockpitAnchor.clone();
+    v.applyEuler(this.shipMesh.rotation);
+    v.applyEuler(this.group.rotation);
+    v.add(this.position);
+    return v;
   }
 
   reset(shipType = null) {
@@ -2344,6 +2946,9 @@ class Starfighter {
       }
       this.thrusterFlames = [];
       this.laserMuzzleOffsets = [];
+      this.missileHardpoints = [];
+      this.missileMeshes = [];
+      this.strobeLights = [];
       this._buildShipModel();
     }
     this.maxHull = this.config.maxHull;
@@ -2351,6 +2956,8 @@ class Starfighter {
     this.maxShield = this.config.maxShield;
     this.shield = this.maxShield;
     this.energy = this.maxEnergy;
+    this.missiles = this.maxMissiles;
+    this.empCooldown = 0;
     this.position.set(0, 0, 0);
     this.velocity.set(0, 0, 0);
     this.heading = 0;
@@ -2364,14 +2971,19 @@ class Starfighter {
     this.group.position.copy(this.position);
     this.group.rotation.set(0, 0, 0);
     if (this.shipMesh) this.shipMesh.rotation.set(0, 0, 0);
+    this.missileMeshes.forEach(m => m.visible = true);
   }
 }
 
     /**
- * Hyper-Realistic Photorealistic Cosmic Environment & PBR Image-Based Lighting
- * Features IBL environment reflection map, high-resolution multi-tiered starfields,
- * volumetric glowing nebulae, cinematic gas giant planet with atmospheric rim scattering,
- * realistic solar lens flare, and deep-space dust particles.
+ * Hyper-Realistic Photorealistic Cosmic Environment & Dynamic Level Atmosphere
+ * Features:
+ * - 5 Level Atmosphere Presets (Deep-Space Planet, Asteroid Belt, Orbital Station, Nebula Frontier, Capital Fleet)
+ * - Massive 3D Orbital Space Station ("Valiance Station") with rotating habitat ring, solar arrays & beacons
+ * - Volumetric Glowing Nebulae (Inspired by Reference Image 2 deep cosmic scale)
+ * - Atmospheric rim scattering planets & moons
+ * - 4,800 Multi-Tiered Stars (O, B, A, F, G, M stellar spectrum)
+ * - Drifting space wreckage chunks and cosmic dust particles
  */
 class CosmicEnvironment {
   constructor(scene, renderer, THREE) {
@@ -2385,10 +2997,21 @@ class CosmicEnvironment {
     this.dustCount = 1000;
     this.dustRadius = 280;
 
+    this.nebulaSprites = [];
+    this.spaceStation = null;
+    this.spaceStationRing = null;
+    this.wreckageChunks = [];
+    this.planetGroup = null;
+    this.planetMesh = null;
+    this.sunGroup = null;
+    this.sunLight = null;
+
     this._createPBREnvironmentMap();
     this._createDeepStarfield();
     this._createVolumetricNebulae();
     this._createCinematicPlanet();
+    this._createOrbitalSpaceStation();
+    this._createSpaceWreckage();
     this._createCosmicSunAndLensflare();
     this._createSpaceDust();
 
@@ -2408,7 +3031,6 @@ class CosmicEnvironment {
       canvas.height = 512;
       const ctx = canvas.getContext('2d');
 
-      // Deep cosmic gradient
       const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
       bgGrad.addColorStop(0, '#02050e');
       bgGrad.addColorStop(0.5, '#060f1c');
@@ -2439,7 +3061,6 @@ class CosmicEnvironment {
       ctx.fillStyle = sunGrad;
       ctx.fillRect(0, 0, 1024, 512);
 
-      // Distant stars reflection specks
       ctx.fillStyle = '#ffffff';
       for (let i = 0; i < 400; i++) {
         ctx.fillRect(Math.random() * 1024, Math.random() * 512, Math.random() > 0.8 ? 2 : 1, 1);
@@ -2466,12 +3087,12 @@ class CosmicEnvironment {
     const sizes = new Float32Array(count);
 
     const starPalette = [
-      new THREE.Color(0xffffff), // White A-class
-      new THREE.Color(0xaad8ff), // Brilliant Blue B-class
-      new THREE.Color(0x66c0ff), // Deep Blue O-class
-      new THREE.Color(0xffeedd), // Soft Yellow-White F-class
-      new THREE.Color(0xffd27d), // Warm Amber G-class
-      new THREE.Color(0xff7055)  // Red Supergiant M-class
+      new THREE.Color(0xffffff),
+      new THREE.Color(0xaad8ff),
+      new THREE.Color(0x66c0ff),
+      new THREE.Color(0xffeedd),
+      new THREE.Color(0xffd27d),
+      new THREE.Color(0xff7055)
     ];
 
     for (let i = 0; i < count; i++) {
@@ -2519,16 +3140,14 @@ class CosmicEnvironment {
     const nebulaTexture = this._generateNebulaTexture();
 
     const nebulae = [
-      { color: 0x4822cf, size: 1300, x: -1100, y: 220, z: -1400, opacity: 0.38 },
-      { color: 0x0088ff, size: 1500, x: 1400, y: -120, z: -1600, opacity: 0.35 },
-      { color: 0xff1493, size: 1000, x: 900, y: 320, z: 1100, opacity: 0.32 },
+      { color: 0x4822cf, size: 1400, x: -1100, y: 220, z: -1400, opacity: 0.38 },
+      { color: 0x0088ff, size: 1600, x: 1400, y: -120, z: -1600, opacity: 0.35 },
+      { color: 0x1d4ed8, size: 1800, x: 500, y: 180, z: -1800, opacity: 0.36 },
       { color: 0x00e5ff, size: 1200, x: -1300, y: -200, z: 950, opacity: 0.34 },
-      { color: 0xff8800, size: 900, x: -500, y: 400, z: -1800, opacity: 0.28 },
-      { color: 0x9400d3, size: 1400, x: 1800, y: 150, z: 500, opacity: 0.28 },
-      { color: 0x00ffcc, size: 850, x: -800, y: -250, z: -850, opacity: 0.26 },
-      { color: 0x7b2cbf, size: 1100, x: 300, y: -380, z: 1500, opacity: 0.30 },
-      { color: 0x3a0ca3, size: 1600, x: -1600, y: 50, z: -400, opacity: 0.34 },
-      { color: 0xf72585, size: 950, x: 1100, y: -280, z: -900, opacity: 0.26 }
+      { color: 0x7e22ce, size: 1500, x: 1800, y: 150, z: 500, opacity: 0.32 },
+      { color: 0x00ffcc, size: 950, x: -800, y: -250, z: -850, opacity: 0.28 },
+      { color: 0x3b82f6, size: 1300, x: 300, y: -380, z: 1500, opacity: 0.32 },
+      { color: 0x3a0ca3, size: 1700, x: -1600, y: 50, z: -400, opacity: 0.34 }
     ];
 
     this.nebulaSprites = [];
@@ -2546,7 +3165,7 @@ class CosmicEnvironment {
       sprite.position.set(data.x, data.y, data.z);
       sprite.scale.set(data.size, data.size * 0.8, 1);
       this.group.add(sprite);
-      this.nebulaSprites.push({ sprite, rotSpeed: (Math.random() - 0.5) * 0.02 });
+      this.nebulaSprites.push({ sprite, baseOpacity: data.opacity });
     });
   }
 
@@ -2565,6 +3184,7 @@ class CosmicEnvironment {
     });
     const planet = new THREE.Mesh(planetGeom, planetMat);
     planetGroup.add(planet);
+    this.planetMesh = planet;
 
     const atmoGeom = new THREE.SphereGeometry(395, 32, 32);
     const atmoMat = new THREE.MeshBasicMaterial({
@@ -2592,6 +3212,116 @@ class CosmicEnvironment {
 
     this.planetGroup = planetGroup;
     this.group.add(planetGroup);
+  }
+
+  /**
+   * Massive 3D Orbital Space Station ("Valiance Station") for Level 3
+   */
+  _createOrbitalSpaceStation() {
+    const THREE = this.THREE;
+    const stationGroup = new THREE.Group();
+    stationGroup.position.set(240, 25, 300);
+
+    const metalMat = new THREE.MeshStandardMaterial({
+      color: 0x2b3442,
+      metalness: 0.88,
+      roughness: 0.30
+    });
+    const solarMat = new THREE.MeshStandardMaterial({
+      color: 0x092347,
+      emissive: 0x041833,
+      metalness: 0.95,
+      roughness: 0.12
+    });
+    const lightGlowMat = new THREE.MeshBasicMaterial({
+      color: 0x3ef0ff
+    });
+    const beaconRed = new THREE.MeshBasicMaterial({
+      color: 0xff1744
+    });
+
+    // 1. Central Rotating Habitat Ring
+    const ringGeom = new THREE.TorusGeometry(40, 3.8, 16, 48);
+    const ringMesh = new THREE.Mesh(ringGeom, metalMat);
+    ringMesh.rotation.x = Math.PI / 2;
+    stationGroup.add(ringMesh);
+
+    // Habitat Window strips
+    const windowRing = new THREE.Mesh(new THREE.TorusGeometry(40.2, 0.45, 8, 48), lightGlowMat);
+    windowRing.rotation.x = Math.PI / 2;
+    stationGroup.add(windowRing);
+
+    // 4 Structural Radial Spokes
+    for (let s = 0; s < 4; s++) {
+      const spoke = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 80, 8), metalMat);
+      spoke.rotation.z = (s / 4) * Math.PI;
+      stationGroup.add(spoke);
+    }
+
+    // 2. Central Spindle Hub & Docking Tower
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(8.5, 9.5, 68, 16), metalMat);
+    stationGroup.add(hub);
+
+    // Docking clamps
+    [-26, 26].forEach(yPos => {
+      const dockRing = new THREE.Mesh(new THREE.TorusGeometry(11.2, 1.4, 8, 24), metalMat);
+      dockRing.rotation.x = Math.PI / 2;
+      dockRing.position.y = yPos;
+      stationGroup.add(dockRing);
+    });
+
+    // 3. Four Massive Photovoltaic Solar Array Wings
+    [-1, 1].forEach(side => {
+      const solarArm = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 22), metalMat);
+      solarArm.position.set(side * 28, 0, 0);
+      stationGroup.add(solarArm);
+
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(36, 0.4, 16), solarMat);
+      panel.position.set(side * 48, 0, 0);
+      stationGroup.add(panel);
+    });
+
+    // 4. Communication Antennas & Flashing Aviation Beacons
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.35, 32, 8), metalMat);
+    antenna.position.set(0, 48, 0);
+    stationGroup.add(antenna);
+
+    const redBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 8), beaconRed);
+    redBeacon.position.set(0, 64, 0);
+    stationGroup.add(redBeacon);
+
+    stationGroup.visible = false; // Enabled in Level 3
+    this.spaceStation = stationGroup;
+    this.spaceStationRing = ringMesh;
+    this.group.add(stationGroup);
+  }
+
+  /**
+   * Drifting Space Wreckage Chunks for Levels 3 & 4
+   */
+  _createSpaceWreckage() {
+    const THREE = this.THREE;
+    const wreckageGroup = new THREE.Group();
+
+    const wreckMat = new THREE.MeshStandardMaterial({
+      color: 0x1f2633,
+      metalness: 0.90,
+      roughness: 0.45
+    });
+
+    for (let i = 0; i < 8; i++) {
+      const chunk = new THREE.Mesh(new THREE.BoxGeometry(4 + Math.random() * 6, 1.5, 8 + Math.random() * 8), wreckMat);
+      const angle = (i / 8) * Math.PI * 2;
+      const dist = 180 + Math.random() * 120;
+      chunk.position.set(Math.sin(angle) * dist, (Math.random() - 0.5) * 35, Math.cos(angle) * dist);
+      chunk.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      wreckageGroup.add(chunk);
+      this.wreckageChunks.push(chunk);
+    }
+
+    wreckageGroup.visible = false;
+    this.wreckageGroup = wreckageGroup;
+    this.group.add(wreckageGroup);
   }
 
   _createCosmicSunAndLensflare() {
@@ -2640,9 +3370,10 @@ class CosmicEnvironment {
     streak.scale.set(4500, 220, 1);
     sunGroup.add(streak);
 
-    const sunLight = new THREE.DirectionalLight(0xfff7ea, 2.0);
+    const sunLight = new THREE.DirectionalLight(0xfff7ea, 2.2);
     sunLight.position.copy(sunGroup.position);
     this.scene.add(sunLight);
+    this.sunLight = sunLight;
 
     const fillLight = new THREE.DirectionalLight(0x1a3048, 0.95);
     fillLight.position.set(2200, -400, 2600);
@@ -2654,6 +3385,7 @@ class CosmicEnvironment {
     const hemiLight = new THREE.HemisphereLight(0x284262, 0x070b14, 0.95);
     this.scene.add(hemiLight);
 
+    this.sunGroup = sunGroup;
     this.group.add(sunGroup);
   }
 
@@ -2728,56 +3460,110 @@ class CosmicEnvironment {
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#0f3152';
+    const grad = ctx.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, '#102e52');
+    grad.addColorStop(0.3, '#2a6496');
+    grad.addColorStop(0.5, '#5b9bd5');
+    grad.addColorStop(0.7, '#24527a');
+    grad.addColorStop(1, '#0c1e33');
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 256);
 
-    for (let y = 0; y < 256; y += 4) {
-      const alpha = 0.15 + Math.sin(y * 0.08) * 0.12;
-      ctx.fillStyle = `rgba(180, 225, 255, ${alpha})`;
-      ctx.fillRect(0, y, 512, 4);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+    for (let i = 0; i < 16; i++) {
+      const y = Math.random() * 256;
+      const h = 4 + Math.random() * 12;
+      ctx.fillRect(0, y, 512, h);
     }
-
-    for (let i = 0; i < 18; i++) {
-      const cx = Math.random() * 512;
-      const cy = 40 + Math.random() * 176;
-      const rad = 25 + Math.random() * 50;
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
-      grad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
-      grad.addColorStop(1, 'rgba(100, 180, 240, 0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
     return new this.THREE.CanvasTexture(canvas);
   }
 
-  update(playerPos, dt = 0.016) {
-    if (this.starPoints) {
-      this.starPoints.position.set(playerPos.x * 0.94, 0, playerPos.z * 0.94);
-    }
-
-    if (this.planetGroup) {
-      this.planetGroup.rotation.y += 0.008 * dt;
-    }
-
-    if (this.dustParticles && this.dustPositions) {
-      const posAttr = this.dustParticles.geometry.attributes.position;
-      const r = this.dustRadius;
-      for (let i = 0; i < this.dustCount; i++) {
-        let x = this.dustPositions[i * 3];
-        let z = this.dustPositions[i * 3 + 2];
-
-        while (x - playerPos.x > r) x -= r * 2;
-        while (x - playerPos.x < -r) x += r * 2;
-        while (z - playerPos.z > r) z -= r * 2;
-        while (z - playerPos.z < -r) z += r * 2;
-
-        this.dustPositions[i * 3] = x;
-        this.dustPositions[i * 3 + 2] = z;
+  /**
+   * Sets the cosmic environment theme for each of the 5 Levels
+   */
+  setLevelEnvironment(levelNumber) {
+    if (levelNumber === 1) {
+      // Level 1: Deep-Space Planet
+      if (this.planetGroup) {
+        this.planetGroup.visible = true;
+        this.planetGroup.position.set(1600, -320, 2100);
       }
-      posAttr.needsUpdate = true;
+      if (this.spaceStation) this.spaceStation.visible = false;
+      if (this.wreckageGroup) this.wreckageGroup.visible = false;
+      if (this.sunLight) this.sunLight.color.setHex(0xfff7ea);
+    } else if (levelNumber === 2) {
+      // Level 2: Asteroid Field
+      if (this.planetGroup) this.planetGroup.visible = false;
+      if (this.spaceStation) this.spaceStation.visible = false;
+      if (this.wreckageGroup) this.wreckageGroup.visible = false;
+      if (this.sunLight) this.sunLight.color.setHex(0xffeedd);
+    } else if (levelNumber === 3) {
+      // Level 3: Orbital Space Station Battle
+      if (this.planetGroup) {
+        this.planetGroup.visible = true;
+        this.planetGroup.position.set(600, -450, 900);
+      }
+      if (this.spaceStation) this.spaceStation.visible = true;
+      if (this.wreckageGroup) this.wreckageGroup.visible = true;
+      if (this.sunLight) this.sunLight.color.setHex(0xffffff);
+    } else if (levelNumber === 4) {
+      // Level 4: Nebula Frontier (Ref 2 Style Cobalt/Violet Majesty)
+      if (this.planetGroup) this.planetGroup.visible = false;
+      if (this.spaceStation) this.spaceStation.visible = false;
+      if (this.wreckageGroup) this.wreckageGroup.visible = true;
+      if (this.sunLight) this.sunLight.color.setHex(0xcce5ff);
+    } else {
+      // Level 5: Capital Fleet Warzone
+      if (this.planetGroup) {
+        this.planetGroup.visible = true;
+        this.planetGroup.position.set(-1200, -280, 1800);
+      }
+      if (this.spaceStation) this.spaceStation.visible = false;
+      if (this.wreckageGroup) this.wreckageGroup.visible = true;
+      if (this.sunLight) this.sunLight.color.setHex(0xffaa77);
+    }
+  }
+
+  update(playerPos, dt) {
+    if (!this.dustParticles) return;
+
+    // Follow player smoothly
+    this.group.position.x = playerPos.x * 0.98;
+    this.group.position.z = playerPos.z * 0.98;
+
+    // Rotate space station habitat ring
+    if (this.spaceStation && this.spaceStationRing) {
+      this.spaceStationRing.rotation.z += 0.25 * dt;
+    }
+
+    // Tumble space wreckage
+    this.wreckageChunks.forEach(chunk => {
+      chunk.rotation.x += 0.05 * dt;
+      chunk.rotation.y += 0.08 * dt;
+    });
+
+    // Space dust loop around player
+    const positions = this.dustPositions;
+    const r = this.dustRadius;
+    const count = this.dustCount;
+
+    for (let i = 0; i < count; i++) {
+      let x = positions[i * 3];
+      let z = positions[i * 3 + 2];
+
+      const dx = x - playerPos.x;
+      const dz = z - playerPos.z;
+
+      if (dx > r) positions[i * 3] -= r * 2;
+      else if (dx < -r) positions[i * 3] += r * 2;
+
+      if (dz > r) positions[i * 3 + 2] -= r * 2;
+      else if (dz < -r) positions[i * 3 + 2] += r * 2;
+    }
+    this.dustParticles.geometry.attributes.position.needsUpdate = true;
+
+    if (this.planetMesh) {
+      this.planetMesh.rotation.y += 0.015 * dt;
     }
   }
 }
@@ -3081,9 +3867,14 @@ class AsteroidManager {
 }
 
     /**
- * Advanced Drone AI, Dynamic Wave Spawner & Epic Boss Battles
- * Features Scout, Assault, and Interceptor drones, plus multi-stage Capital Bosses
- * and holographic power-up drops (Shield Overcharge, Weapon Upgrades, Overdrive Cores).
+ * Advanced Enemy Combat AI, 5 Distinct Spacecraft Classes & Capital Boss Battles
+ * 1. Interceptor ("Shadow Dart"): Small, agile, hit-and-run strafing passes.
+ * 2. Fighter ("Phantom Raider"): Balanced combat dogfighter with predictive aiming.
+ * 3. Heavy Gunship ("Goliath Fortress"): Armored weapons platform with dual turrets & frontal shields.
+ * 4. Elite Spacecraft ("Viper Ace"): Advanced stealth ace with barrel rolls, micro-missiles, and tactical shield retreats.
+ * 5. Capital Boss ("Leviathan Omega Dreadnought"): Massive 45m capital ship with 3 combat phases & cascading destruction.
+ *
+ * Also manages Player Homing Missiles, EMP Shockwaves, and Holographic Power-ups.
  */
 class DroneManager {
   constructor(scene, THREE) {
@@ -3094,14 +3885,16 @@ class DroneManager {
     this.boss = null;
     this.enemyLasers = [];
     this.enemyMissiles = [];
+    this.playerMissiles = [];
     this.powerups = [];
+    this.activeEMPWave = null;
 
     // Shared Geometries & Materials
-    this.laserGeom = new THREE.CylinderGeometry(0.14, 0.14, 2.0, 8);
+    this.laserGeom = new THREE.CylinderGeometry(0.14, 0.14, 2.2, 8);
     this.laserGeom.rotateX(Math.PI / 2);
 
     this.droneLaserMat = new THREE.MeshBasicMaterial({
-      color: 0xff1744,
+      color: 0xff2244,
       transparent: true,
       opacity: 0.95
     });
@@ -3112,7 +3905,14 @@ class DroneManager {
       opacity: 0.98
     });
 
-    this.missileGeom = new THREE.ConeGeometry(0.35, 1.4, 8);
+    this.beamLaserMat = new THREE.MeshBasicMaterial({
+      color: 0xff0088,
+      transparent: true,
+      opacity: 0.95
+    });
+
+    // Missile Geometry
+    this.missileGeom = new THREE.ConeGeometry(0.28, 1.4, 8);
     this.missileGeom.rotateX(Math.PI / 2);
     this.missileMat = new THREE.MeshStandardMaterial({
       color: 0xff3b00,
@@ -3120,31 +3920,60 @@ class DroneManager {
       emissiveIntensity: 3.0
     });
 
-    // Drone Materials
-    this.droneArmorMat = new THREE.MeshStandardMaterial({
+    this.playerMissileMat = new THREE.MeshStandardMaterial({
+      color: 0x3ef0ff,
+      emissive: 0x00c8ff,
+      emissiveIntensity: 3.5
+    });
+
+    // Spacecraft PBR Materials
+    this.armorDarkMat = new THREE.MeshStandardMaterial({
       color: 0x161a22,
       metalness: 0.88,
       roughness: 0.32
     });
 
-    this.crimsonGlowMat = new THREE.MeshStandardMaterial({
-      color: 0xff1744,
+    this.armorGunmetalMat = new THREE.MeshStandardMaterial({
+      color: 0x222a36,
+      metalness: 0.92,
+      roughness: 0.28,
+      envMapIntensity: 1.5
+    });
+
+    this.crimsonTrimMat = new THREE.MeshStandardMaterial({
+      color: 0xd90429,
       emissive: 0xff1744,
-      emissiveIntensity: 3.2,
+      emissiveIntensity: 2.2,
       roughness: 0.2
     });
 
+    this.amberGlowMat = new THREE.MeshStandardMaterial({
+      color: 0xff8800,
+      emissive: 0xff8800,
+      emissiveIntensity: 3.0,
+      roughness: 0.2
+    });
+
+    this.shieldMat = new THREE.MeshBasicMaterial({
+      color: 0xff2244,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
     this.bossArmorMat = new THREE.MeshStandardMaterial({
-      color: 0x0c0f16,
+      color: 0x0a0d14,
       metalness: 0.94,
       roughness: 0.26,
-      envMapIntensity: 1.4
+      envMapIntensity: 1.6
     });
 
     this.bossCoreMat = new THREE.MeshStandardMaterial({
-      color: 0x9400d3,
-      emissive: 0xbf00ff,
-      emissiveIntensity: 4.5,
+      color: 0xbf00ff,
+      emissive: 0xd946ef,
+      emissiveIntensity: 4.8,
       roughness: 0.1
     });
 
@@ -3153,180 +3982,202 @@ class DroneManager {
     this.powerupRingGeom = new THREE.TorusGeometry(1.6, 0.08, 8, 24);
   }
 
-  spawnWave(sectorNumber, playerPos) {
+  /**
+   * Spawns structured waves tailored to the 5 Mission Levels
+   */
+  spawnLevelWave(levelNumber, playerPos) {
     this.clearAll();
 
-    // Every 3rd Sector is an EPIC CAPITAL SHIP BOSS BATTLE!
-    const isBossSector = (sectorNumber % 3 === 0);
-
-    if (isBossSector) {
-      this._spawnBoss(sectorNumber, playerPos);
-      // Spawn light escort squadron
-      for (let i = 0; i < 2; i++) {
-        this._createDrone('scout', playerPos, i * Math.PI);
+    if (levelNumber === 1) {
+      // Level 1: Deep-Space Patrol (Small Scout Interceptor Patrol)
+      for (let i = 0; i < 5; i++) {
+        this._createDrone('interceptor', playerPos, i * (Math.PI * 2 / 5), 180 + i * 20);
+      }
+    } else if (levelNumber === 2) {
+      // Level 2: Asteroid Field (Agile Interceptors + Balanced Fighters)
+      for (let i = 0; i < 4; i++) {
+        this._createDrone('interceptor', playerPos, i * (Math.PI / 2), 190);
+      }
+      for (let i = 0; i < 5; i++) {
+        this._createDrone('fighter', playerPos, (i + 0.5) * (Math.PI * 2 / 5), 210);
+      }
+    } else if (levelNumber === 3) {
+      // Level 3: Orbital Space Station Battle (Fighters + Heavy Gunships)
+      for (let i = 0; i < 6; i++) {
+        this._createDrone('fighter', playerPos, i * (Math.PI * 2 / 6), 200);
+      }
+      for (let i = 0; i < 3; i++) {
+        this._createDrone('gunship', playerPos, i * (Math.PI * 2 / 3), 230);
+      }
+    } else if (levelNumber === 4) {
+      // Level 4: Nebula Frontier (Heavy Gunships + Elite Viper Aces)
+      for (let i = 0; i < 4; i++) {
+        this._createDrone('gunship', playerPos, i * (Math.PI / 2), 220);
+      }
+      for (let i = 0; i < 4; i++) {
+        this._createDrone('elite', playerPos, (i + 0.5) * (Math.PI / 2), 240);
       }
     } else {
-      // Dynamic standard wave
-      const scoutCount = 3 + sectorNumber * 2;
-      const assaultCount = Math.floor(sectorNumber / 2);
-      const interceptorCount = Math.max(0, sectorNumber - 1);
-
-      for (let i = 0; i < scoutCount; i++) {
-        this._createDrone('scout', playerPos, i * (Math.PI * 2 / scoutCount));
+      // Level 5: Capital Ship Assault (Massive Capital Dreadnought + Escorts)
+      this._spawnBoss(levelNumber, playerPos);
+      for (let i = 0; i < 2; i++) {
+        this._createDrone('interceptor', playerPos, i * Math.PI, 180);
       }
-      for (let i = 0; i < assaultCount; i++) {
-        this._createDrone('assault', playerPos, (i + 0.5) * (Math.PI * 2 / assaultCount));
-      }
-      for (let i = 0; i < interceptorCount; i++) {
-        this._createDrone('interceptor', playerPos, Math.random() * Math.PI * 2);
+      for (let i = 0; i < 2; i++) {
+        this._createDrone('fighter', playerPos, (i + 0.5) * Math.PI, 210);
       }
     }
   }
 
-  _spawnBoss(sectorNumber, playerPos) {
+  _createDrone(type, playerPos, angle, spawnDist = 200) {
     const THREE = this.THREE;
-    const bossName = sectorNumber >= 6 ? 'VOID OMEGA CRUCIBLE' : 'LEVIATHAN DREADNOUGHT';
-    const maxHp = sectorNumber >= 6 ? 90 : 55;
-    const maxShield = sectorNumber >= 6 ? 60 : 40;
-
-    const spawnDist = 240;
-    const angle = Math.random() * Math.PI * 2;
     const x = playerPos.x + Math.sin(angle) * spawnDist;
     const z = playerPos.z + Math.cos(angle) * spawnDist;
 
     const group = new THREE.Group();
+    let hp, maxHp, shield = 0, maxShield = 0, speed, fireRate, points, radius, name;
+    let behavior = 'dogfight';
 
-    // 1. Massive Capital Ship Core Superstructure
-    const coreHull = new THREE.Mesh(new THREE.BoxGeometry(8.0, 3.2, 28.0), this.bossArmorMat);
-    coreHull.castShadow = true;
-    group.add(coreHull);
+    if (type === 'interceptor') {
+      // 1. INTERCEPTOR ("Shadow Dart")
+      name = 'SHADOW INTERCEPTOR';
+      hp = maxHp = 3;
+      speed = 58;
+      fireRate = 1.3;
+      points = 200;
+      radius = 2.2;
+      behavior = 'hit_and_run';
 
-    // Elevated command bridge
-    const bridge = new THREE.Mesh(new THREE.BoxGeometry(5.2, 2.2, 8.5), this.bossArmorMat);
-    bridge.position.set(0, 2.4, -4.0);
-    group.add(bridge);
+      const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.7, 3.4, 4), this.armorDarkMat);
+      fuselage.rotation.x = Math.PI / 2;
+      group.add(fuselage);
 
-    // Glowing alien hyper-matter core
-    const coreReactor = new THREE.Mesh(new THREE.SphereGeometry(2.4, 16, 16), this.bossCoreMat);
-    coreReactor.position.set(0, 0.4, 2.0);
-    group.add(coreReactor);
+      // Forward-swept razor wings
+      [-1, 1].forEach(s => {
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 1.2), this.crimsonTrimMat);
+        wing.position.set(s * 1.0, 0, -0.4);
+        wing.rotation.y = s * -0.35;
+        group.add(wing);
 
-    // 2. Outrigger Heavy Sponsons with Dual Weapon Batteries
-    [-5.8, 5.8].forEach(side => {
-      const sponson = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.2, 22.0), this.bossArmorMat);
-      sponson.position.set(side, 0, -1.0);
-      group.add(sponson);
-
-      // Heavy Cannon Barrels
-      [-4.0, 4.0].forEach(zOff => {
-        const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 4.8, 8), this.crimsonGlowMat);
+        const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.4, 8), this.armorGunmetalMat);
         cannon.rotation.x = Math.PI / 2;
-        cannon.position.set(side * 1.15, -0.2, zOff);
+        cannon.position.set(s * 1.5, 0, 0.5);
         group.add(cannon);
       });
 
-      // Lateral glowing crimson conduits
-      const conduit = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 18.0), this.crimsonGlowMat);
-      conduit.position.set(side * 1.25, 0.8, -1.0);
-      group.add(conduit);
-    });
-
-    // 3. Reactive Boss Shield Mesh
-    const bossShieldGeom = new THREE.IcosahedronGeometry(18.0, 2);
-    const bossShieldMat = new THREE.MeshBasicMaterial({
-      color: 0xbf00ff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.65,
-      blending: THREE.AdditiveBlending
-    });
-    const bossShield = new THREE.Mesh(bossShieldGeom, bossShieldMat);
-    bossShield.scale.set(1.1, 0.45, 1.3);
-    group.add(bossShield);
-
-    group.position.set(x, 0, z);
-    this.scene.add(group);
-
-    this.boss = {
-      name: bossName,
-      group,
-      shieldMesh: bossShield,
-      hp: maxHp,
-      maxHp,
-      shield: maxShield,
-      maxShield,
-      speed: 16,
-      heading: angle + Math.PI,
-      radius: 14.0,
-      lastFireTime: 0,
-      fireRate: 1.2,
-      lastMissileTime: 0,
-      missileRate: 4.8,
-      points: 8000
-    };
-  }
-
-  _createDrone(type, playerPos, angle) {
-    const THREE = this.THREE;
-    const spawnDist = 180 + Math.random() * 80;
-    const x = playerPos.x + Math.sin(angle) * spawnDist;
-    const z = playerPos.z + Math.cos(angle) * spawnDist;
-
-    const group = new THREE.Group();
-    let hp, maxHp, speed, fireRate, points, radius, name;
-
-    if (type === 'scout') {
-      name = 'SCOUT DRONE';
-      hp = maxHp = 2;
-      speed = 42;
-      fireRate = 1.6;
-      points = 150;
-      radius = 2.0;
-
-      const wingGeom = new THREE.ConeGeometry(1.8, 2.8, 3);
-      wingGeom.rotateX(Math.PI / 2);
-      wingGeom.rotateY(Math.PI);
-      const wing = new THREE.Mesh(wingGeom, this.droneArmorMat);
-      group.add(wing);
-
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 12), this.crimsonGlowMat);
-      eye.position.set(0, 0.15, 0.9);
+      const eye = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.08, 0.6), this.crimsonTrimMat);
+      eye.position.set(0, 0.16, 0.8);
       group.add(eye);
-    } else if (type === 'assault') {
-      name = 'ASSAULT CRUISER';
+    } else if (type === 'fighter') {
+      // 2. FIGHTER ("Phantom Raider")
+      name = 'PHANTOM FIGHTER';
       hp = maxHp = 8;
-      speed = 26;
+      speed = 38;
+      fireRate = 1.6;
+      points = 350;
+      radius = 2.8;
+      behavior = 'dogfight';
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.45, 3.2), this.armorDarkMat);
+      group.add(body);
+
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.65, 1.8, 4), this.armorGunmetalMat);
+      nose.rotation.x = Math.PI / 2;
+      nose.rotation.y = Math.PI / 4;
+      nose.position.set(0, 0.08, 2.2);
+      group.add(nose);
+
+      [-1, 1].forEach(s => {
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.12, 1.6), this.armorGunmetalMat);
+        wing.position.set(s * 1.3, 0, -0.3);
+        wing.rotation.y = s * 0.2;
+        group.add(wing);
+
+        const wingTrim = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 1.4), this.crimsonTrimMat);
+        wingTrim.position.set(s * 2.1, 0, -0.3);
+        group.add(wingTrim);
+
+        const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.0, 8), this.crimsonTrimMat);
+        gun.rotation.x = Math.PI / 2;
+        gun.position.set(s * 1.5, -0.06, 1.2);
+        group.add(gun);
+
+        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 0.9), this.armorDarkMat);
+        fin.position.set(s * 0.5, 0.5, -1.2);
+        fin.rotation.z = s * -0.22;
+        group.add(fin);
+      });
+    } else if (type === 'gunship') {
+      // 3. HEAVY GUNSHIP ("Goliath Fortress")
+      name = 'GOLIATH GUNSHIP';
+      hp = maxHp = 22;
+      shield = maxShield = 15;
+      speed = 22;
       fireRate = 2.2;
-      points = 450;
-      radius = 3.6;
+      points = 700;
+      radius = 4.2;
+      behavior = 'standoff_flak';
 
-      const hull = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.8, 1.1, 6), this.droneArmorMat);
-      hull.rotation.x = Math.PI / 2;
-      group.add(hull);
+      const mainHull = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 3.2, 1.4, 6), this.armorDarkMat);
+      mainHull.rotation.x = Math.PI / 2;
+      group.add(mainHull);
 
-      const gunL = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.6, 8), this.crimsonGlowMat);
-      gunL.rotation.x = Math.PI / 2;
-      gunL.position.set(-1.4, 0, 1.4);
-      group.add(gunL);
+      const topTurretArmor = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.6, 2.2), this.armorGunmetalMat);
+      topTurretArmor.position.set(0, 0.8, -0.2);
+      group.add(topTurretArmor);
 
-      const gunR = gunL.clone();
-      gunR.position.x = 1.4;
-      group.add(gunR);
-    } else {
-      name = 'SEEKER INTERCEPTOR';
-      hp = maxHp = 4;
-      speed = 54;
+      // Dual Twin Heavy Cannon Turrets
+      [-1.4, 1.4].forEach(s => {
+        const turret = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 3.4, 8), this.crimsonTrimMat);
+        turret.rotation.x = Math.PI / 2;
+        turret.position.set(s, 0.4, 1.8);
+        group.add(turret);
+
+        const muzzle = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.05, 8, 16), this.amberGlowMat);
+        muzzle.position.set(s, 0.4, 3.4);
+        group.add(muzzle);
+      });
+
+      // Frontal Shield Dish
+      const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(3.6, 16, 16), this.shieldMat);
+      shieldMesh.scale.set(1.2, 0.6, 1.2);
+      group.add(shieldMesh);
+      group.shieldMesh = shieldMesh;
+    } else if (type === 'elite') {
+      // 4. ELITE SPACECRAFT ("Viper Ace")
+      name = 'VIPER ACE';
+      hp = maxHp = 16;
+      shield = maxShield = 14;
+      speed = 48;
       fireRate = 1.4;
-      points = 280;
-      radius = 1.8;
+      points = 850;
+      radius = 3.0;
+      behavior = 'elite_ace';
 
-      const dart = new THREE.Mesh(new THREE.ConeGeometry(1.0, 3.6, 4), this.droneArmorMat);
-      dart.rotation.x = Math.PI / 2;
-      group.add(dart);
+      const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.85, 4.2, 5), this.armorDarkMat);
+      fuselage.rotation.x = Math.PI / 2;
+      fuselage.rotation.y = Math.PI / 5;
+      group.add(fuselage);
 
-      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.7, 2.0), this.crimsonGlowMat);
-      fin.position.set(0, 0.45, -0.4);
-      group.add(fin);
+      const cockpitVisor = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.18, 1.2), this.crimsonTrimMat);
+      cockpitVisor.position.set(0, 0.28, 0.6);
+      group.add(cockpitVisor);
+
+      [-1, 1].forEach(s => {
+        const sweptWing = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 1.8), this.armorGunmetalMat);
+        sweptWing.position.set(s * 1.5, 0, -0.6);
+        sweptWing.rotation.y = s * -0.3;
+        group.add(sweptWing);
+
+        // Micro-seeker missile pods
+        const pod = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 1.2), this.crimsonTrimMat);
+        pod.position.set(s * 1.8, -0.12, 0.2);
+        group.add(pod);
+      });
+
+      const shieldMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(3.2, 1), this.shieldMat);
+      group.add(shieldMesh);
+      group.shieldMesh = shieldMesh;
     }
 
     group.position.set(x, 0, z);
@@ -3338,133 +4189,447 @@ class DroneManager {
       group,
       hp,
       maxHp,
+      shield,
+      maxShield,
       speed,
       fireRate,
       lastFireTime: Math.random() * fireRate,
+      lastMissileTime: 0,
       points,
       radius,
+      behavior,
       heading: angle + Math.PI,
-      strafeAngle: Math.random() * Math.PI * 2
+      targetHeading: angle + Math.PI,
+      vx: 0,
+      vz: 0,
+      roll: 0,
+      strafeAngle: Math.random() * Math.PI * 2,
+      evadeTimer: 0,
+      disabledTimer: 0 // for EMP
     });
   }
 
-  update(dt, player, time, audio) {
+  /**
+   * Spawns the massive Capital Dreadnought "Leviathan Omega" (Level 5 Boss)
+   */
+  _spawnBoss(levelNumber, playerPos) {
     const THREE = this.THREE;
+    const bossName = 'LEVIATHAN OMEGA CAPITAL DREADNOUGHT';
+    const maxHp = 120;
+    const maxShield = 80;
 
-    // 1. UPDATE BOSS (if active)
-    if (this.boss) {
-      const b = this.boss;
-      const dx = player.position.x - b.group.position.x;
-      const dz = player.position.z - b.group.position.z;
-      const dist = Math.hypot(dx, dz);
+    const spawnDist = 260;
+    const angle = Math.random() * Math.PI * 2;
+    const x = playerPos.x + Math.sin(angle) * spawnDist;
+    const z = playerPos.z + Math.cos(angle) * spawnDist;
 
-      // Smooth turning towards player
-      const angleToPlayer = Math.atan2(dx, dz);
-      let angleDiff = Math.atan2(Math.sin(angleToPlayer - b.heading), Math.cos(angleToPlayer - b.heading));
-      b.heading += angleDiff * Math.min(1.0, 1.2 * dt);
-      b.group.rotation.y = b.heading;
+    const group = new THREE.Group();
 
-      // Slow deliberate pursuit
-      if (dist > 80) {
-        b.group.position.x += Math.sin(b.heading) * b.speed * dt;
-        b.group.position.z += Math.cos(b.heading) * b.speed * dt;
-      }
+    // 1. Massive 45m Capital Ship Core Superstructure
+    const coreHull = new THREE.Mesh(new THREE.BoxGeometry(9.0, 3.8, 36.0), this.bossArmorMat);
+    coreHull.castShadow = true;
+    group.add(coreHull);
 
-      // Update Shield Mesh Opacity
-      if (b.shieldMesh) {
-        b.shieldMesh.material.opacity = (b.shield > 0) ? (0.35 + Math.sin(time * 4) * 0.15) : 0;
-      }
+    // Multi-Tiered Command Bridge
+    const bridgeTier1 = new THREE.Mesh(new THREE.BoxGeometry(6.4, 2.4, 12.0), this.bossArmorMat);
+    bridgeTier1.position.set(0, 2.8, -6.0);
+    group.add(bridgeTier1);
 
-      // Boss Weapon Battery Volley
-      if (dist < 220 && (time - b.lastFireTime >= b.fireRate)) {
-        b.lastFireTime = time;
-        this._bossFire(b, player, audio);
-      }
+    const bridgeTower = new THREE.Mesh(new THREE.BoxGeometry(4.0, 2.0, 6.0), this.armorGunmetalMat);
+    bridgeTower.position.set(0, 4.8, -7.0);
+    group.add(bridgeTower);
 
-      // Boss Homing Seeker Missiles
-      if (dist < 250 && (time - b.lastMissileTime >= b.missileRate)) {
-        b.lastMissileTime = time;
-        this._bossLaunchMissile(b, player, audio);
+    const bridgeVisor = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.4, 0.8), this.crimsonTrimMat);
+    bridgeVisor.position.set(0, 5.2, -4.0);
+    group.add(bridgeVisor);
+
+    // Glowing Alien Hyper-Matter Reactor Core
+    const coreReactor = new THREE.Mesh(new THREE.SphereGeometry(2.8, 24, 24), this.bossCoreMat);
+    coreReactor.position.set(0, 0.8, 3.0);
+    group.add(coreReactor);
+
+    // 2. Outrigger Battleship Sponsons with Dual Broadside Batteries
+    [-6.8, 6.8].forEach(side => {
+      const sponson = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.8, 28.0), this.bossArmorMat);
+      sponson.position.set(side, 0, -2.0);
+      group.add(sponson);
+
+      // Rotating Heavy Broadside Turrets
+      [-8.0, -1.0, 6.0].forEach(zOff => {
+        const turretBase = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 0.8, 12), this.armorGunmetalMat);
+        turretBase.position.set(side, 1.6, zOff);
+        group.add(turretBase);
+
+        const cannonL = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 4.2, 8), this.crimsonTrimMat);
+        cannonL.rotation.x = Math.PI / 2;
+        cannonL.position.set(side - 0.35, 1.8, zOff + 2.2);
+        group.add(cannonL);
+
+        const cannonR = cannonL.clone();
+        cannonR.position.x = side + 0.35;
+        group.add(cannonR);
+      });
+    });
+
+    // Rear Quad Engine Thruster Array
+    [-3.0, -1.0, 1.0, 3.0].forEach(xOff => {
+      const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 2.4, 16), this.armorGunmetalMat);
+      bell.rotation.x = Math.PI / 2;
+      bell.position.set(xOff, 0.4, -19.0);
+      group.add(bell);
+
+      const glow = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.15, 8, 16), this.bossCoreMat);
+      glow.position.set(xOff, 0.4, -20.2);
+      group.add(glow);
+    });
+
+    // Massive Ellipsoid Shield Bubble
+    const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(18.0, 24, 24), this.shieldMat);
+    shieldMesh.scale.set(1.4, 0.55, 1.8);
+    group.add(shieldMesh);
+
+    group.position.set(x, 0, z);
+    this.scene.add(group);
+
+    this.boss = {
+      name: bossName,
+      group,
+      hp: maxHp,
+      maxHp,
+      shield: maxShield,
+      maxShield,
+      speed: 14,
+      fireRate: 2.2,
+      lastFireTime: 0,
+      lastBeamTime: 0,
+      lastMissileTime: 0,
+      missileRate: 4.5,
+      heading: angle + Math.PI,
+      radius: 18.0,
+      points: 8000,
+      shieldMesh,
+      phase: 1, // Phase 1 (100-65%), Phase 2 (65-30%), Phase 3 (30-0%)
+      isDestroying: false,
+      destroyTimer: 0,
+      disabledTimer: 0
+    };
+  }
+
+  /**
+   * Player Fires a Homing Missile toward locked target
+   */
+  launchPlayerMissile(player, target) {
+    const THREE = this.THREE;
+    const spawnPos = player.getMissileSpawn();
+    const mesh = new THREE.Mesh(this.missileGeom, this.playerMissileMat);
+    mesh.position.copy(spawnPos);
+    mesh.rotation.y = player.heading;
+    this.scene.add(mesh);
+
+    this.playerMissiles.push({
+      mesh,
+      target,
+      heading: player.heading,
+      speed: 110,
+      life: 5.0,
+      damage: 16
+    });
+  }
+
+  /**
+   * Player Triggers EMP Shockwave Blast
+   */
+  triggerEMPBlast(pos, radius = 140, particles, audio) {
+    audio.empBlast();
+    particles.createEMPShockwave(pos, radius);
+
+    // Detonate all incoming enemy missiles
+    for (let i = this.enemyMissiles.length - 1; i >= 0; i--) {
+      const m = this.enemyMissiles[i];
+      if (m.mesh.position.distanceTo(pos) < radius) {
+        particles.createExplosion(m.mesh.position, 1.2, 0x3ef0ff);
+        this.scene.remove(m.mesh);
+        this.enemyMissiles.splice(i, 1);
       }
     }
 
-    // 2. UPDATE STANDARD DRONES
+    // Strip enemy shields & disable weapons
+    this.drones.forEach(d => {
+      if (d.group.position.distanceTo(pos) < radius) {
+        d.shield = 0;
+        d.disabledTimer = 4.5;
+        if (d.group.shieldMesh) d.group.shieldMesh.material.opacity = 0;
+        particles.createShieldHit(d.group.position, 0x3ef0ff);
+      }
+    });
+
+    if (this.boss && this.boss.group.position.distanceTo(pos) < radius) {
+      this.boss.shield = Math.max(0, this.boss.shield - 35);
+      this.boss.disabledTimer = 3.0;
+      particles.createShieldHit(this.boss.group.position, 0x3ef0ff);
+    }
+  }
+
+  update(dt, player, time, audio, particles) {
+    const THREE = this.THREE;
+
+    // =========================================================
+    // 1. UPDATE BOSS (Leviathan Omega)
+    // =========================================================
+    if (this.boss) {
+      const b = this.boss;
+
+      if (b.isDestroying) {
+        b.destroyTimer += dt;
+        // Cascading explosions along the capital hull
+        if (Math.random() < 0.45) {
+          const rx = b.group.position.x + (Math.random() - 0.5) * 16;
+          const rz = b.group.position.z + (Math.random() - 0.5) * 32;
+          particles.createExplosion(new THREE.Vector3(rx, (Math.random() - 0.5) * 4, rz), 2.2, 0xff5500);
+          audio.explode(false);
+        }
+        b.group.rotation.y += 0.08 * dt;
+        b.group.rotation.z += 0.05 * dt;
+
+        if (b.destroyTimer > 3.8) {
+          particles.createShipExplosion(b.group.position, true);
+          audio.explode(true);
+          this.scene.remove(b.group);
+          this.boss = null;
+        }
+      } else {
+        const dx = player.position.x - b.group.position.x;
+        const dz = player.position.z - b.group.position.z;
+        const dist = Math.hypot(dx, dz);
+
+        // Turn towards player
+        const angleToPlayer = Math.atan2(dx, dz);
+        let angleDiff = Math.atan2(Math.sin(angleToPlayer - b.heading), Math.cos(angleToPlayer - b.heading));
+        b.heading += angleDiff * Math.min(1.0, 0.9 * dt);
+        b.group.rotation.y = b.heading;
+
+        if (dist > 85) {
+          b.group.position.x += Math.sin(b.heading) * b.speed * dt;
+          b.group.position.z += Math.cos(b.heading) * b.speed * dt;
+        }
+
+        // Shield Mesh Opacity
+        if (b.shieldMesh) {
+          b.shieldMesh.material.opacity = (b.shield > 0) ? (0.35 + Math.sin(time * 5) * 0.15) : 0;
+        }
+
+        // Phase Transitions
+        const hpPercent = (b.hp + b.shield) / (b.maxHp + b.maxShield);
+        if (hpPercent < 0.35) b.phase = 3;
+        else if (hpPercent < 0.65) b.phase = 2;
+        else b.phase = 1;
+
+        if (b.disabledTimer > 0) {
+          b.disabledTimer -= dt;
+        } else {
+          // Broadside Volleys
+          if (dist < 260 && (time - b.lastFireTime >= (b.phase === 3 ? 1.4 : b.fireRate))) {
+            b.lastFireTime = time;
+            this._bossFire(b, player, audio);
+          }
+
+          // Seeker Missiles
+          if (dist < 280 && (time - b.lastMissileTime >= (b.phase >= 2 ? 3.0 : b.missileRate))) {
+            b.lastMissileTime = time;
+            this._bossLaunchMissile(b, player, audio);
+          }
+
+          // Phase 2/3 Sweeping Plasma Beam
+          if (b.phase >= 2 && dist < 220 && (time - b.lastBeamTime >= 6.5)) {
+            b.lastBeamTime = time;
+            this._bossSweepBeam(b, player, audio);
+          }
+        }
+      }
+    }
+
+    // =========================================================
+    // 2. UPDATE STANDARD DRONES (With 5 Class Behaviors)
+    // =========================================================
     for (let i = this.drones.length - 1; i >= 0; i--) {
       const drone = this.drones[i];
+      if (drone.disabledTimer > 0) drone.disabledTimer -= dt;
+
       const dx = player.position.x - drone.group.position.x;
       const dz = player.position.z - drone.group.position.z;
       const dist = Math.hypot(dx, dz);
 
       const angleToPlayer = Math.atan2(dx, dz);
       let angleDiff = Math.atan2(Math.sin(angleToPlayer - drone.heading), Math.cos(angleToPlayer - drone.heading));
-      drone.heading += angleDiff * Math.min(1.0, 4.0 * dt);
-      drone.group.rotation.y = drone.heading;
 
-      let forwardMove = 0;
+      let forwardMove = drone.speed;
       let strafeMove = 0;
 
-      if (drone.type === 'scout') {
-        if (dist > 75) forwardMove = drone.speed;
-        else if (dist < 40) forwardMove = -drone.speed * 0.6;
-        else forwardMove = drone.speed * 0.2;
-        strafeMove = Math.sin(time * 1.5 + drone.strafeAngle) * drone.speed * 0.65;
-      } else if (drone.type === 'assault') {
-        if (dist > 60) forwardMove = drone.speed;
-        else forwardMove = Math.sin(time) * 8;
-      } else {
-        forwardMove = drone.speed;
-        strafeMove = Math.sin(time * 3.0) * 14;
+      if (drone.behavior === 'hit_and_run') {
+        // Interceptor: Speeds in for high-speed strafe, then rolls and breaks away
+        if (drone.evadeTimer > 0) {
+          drone.evadeTimer -= dt;
+          forwardMove = drone.speed * 1.2;
+          drone.targetHeading = angleToPlayer + Math.PI * 0.7;
+          drone.roll += (1.4 - drone.roll) * 8 * dt;
+        } else {
+          drone.targetHeading = angleToPlayer;
+          drone.roll += (-angleDiff * 1.8 - drone.roll) * 6 * dt;
+          if (dist < 45) {
+            drone.evadeTimer = 2.4; // Trigger evasive breakaway!
+          }
+        }
+      } else if (drone.behavior === 'dogfight') {
+        // Fighter: Classic circling dogfight with predictive aiming
+        drone.targetHeading = angleToPlayer + (player.velocity.x * Math.cos(drone.heading) - player.velocity.z * Math.sin(drone.heading)) * 0.015;
+        if (dist > 80) forwardMove = drone.speed;
+        else if (dist < 42) forwardMove = -drone.speed * 0.4;
+        else forwardMove = drone.speed * 0.35;
+        strafeMove = Math.sin(time * 1.8 + drone.strafeAngle) * drone.speed * 0.55;
+        drone.roll += (-strafeMove * 0.04 - drone.roll) * 6 * dt;
+      } else if (drone.behavior === 'standoff_flak') {
+        // Heavy Gunship: Standoff firing platform, slow deliberate turns
+        drone.targetHeading = angleToPlayer;
+        if (dist > 110) forwardMove = drone.speed;
+        else if (dist < 60) forwardMove = -drone.speed * 0.5;
+        else forwardMove = Math.sin(time * 0.8) * 4;
+        strafeMove = Math.cos(time * 0.5) * 6;
+      } else if (drone.behavior === 'elite_ace') {
+        // Elite Ace: Barrel rolls when targeted, flanking maneuvers
+        drone.targetHeading = angleToPlayer;
+        if (dist < 50) drone.roll += Math.PI * 3 * dt; // Barrel roll!
+        else drone.roll += (-angleDiff * 2.2 - drone.roll) * 8 * dt;
+
+        if (dist > 70) forwardMove = drone.speed;
+        else forwardMove = drone.speed * 0.5;
+        strafeMove = Math.sin(time * 2.5) * 18;
+
+        // Elite Micro-Missiles
+        if (drone.disabledTimer <= 0 && dist < 160 && (time - drone.lastMissileTime >= 4.2)) {
+          drone.lastMissileTime = time;
+          this._droneLaunchMissile(drone, player, audio);
+        }
       }
 
+      // Smooth turning
+      let hDiff = Math.atan2(Math.sin(drone.targetHeading - drone.heading), Math.cos(drone.targetHeading - drone.heading));
+      drone.heading += hDiff * Math.min(1.0, 3.8 * dt);
+      drone.group.rotation.y = drone.heading;
+      drone.group.rotation.z = drone.roll;
+
+      // Position update
       const cosH = Math.cos(drone.heading);
       const sinH = Math.sin(drone.heading);
-      drone.group.position.x += (sinH * forwardMove + cosH * strafeMove) * dt;
-      drone.group.position.z += (cosH * forwardMove - sinH * strafeMove) * dt;
-      drone.group.rotation.z = -strafeMove * 0.02;
+      drone.vx = sinH * forwardMove + cosH * strafeMove;
+      drone.vz = cosH * forwardMove - sinH * strafeMove;
 
-      if (dist < 150 && (time - drone.lastFireTime >= drone.fireRate)) {
-        if (Math.abs(angleDiff) < 0.6) {
+      drone.group.position.x += drone.vx * dt;
+      drone.group.position.z += drone.vz * dt;
+
+      // Firing
+      if (drone.disabledTimer <= 0 && dist < 170 && (time - drone.lastFireTime >= drone.fireRate)) {
+        if (Math.abs(angleDiff) < 0.65) {
           drone.lastFireTime = time;
           this._droneFire(drone, player, audio);
         }
       }
     }
 
-    // 3. UPDATE HOMING MISSILES
+    // =========================================================
+    // 3. UPDATE PLAYER HOMING MISSILES
+    // =========================================================
+    for (let i = this.playerMissiles.length - 1; i >= 0; i--) {
+      const pm = this.playerMissiles[i];
+      pm.life -= dt;
+
+      // Guide toward target if still active
+      if (pm.target && (pm.target.hp > 0 || (pm.target.group && pm.target.group.parent))) {
+        const tPos = pm.target.group.position;
+        const dx = tPos.x - pm.mesh.position.x;
+        const dz = tPos.z - pm.mesh.position.z;
+        const targetAngle = Math.atan2(dx, dz);
+        let angleDiff = Math.atan2(Math.sin(targetAngle - pm.heading), Math.cos(targetAngle - pm.heading));
+        pm.heading += angleDiff * Math.min(1.0, 4.5 * dt);
+      }
+
+      pm.mesh.rotation.y = pm.heading;
+      pm.mesh.position.x += Math.sin(pm.heading) * pm.speed * dt;
+      pm.mesh.position.z += Math.cos(pm.heading) * pm.speed * dt;
+
+      particles.createMissileSmoke(pm.mesh.position);
+
+      // Check collision with any hostile
+      let detonated = false;
+
+      // Boss check
+      if (this.boss && !this.boss.isDestroying) {
+        if (pm.mesh.position.distanceTo(this.boss.group.position) < this.boss.radius) {
+          this._applyDamageToTarget(this.boss, pm.damage, particles, audio);
+          detonated = true;
+        }
+      }
+
+      // Standard drones check
+      if (!detonated) {
+        for (let j = this.drones.length - 1; j >= 0; j--) {
+          const d = this.drones[j];
+          if (pm.mesh.position.distanceTo(d.group.position) < d.radius + 1.2) {
+            this._applyDamageToTarget(d, pm.damage, particles, audio);
+            detonated = true;
+            break;
+          }
+        }
+      }
+
+      if (detonated || pm.life <= 0) {
+        particles.createExplosion(pm.mesh.position, 1.8, 0x3ef0ff);
+        audio.explode(false);
+        this.scene.remove(pm.mesh);
+        this.playerMissiles.splice(i, 1);
+      }
+    }
+
+    // =========================================================
+    // 4. UPDATE ENEMY HOMING MISSILES
+    // =========================================================
     for (let i = this.enemyMissiles.length - 1; i >= 0; i--) {
       const m = this.enemyMissiles[i];
       m.life -= dt;
 
-      // Homing tracking towards player
       const dx = player.position.x - m.mesh.position.x;
       const dz = player.position.z - m.mesh.position.z;
       const dist = Math.hypot(dx, dz);
 
       const targetAngle = Math.atan2(dx, dz);
       let angleDiff = Math.atan2(Math.sin(targetAngle - m.heading), Math.cos(targetAngle - m.heading));
-      m.heading += angleDiff * Math.min(1.0, 3.2 * dt);
+      m.heading += angleDiff * Math.min(1.0, 3.4 * dt);
 
       m.mesh.rotation.y = m.heading;
-      const speed = 75;
+      const speed = 76;
       m.mesh.position.x += Math.sin(m.heading) * speed * dt;
       m.mesh.position.z += Math.cos(m.heading) * speed * dt;
 
-      // Hit Player
-      if (dist < 3.2) {
+      particles.createMissileSmoke(m.mesh.position);
+
+      if (dist < 3.4) {
         player.takeDamage(m.damage, time);
         audio.explode(false);
+        particles.createExplosion(m.mesh.position, 1.6, 0xff5500);
         this.scene.remove(m.mesh);
         this.enemyMissiles.splice(i, 1);
         continue;
       }
 
       if (m.life <= 0) {
+        particles.createExplosion(m.mesh.position, 0.8, 0xff3b00);
         this.scene.remove(m.mesh);
         this.enemyMissiles.splice(i, 1);
       }
     }
 
-    // 4. UPDATE ENEMY LASER PROJECTILES
+    // =========================================================
+    // 5. UPDATE ENEMY LASER PROJECTILES
+    // =========================================================
     for (let i = this.enemyLasers.length - 1; i >= 0; i--) {
       const laser = this.enemyLasers[i];
       laser.mesh.position.x += laser.vx * dt;
@@ -3473,9 +4638,10 @@ class DroneManager {
 
       const pDx = player.position.x - laser.mesh.position.x;
       const pDz = player.position.z - laser.mesh.position.z;
-      if (Math.hypot(pDx, pDz) < 2.5) {
+      if (Math.hypot(pDx, pDz) < 2.6) {
         player.takeDamage(laser.damage, time);
         audio.shieldHit();
+        particles.createShieldHit(laser.mesh.position, 0xff1744);
 
         this.scene.remove(laser.mesh);
         this.enemyLasers.splice(i, 1);
@@ -3488,27 +4654,28 @@ class DroneManager {
       }
     }
 
-    // 5. UPDATE HOLOGRAPHIC POWER-UP PICKUPS
+    // =========================================================
+    // 6. UPDATE HOLOGRAPHIC POWER-UP PICKUPS
+    // =========================================================
     for (let i = this.powerups.length - 1; i >= 0; i--) {
       const p = this.powerups[i];
       p.life -= dt;
       p.group.rotation.y += 2.8 * dt;
       p.group.rotation.x += 1.4 * dt;
 
-      // Magnetize towards player if within 42m
       const dx = player.position.x - p.group.position.x;
       const dz = player.position.z - p.group.position.z;
       const dist = Math.hypot(dx, dz);
 
-      if (dist < 42) {
-        const pull = 50 * (1 - dist / 42);
+      if (dist < 45) {
+        const pull = 55 * (1 - dist / 45);
         p.group.position.x += (dx / dist) * pull * dt;
         p.group.position.z += (dz / dist) * pull * dt;
       }
 
-      // Collect Power-up
-      if (dist < 4.0) {
+      if (dist < 4.2) {
         this._applyPowerup(p.type, player, audio);
+        particles.createPowerupCollect(p.group.position, p.type);
         this.scene.remove(p.group);
         this.powerups.splice(i, 1);
         continue;
@@ -3523,263 +4690,326 @@ class DroneManager {
 
   _bossFire(boss, player, audio) {
     const THREE = this.THREE;
-    // Quad broadside plasma volley
-    [-3.5, -1.2, 1.2, 3.5].forEach(offset => {
+    [-4.5, -1.8, 1.8, 4.5].forEach(offset => {
       const mesh = new THREE.Mesh(this.laserGeom, this.bossLaserMat);
-      mesh.scale.set(1.6, 1.6, 1.6);
+      mesh.scale.set(1.8, 1.8, 1.8);
       mesh.position.copy(boss.group.position);
       mesh.position.x += Math.cos(boss.heading) * offset;
       mesh.position.z -= Math.sin(boss.heading) * offset;
-      mesh.rotation.y = boss.heading;
 
-      const speed = 135;
-      this.scene.add(mesh);
+      const dx = player.position.x - mesh.position.x;
+      const dz = player.position.z - mesh.position.z;
+      const aimHeading = Math.atan2(dx, dz);
+      mesh.rotation.y = aimHeading;
+
+      const speed = 125;
       this.enemyLasers.push({
         mesh,
-        vx: Math.sin(boss.heading) * speed,
-        vz: Math.cos(boss.heading) * speed,
-        damage: 18,
-        life: 2.5
+        vx: Math.sin(aimHeading) * speed,
+        vz: Math.cos(aimHeading) * speed,
+        life: 2.8,
+        damage: 14
       });
+      this.scene.add(mesh);
     });
-    audio.enemyShoot();
+    audio.enemyLaser();
   }
 
   _bossLaunchMissile(boss, player, audio) {
     const THREE = this.THREE;
     const mesh = new THREE.Mesh(this.missileGeom, this.missileMat);
     mesh.position.copy(boss.group.position);
-    mesh.position.y = 1.0;
+    mesh.position.y += 1.5;
     mesh.rotation.y = boss.heading;
-
     this.scene.add(mesh);
+
     this.enemyMissiles.push({
       mesh,
       heading: boss.heading,
-      damage: 28,
-      life: 7.0
+      life: 6.5,
+      damage: 24
     });
-    audio.waveAlert();
+    audio.missileLaunch();
+  }
+
+  _bossSweepBeam(boss, player, audio) {
+    const THREE = this.THREE;
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 4.5, 8), this.beamLaserMat);
+    mesh.rotation.x = Math.PI / 2;
+    mesh.position.copy(boss.group.position);
+    mesh.position.y += 0.8;
+
+    const dx = player.position.x - mesh.position.x;
+    const dz = player.position.z - mesh.position.z;
+    const aimHeading = Math.atan2(dx, dz);
+    mesh.rotation.y = aimHeading;
+
+    const speed = 160;
+    this.enemyLasers.push({
+      mesh,
+      vx: Math.sin(aimHeading) * speed,
+      vz: Math.cos(aimHeading) * speed,
+      life: 3.0,
+      damage: 20
+    });
+    this.scene.add(mesh);
+    audio.enemyLaser();
   }
 
   _droneFire(drone, player, audio) {
     const THREE = this.THREE;
     const mesh = new THREE.Mesh(this.laserGeom, this.droneLaserMat);
     mesh.position.copy(drone.group.position);
-    mesh.rotation.y = drone.heading;
+    mesh.position.y += 0.1;
 
-    const speed = 125;
-    this.scene.add(mesh);
+    // Lead player velocity slightly
+    const dx = (player.position.x + player.velocity.x * 0.25) - mesh.position.x;
+    const dz = (player.position.z + player.velocity.z * 0.25) - mesh.position.z;
+    const aimHeading = Math.atan2(dx, dz);
+    mesh.rotation.y = aimHeading;
+
+    const speed = drone.type === 'gunship' ? 140 : 130;
+    const damage = drone.type === 'gunship' ? 12 : 8;
+
     this.enemyLasers.push({
       mesh,
-      vx: Math.sin(drone.heading) * speed,
-      vz: Math.cos(drone.heading) * speed,
-      damage: drone.type === 'assault' ? 16 : 10,
-      life: 2.2
+      vx: Math.sin(aimHeading) * speed,
+      vz: Math.cos(aimHeading) * speed,
+      life: 2.2,
+      damage
     });
-    audio.enemyShoot();
+    this.scene.add(mesh);
+    audio.enemyLaser();
   }
 
-  checkPlayerLaserCollisions(laser, damage, particles, audio) {
-    // 1. Check against Capital Boss
-    if (this.boss) {
+  _droneLaunchMissile(drone, player, audio) {
+    const THREE = this.THREE;
+    const mesh = new THREE.Mesh(this.missileGeom, this.missileMat);
+    mesh.position.copy(drone.group.position);
+    mesh.rotation.y = drone.heading;
+    this.scene.add(mesh);
+
+    this.enemyMissiles.push({
+      mesh,
+      heading: drone.heading,
+      life: 5.0,
+      damage: 18
+    });
+    audio.missileLaunch();
+  }
+
+  _applyDamageToTarget(target, damage, particles, audio) {
+    if (target.shield > 0) {
+      target.shield = Math.max(0, target.shield - damage);
+      particles.createShieldHit(target.group.position, 0xff1744);
+      audio.shieldHit();
+    } else {
+      target.hp -= damage;
+      particles.createExplosion(target.group.position, 0.8, 0xff5500);
+      audio.hit();
+    }
+
+    if (target.hp <= 0) {
+      if (target === this.boss) {
+        target.isDestroying = true;
+      } else {
+        this._destroyDrone(target, particles, audio);
+      }
+    }
+  }
+
+  checkPlayerLaserCollisions(laserMesh, damage, particles, audio) {
+    // 1. Check Boss
+    if (this.boss && !this.boss.isDestroying) {
       const b = this.boss;
-      const dx = laser.position.x - b.group.position.x;
-      const dz = laser.position.z - b.group.position.z;
-      if (Math.hypot(dx, dz) < b.radius) {
-        // Damage Shield first
+      const dist = laserMesh.position.distanceTo(b.group.position);
+      if (dist < b.radius) {
         if (b.shield > 0) {
           b.shield -= damage;
-          particles.createSparks(laser.position, 10, 0xbf00ff);
+          particles.createShieldHit(laserMesh.position, 0xbf00ff);
           audio.shieldHit();
         } else {
           b.hp -= damage;
-          particles.createSparks(laser.position, 12, 0xff0055);
+          particles.createExplosion(laserMesh.position, 0.6, 0xff1744);
           audio.hit();
         }
 
         if (b.hp <= 0) {
-          // Boss Destroyed!
-          const pos = b.group.position.clone();
-          const points = b.points;
-          const name = b.name;
-
-          particles.createShipExplosion(pos, true);
-          audio.explode(true);
-
-          // Drop massive power-up cache
-          this._spawnPowerup(pos, 'shield_boost');
-          this._spawnPowerup(pos, 'weapon_upgrade');
-          this._spawnPowerup(pos, 'overdrive');
-
-          this.scene.remove(b.group);
-          this.boss = null;
-          return { hit: true, destroyed: true, isBoss: true, points, name, pos };
+          b.isDestroying = true;
+          this._spawnPowerup(b.group.position, 'weapon');
+          return { hit: true, destroyed: true, name: b.name, points: b.points, isBoss: true };
         }
-        return { hit: true, destroyed: false, isBoss: true };
+        return { hit: true, destroyed: false, name: b.name, isBoss: true };
       }
     }
 
-    // 2. Check against Standard Drones
-    for (let i = 0; i < this.drones.length; i++) {
+    // 2. Check Standard Drones
+    for (let i = this.drones.length - 1; i >= 0; i--) {
       const drone = this.drones[i];
-      const dx = laser.position.x - drone.group.position.x;
-      const dz = laser.position.z - drone.group.position.z;
-
-      if (dx * dx + dz * dz < drone.radius * drone.radius) {
-        drone.hp -= damage;
-        particles.createSparks(drone.group.position, 8, 0xff1744);
+      const dist = laserMesh.position.distanceTo(drone.group.position);
+      if (dist < drone.radius) {
+        if (drone.shield > 0) {
+          drone.shield -= damage;
+          particles.createShieldHit(laserMesh.position, 0xff1744);
+          audio.shieldHit();
+        } else {
+          drone.hp -= damage;
+          particles.createExplosion(laserMesh.position, 0.5, 0xffaa00);
+          audio.hit();
+        }
 
         if (drone.hp <= 0) {
-          const pos = drone.group.position.clone();
-          const points = drone.points;
-          const name = drone.name;
-
-          particles.createShipExplosion(pos, drone.type === 'assault');
-          audio.explode(true);
-
-          // Chance to drop powerup (35%)
-          if (Math.random() < 0.35) {
-            const types = ['shield_boost', 'weapon_upgrade', 'overdrive'];
-            this._spawnPowerup(pos, types[Math.floor(Math.random() * types.length)]);
-          }
-
-          this.scene.remove(drone.group);
-          this.drones.splice(i, 1);
-
-          return { hit: true, destroyed: true, isBoss: false, points, name, pos };
-        } else {
-          audio.hit();
-          return { hit: true, destroyed: false };
+          this._destroyDrone(drone, particles, audio);
+          return { hit: true, destroyed: true, name: drone.name, points: drone.points, isBoss: false };
         }
+        return { hit: true, destroyed: false, name: drone.name, isBoss: false };
       }
     }
+
     return { hit: false };
+  }
+
+  _destroyDrone(drone, particles, audio) {
+    particles.createShipExplosion(drone.group.position, drone.type === 'gunship');
+    audio.explode(false);
+
+    // Chance to spawn holographic power-up drop
+    if (Math.random() < 0.45) {
+      const roll = Math.random();
+      const pType = roll > 0.6 ? 'missile' : (roll > 0.3 ? 'shield' : 'weapon');
+      this._spawnPowerup(drone.group.position, pType);
+    }
+
+    this.scene.remove(drone.group);
+    const idx = this.drones.indexOf(drone);
+    if (idx !== -1) this.drones.splice(idx, 1);
   }
 
   _spawnPowerup(pos, type) {
     const THREE = this.THREE;
     const group = new THREE.Group();
 
-    let color = 0x5cff9d;
-    if (type === 'weapon_upgrade') color = 0xffc247;
-    if (type === 'overdrive') color = 0x3ef0ff;
+    const colors = {
+      shield: 0x5cff9d,
+      weapon: 0xffaa00,
+      missile: 0x3ef0ff
+    };
+    const col = colors[type] || 0x3ef0ff;
 
-    const core = new THREE.Mesh(this.powerupGeom, new THREE.MeshBasicMaterial({ color }));
+    const core = new THREE.Mesh(this.powerupGeom, new THREE.MeshBasicMaterial({ color: col }));
     group.add(core);
 
-    const ring = new THREE.Mesh(this.powerupRingGeom, new THREE.MeshBasicMaterial({ color, wireframe: true }));
-    ring.rotation.x = Math.PI / 2;
+    const ring = new THREE.Mesh(this.powerupRingGeom, new THREE.MeshBasicMaterial({ color: col, wireframe: true }));
     group.add(ring);
 
     group.position.copy(pos);
-    group.position.x += (Math.random() - 0.5) * 6;
-    group.position.z += (Math.random() - 0.5) * 6;
-
     this.scene.add(group);
-    this.powerups.push({ group, type, life: 25.0 });
+
+    this.powerups.push({
+      group,
+      type,
+      life: 25.0
+    });
   }
 
   _applyPowerup(type, player, audio) {
     audio.pickup(type);
-    if (type === 'shield_boost') {
-      player.applyOvercharge();
-    } else if (type === 'weapon_upgrade') {
-      player.upgradeWeapons();
-    } else if (type === 'overdrive') {
-      player.energy = player.maxEnergy;
-      player.isBoosting = true;
+    if (type === 'shield') {
+      player.repairShield(45);
+      player.repairHull(25);
+    } else if (type === 'weapon') {
+      player.upgradeWeapon(2, 18.0);
+    } else if (type === 'missile') {
+      player.reloadMissiles(4);
     }
   }
 
+  /**
+   * Calculates Target Tracking & Predictive Dogfight Lead Pip
+   */
   getTargetTrackingInfo(player, camera, canvasWidth, canvasHeight) {
-    let bestTarget = null;
-    let minScore = Infinity;
-    const targets = [];
+    const THREE = this.THREE;
+    const candidates = [];
 
-    // Boss target priority
-    if (this.boss) {
-      const b = this.boss;
-      const dx = b.group.position.x - player.position.x;
-      const dz = b.group.position.z - player.position.z;
-      const dist = Math.hypot(dx, dz);
-
-      const screenPos = b.group.position.clone();
-      screenPos.project(camera);
-      const isBehind = screenPos.z > 1;
-      const screenX = (screenPos.x * 0.5 + 0.5) * canvasWidth;
-      const screenY = (-screenPos.y * 0.5 + 0.5) * canvasHeight;
-
-      const bossTarget = {
-        name: b.name,
-        dist: Math.round(dist),
-        hpRatio: b.hp / b.maxHp,
-        shieldRatio: b.shield / b.maxShield,
-        screenX,
-        screenY,
-        isBehind,
-        isInView: !isBehind && screenX >= 0 && screenX <= canvasWidth && screenY >= 0 && screenY <= canvasHeight,
-        isBoss: true
-      };
-      targets.push(bossTarget);
-      bestTarget = bossTarget;
+    if (this.boss && !this.boss.isDestroying) {
+      candidates.push({ ...this.boss, isBoss: true });
     }
+    this.drones.forEach(d => candidates.push({ ...d, isBoss: false }));
 
-    this.drones.forEach(drone => {
-      const dx = drone.group.position.x - player.position.x;
-      const dz = drone.group.position.z - player.position.z;
-      const dist = Math.hypot(dx, dz);
+    if (candidates.length === 0) return null;
 
-      const angleToDrone = Math.atan2(dx, dz);
-      const angleDiff = Math.abs(Math.atan2(Math.sin(angleToDrone - player.heading), Math.cos(angleToDrone - player.heading)));
-      const trackingScore = dist + angleDiff * 50;
+    // Find closest target in front of player
+    let bestTarget = null;
+    let minDist = Infinity;
 
-      const screenPos = drone.group.position.clone();
-      screenPos.project(camera);
-      const isBehind = screenPos.z > 1;
-      const screenX = (screenPos.x * 0.5 + 0.5) * canvasWidth;
-      const screenY = (-screenPos.y * 0.5 + 0.5) * canvasHeight;
+    const pPos = player.position;
+    const pHeadingVec = new THREE.Vector3(Math.sin(player.heading), 0, Math.cos(player.heading));
 
-      const targetData = {
-        name: drone.name,
-        dist: Math.round(dist),
-        hpRatio: drone.hp / drone.maxHp,
-        screenX,
-        screenY,
-        isBehind,
-        isInView: !isBehind && screenX >= 0 && screenX <= canvasWidth && screenY >= 0 && screenY <= canvasHeight,
-        isBoss: false
-      };
-      targets.push(targetData);
+    candidates.forEach(c => {
+      const cPos = c.group.position;
+      const toVec = new THREE.Vector3().subVectors(cPos, pPos);
+      const dist = toVec.length();
 
-      if (!this.boss && trackingScore < minScore && !isBehind) {
-        minScore = trackingScore;
-        bestTarget = targetData;
+      // Dot product to check if candidate is in front
+      const forwardDot = toVec.clone().normalize().dot(pHeadingVec);
+      const score = dist - forwardDot * 60;
+
+      if (score < minDist) {
+        minDist = score;
+        bestTarget = { candidate: c, dist };
       }
     });
 
-    const activeCount = (this.boss ? 1 : 0) + this.drones.length;
+    if (!bestTarget) return null;
+
+    const target = bestTarget.candidate;
+    const tPos = target.group.position.clone();
+
+    // Screen Space Projection of Target
+    const screenPos = tPos.clone().project(camera);
+    const sx = (screenPos.x * 0.5 + 0.5) * canvasWidth;
+    const sy = (-screenPos.y * 0.5 + 0.5) * canvasHeight;
+
+    // Calculate Dogfight Lead Pip (Where to aim)
+    const laserSpeed = 210;
+    const timeToHit = bestTarget.dist / laserSpeed;
+    const leadWorldPos = tPos.clone();
+    leadWorldPos.x += (target.vx || 0) * timeToHit;
+    leadWorldPos.z += (target.vz || 0) * timeToHit;
+
+    const leadScreenPos = leadWorldPos.clone().project(camera);
+    const lx = (leadScreenPos.x * 0.5 + 0.5) * canvasWidth;
+    const ly = (-leadScreenPos.y * 0.5 + 0.5) * canvasHeight;
+
     return {
-      primaryTarget: bestTarget,
-      allTargets: targets,
-      remainingDrones: activeCount,
-      bossData: this.boss ? { name: this.boss.name, hp: this.boss.hp, maxHp: this.boss.maxHp, shield: this.boss.shield, maxShield: this.boss.maxShield } : null
+      target,
+      screenX: sx,
+      screenY: sy,
+      leadScreenX: lx,
+      leadScreenY: ly,
+      distance: Math.round(bestTarget.dist),
+      inFront: screenPos.z < 1.0,
+      isLocked: bestTarget.dist < 180
     };
   }
 
   clearAll() {
+    this.drones.forEach(d => this.scene.remove(d.group));
+    this.drones = [];
+
     if (this.boss) {
       this.scene.remove(this.boss.group);
       this.boss = null;
     }
-    this.drones.forEach(d => this.scene.remove(d.group));
-    this.drones = [];
 
     this.enemyLasers.forEach(l => this.scene.remove(l.mesh));
     this.enemyLasers = [];
 
     this.enemyMissiles.forEach(m => this.scene.remove(m.mesh));
     this.enemyMissiles = [];
+
+    this.playerMissiles.forEach(pm => this.scene.remove(pm.mesh));
+    this.playerMissiles = [];
 
     this.powerups.forEach(p => this.scene.remove(p.group));
     this.powerups = [];
@@ -4024,6 +5254,91 @@ class ParticleSystem {
     }
   }
 
+  createMissileSmoke(pos) {
+    if (Math.random() < 0.6) {
+      this._addSpark({
+        x: pos.x + (Math.random() - 0.5) * 0.3,
+        y: pos.y + (Math.random() - 0.5) * 0.3,
+        z: pos.z + (Math.random() - 0.5) * 0.3,
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2,
+        vz: (Math.random() - 0.5) * 2,
+        r: 0.9,
+        g: 0.65,
+        b: 0.3,
+        life: 0.35 + Math.random() * 0.2,
+        maxLife: 0.55,
+        size: 3.5 + Math.random() * 2.5
+      });
+    }
+  }
+
+  createEMPShockwave(pos, radius = 140) {
+    const THREE = this.THREE;
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x3ef0ff,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const ring = new THREE.Mesh(this.ringGeom, ringMat);
+    ring.position.copy(pos);
+    ring.position.y = 0.5;
+    this.scene.add(ring);
+
+    this.shockwaves.push({
+      mesh: ring,
+      scale: 1,
+      maxScale: radius,
+      speed: 90,
+      life: 1.0,
+      decay: 0.8
+    });
+
+    for (let i = 0; i < 60; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 25 + Math.random() * 50;
+      this._addSpark({
+        x: pos.x,
+        y: pos.y + (Math.random() - 0.5) * 3,
+        z: pos.z,
+        vx: Math.sin(angle) * speed,
+        vy: (Math.random() - 0.5) * 10,
+        vz: Math.cos(angle) * speed,
+        r: 0.24,
+        g: 0.94,
+        b: 1.0,
+        life: 0.9 + Math.random() * 0.6,
+        maxLife: 1.5,
+        size: 3.8 + Math.random() * 3
+      });
+    }
+  }
+
+  createPowerupCollect(pos, type) {
+    const col = type === 'shield' ? { r: 0.36, g: 1.0, b: 0.61 } : (type === 'missile' ? { r: 0.24, g: 0.94, b: 1.0 } : { r: 1.0, g: 0.76, b: 0.28 });
+    for (let i = 0; i < 30; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 12 + Math.random() * 25;
+      this._addSpark({
+        x: pos.x,
+        y: pos.y,
+        z: pos.z,
+        vx: Math.sin(angle) * speed,
+        vy: (Math.random() - 0.5) * 10,
+        vz: Math.cos(angle) * speed,
+        r: col.r,
+        g: col.g,
+        b: col.b,
+        life: 0.6 + Math.random() * 0.5,
+        maxLife: 1.1,
+        size: 3.2
+      });
+    }
+  }
+
   _addSpark(spark) {
     if (this.activeSparks.length < this.maxSparks) {
       this.activeSparks.push(spark);
@@ -4116,7 +5431,8 @@ class ParticleSystem {
     /**
  * Smooth, Intuitive & Simplified Arcade Flight Controls
  * Handles Keyboard, Mouse Flight Steering, Gamepad, and Mobile Touch.
- * Eliminates jerky mechanics, freezes, and gimbal snapping.
+ * Supports Primary Weapons, Secondary Homing Missiles, EMP Shockwaves,
+ * Camera View Switching, and Pause / Settings Menu.
  */
 class InputController {
   constructor(canvas, camera, THREE) {
@@ -4126,13 +5442,15 @@ class InputController {
 
     // Active Input State
     this.keys = new Set();
+    this.justPressedKeys = new Set();
     this.mouse = {
       x: window.innerWidth / 2,
       y: window.innerHeight / 2,
       worldX: 0,
       worldZ: 0,
       isDown: false,
-      rightDown: false
+      rightDown: false,
+      rightJustPressed: false
     };
 
     // Virtual Touch Stick State
@@ -4141,7 +5459,8 @@ class InputController {
       thrust: 0,
       steer: 0,
       fire: false,
-      boost: false
+      boost: false,
+      missile: false
     };
 
     // Gamepad
@@ -4149,7 +5468,7 @@ class InputController {
 
     // Raycaster for 3D Cosmic Plane Cursor Projection
     this.raycaster = new THREE.Raycaster();
-    this.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // Y = 0 gameplay plane
+    this.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     this.planeIntersect = new THREE.Vector3();
 
     this._bindEvents();
@@ -4157,8 +5476,12 @@ class InputController {
 
   _bindEvents() {
     window.addEventListener('keydown', (e) => {
+      if (!this.keys.has(e.code)) {
+        this.justPressedKeys.add(e.code);
+      }
       this.keys.add(e.code);
-      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyC', 'KeyQ', 'KeyE', 'KeyP', 'Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
         e.preventDefault();
       }
     });
@@ -4175,7 +5498,10 @@ class InputController {
 
     window.addEventListener('mousedown', (e) => {
       if (e.button === 0) this.mouse.isDown = true;
-      if (e.button === 2) this.mouse.rightDown = true;
+      if (e.button === 2) {
+        this.mouse.rightDown = true;
+        this.mouse.rightJustPressed = true;
+      }
     });
 
     window.addEventListener('mouseup', (e) => {
@@ -4185,14 +5511,12 @@ class InputController {
 
     window.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    // Gamepad connection
     window.addEventListener('gamepadconnected', (e) => {
       this.padIndex = e.gamepad.index;
     });
   }
 
   _updateWorldCursor() {
-    // Project mouse onto 3D horizontal cosmic plane
     const ndcX = (this.mouse.x / window.innerWidth) * 2 - 1;
     const ndcY = -(this.mouse.y / window.innerHeight) * 2 + 1;
 
@@ -4207,6 +5531,11 @@ class InputController {
     let thrust = 0;
     let boost = false;
     let fire = false;
+    let fireMissile = false;
+    let triggerEMP = false;
+    let switchCamera = false;
+    let togglePause = false;
+    let weaponSelect = null;
     let targetHeading = ship.heading;
 
     // 1. KEYBOARD AXES
@@ -4218,40 +5547,64 @@ class InputController {
     if (keyW) thrust += 1.0;
     if (keyS) thrust -= 0.8;
 
-    if (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') || this.mouse.rightDown) {
+    if (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) {
       boost = true;
     }
     if (this.keys.has('Space') || this.mouse.isDown) {
       fire = true;
     }
 
-    // 2. MOUSE FLIGHT STEERING (Smooth & Intuitive)
+    // Secondary Weapon / Missiles (Right Click or E or F)
+    if (this.mouse.rightJustPressed || this.justPressedKeys.has('KeyE') || this.justPressedKeys.has('KeyF') || this.touch.missile) {
+      fireMissile = true;
+      this.mouse.rightJustPressed = false;
+      this.touch.missile = false;
+    }
+
+    // Special Weapon / EMP (Q or R)
+    if (this.justPressedKeys.has('KeyQ') || this.justPressedKeys.has('KeyR')) {
+      triggerEMP = true;
+    }
+
+    // Camera Switch (C or V)
+    if (this.justPressedKeys.has('KeyC') || this.justPressedKeys.has('KeyV')) {
+      switchCamera = true;
+    }
+
+    // Pause Toggle (ESC or P)
+    if (this.justPressedKeys.has('Escape') || this.justPressedKeys.has('KeyP')) {
+      togglePause = true;
+    }
+
+    // Weapon Selection (1, 2, 3)
+    if (this.justPressedKeys.has('Digit1')) weaponSelect = 'cannons';
+    if (this.justPressedKeys.has('Digit2')) weaponSelect = 'rapid';
+    if (this.justPressedKeys.has('Digit3')) weaponSelect = 'missiles';
+
+    // Clear single-frame actions
+    this.justPressedKeys.clear();
+
+    // 2. MOUSE FLIGHT STEERING
     this._updateWorldCursor();
     const dx = this.mouse.worldX - ship.position.x;
     const dz = this.mouse.worldZ - ship.position.z;
     const cursorDist = Math.hypot(dx, dz);
 
-    // If mouse is moved away from ship center, steer towards it smoothly
-    if (cursorDist > 3.0) {
+    if (cursorDist > 2.5) {
       targetHeading = Math.atan2(dx, dz);
     }
 
-    // Allow keyboard A/D to provide direct turning override if pressed
-    if (keyA) targetHeading += 0.05;
-    if (keyD) targetHeading -= 0.05;
+    if (keyA) targetHeading += 0.06;
+    if (keyD) targetHeading -= 0.06;
 
     // 3. GAMEPAD INPUT
     if (navigator.getGamepads && this.padIndex !== null) {
       const pads = navigator.getGamepads();
       const pad = pads[this.padIndex];
       if (pad && pad.connected) {
-        // Left Stick (Y axis: throttle)
         const stickY = pad.axes[1] || 0;
-        if (Math.abs(stickY) > 0.15) {
-          thrust = -stickY;
-        }
+        if (Math.abs(stickY) > 0.15) thrust = -stickY;
 
-        // Right Stick or Left Stick (Aim direction)
         const aimX = Math.abs(pad.axes[2]) > 0.2 ? pad.axes[2] : (Math.abs(pad.axes[0]) > 0.2 ? pad.axes[0] : 0);
         const aimY = Math.abs(pad.axes[3]) > 0.2 ? pad.axes[3] : (Math.abs(pad.axes[1]) > 0.2 ? pad.axes[1] : 0);
 
@@ -4259,13 +5612,15 @@ class InputController {
           targetHeading = Math.atan2(aimX, -aimY);
         }
 
-        // Triggers / Buttons
-        if (pad.buttons[7]?.pressed || pad.buttons[0]?.pressed) fire = true; // R2 or A
-        if (pad.buttons[6]?.pressed || pad.buttons[1]?.pressed) boost = true; // L2 or B
+        if (pad.buttons[7]?.pressed || pad.buttons[0]?.pressed) fire = true;
+        if (pad.buttons[6]?.pressed || pad.buttons[1]?.pressed) boost = true;
+        if (pad.buttons[5]?.pressed) fireMissile = true; // R1
+        if (pad.buttons[4]?.pressed) triggerEMP = true; // L1
+        if (pad.buttons[9]?.pressed) togglePause = true; // Start
       }
     }
 
-    // 4. TOUCH OVERRIDES (if active)
+    // 4. TOUCH OVERRIDES
     if (this.touch.active) {
       if (Math.abs(this.touch.thrust) > 0.05) thrust = this.touch.thrust;
       if (this.touch.boost) boost = true;
@@ -4276,19 +5631,30 @@ class InputController {
       thrust,
       boost,
       fire,
+      fireMissile,
+      triggerEMP,
+      switchCamera,
+      togglePause,
+      weaponSelect,
       targetHeading,
-      mouseWorld: { x: this.mouse.worldX, z: this.mouse.worldZ }
+      hasMouseTarget: cursorDist > 2.5,
+      targetWorldX: this.mouse.worldX,
+      targetWorldZ: this.mouse.worldZ,
+      mouseScreenX: this.mouse.x,
+      mouseScreenY: this.mouse.y
     };
   }
 }
 
     /**
- * Futuristic Cockpit Tactical HUD, 360° Radar & Boss Health Bar
+ * Futuristic Cockpit Tactical HUD, 360° Radar, Predictive Dogfight Lead Pip,
+ * Mission Objectives, Weapon Status Rack, and Interactive Pause / Settings Menu.
  */
 class TacticalHUD {
   constructor(container) {
     this.container = container;
     this.feedMessages = [];
+    this.callbacks = {};
     this._buildDOM();
   }
 
@@ -4298,22 +5664,26 @@ class TacticalHUD {
         <!-- Top Tactical Status Bar -->
         <header class="hud-top">
           <div class="hud-brand">
-            <span class="hud-title">COSMIC EXPANSE</span>
-            <span class="hud-sector" id="hud-sector-badge">SECTOR 01</span>
+            <span class="hud-title">HOVERDRIFT // COSMIC</span>
+            <span class="hud-sector" id="hud-sector-badge">LEVEL 01: PATROL</span>
+          </div>
+
+          <!-- Mission Objective Panel (Top Left Center) -->
+          <div class="hud-mission-panel">
+            <div class="mission-title" id="hud-mission-title">MISSION 01: DEEP-SPACE PATROL</div>
+            <div class="mission-objective" id="hud-mission-objective">OBJECTIVE: Neutralize hostile patrol [0/5]</div>
           </div>
 
           <!-- Dedicated Boss Health Bar (Active during Capital Boss Battles) -->
           <div class="hud-boss-bar-panel" id="hud-boss-panel" style="display: none;">
             <div class="boss-title-row">
-              <span class="boss-warning-tag">WARNING: CAPITAL THREAT</span>
-              <span class="boss-name" id="hud-boss-name">LEVIATHAN DREADNOUGHT</span>
+              <span class="boss-warning-tag">WARNING: CAPITAL CLASS THREAT</span>
+              <span class="boss-name" id="hud-boss-name">LEVIATHAN OMEGA DREADNOUGHT</span>
             </div>
             <div class="boss-bars">
-              <!-- Boss Shield -->
               <div class="boss-track">
                 <div class="boss-fill boss-shield-fill" id="hud-boss-shield" style="width: 100%;"></div>
               </div>
-              <!-- Boss Hull -->
               <div class="boss-track">
                 <div class="boss-fill boss-hull-fill" id="hud-boss-hull" style="width: 100%;"></div>
               </div>
@@ -4322,7 +5692,7 @@ class TacticalHUD {
 
           <!-- Central Alert Announcement -->
           <div class="hud-center-alert" id="hud-announcement" style="display: none;">
-            <div class="alert-box" id="hud-alert-text">SECTOR COMPLETED</div>
+            <div class="alert-box" id="hud-alert-text">MISSION UPDATED</div>
           </div>
 
           <!-- Score & Multiplier -->
@@ -4338,8 +5708,15 @@ class TacticalHUD {
         <!-- Dynamic Combat Feed (Top Right) -->
         <div class="hud-feed" id="hud-feed"></div>
 
-        <!-- Center Crosshair & Target Tracking Canvas -->
+        <!-- Center Crosshair & Predictive Target Lead Canvas -->
         <canvas class="hud-tracking-canvas" id="hud-tracking-canvas"></canvas>
+
+        <!-- First-Person Cockpit Canopy Frame Overlay (Visible in Cockpit Mode) -->
+        <div class="cockpit-overlay" id="cockpit-overlay" style="display: none;">
+          <div class="cockpit-frame-left"></div>
+          <div class="cockpit-frame-right"></div>
+          <div class="cockpit-hud-glass"></div>
+        </div>
 
         <!-- Lower Left: 360-Degree Tactical Radar -->
         <div class="hud-radar-panel">
@@ -4350,7 +5727,7 @@ class TacticalHUD {
           <div class="radar-label">360° TACTICAL SCANNER</div>
         </div>
 
-        <!-- Lower Center: Vitals (Shields, Hull, Boost, Weapon Power) -->
+        <!-- Lower Center: Vitals & Weapon Ordnance Rack -->
         <div class="hud-vitals">
           <!-- Shield Bar -->
           <div class="vital-row">
@@ -4381,31 +5758,84 @@ class TacticalHUD {
 
           <!-- Weapon Status & Heat -->
           <div class="vital-row">
-            <span class="vital-label" id="hud-weapon-label">LASER LV1</span>
+            <span class="vital-label" id="hud-weapon-label">CANNONS</span>
             <div class="bar-track thin">
               <div class="bar-fill heat-fill" id="hud-heat-fill" style="width: 0%;"></div>
             </div>
             <span class="vital-val" id="hud-heat-val">OK</span>
           </div>
+
+          <!-- Weapon Ordnance Selector Rack -->
+          <div class="weapons-rack">
+            <div class="w-slot active" id="w-slot-1"><span class="w-key">1</span> CANNONS</div>
+            <div class="w-slot" id="w-slot-2"><span class="w-key">2</span> GATLING</div>
+            <div class="w-slot" id="w-slot-3"><span class="w-key">3</span> MISSILES (<span id="hud-missiles-val">8</span>)</div>
+            <div class="w-slot emp-slot" id="w-slot-emp"><span class="w-key">Q</span> EMP [READY]</div>
+          </div>
         </div>
 
-        <!-- Key Hints (Bottom Right) -->
+        <!-- Camera Mode Badge & Key Hints (Bottom Right) -->
         <div class="hud-hints">
-          <div class="hint-chip"><kbd>W</kbd> THRUST</div>
-          <div class="hint-chip"><kbd>S</kbd> BRAKE</div>
-          <div class="hint-chip"><kbd>MOUSE</kbd> STEER</div>
-          <div class="hint-chip"><kbd>SPACE</kbd> / <kbd>L-CLICK</kbd> FIRE</div>
-          <div class="hint-chip"><kbd>SHIFT</kbd> / <kbd>R-CLICK</kbd> BOOST</div>
+          <div class="cam-badge" id="hud-cam-badge"><kbd>C</kbd> CAM: TACTICAL CHASE</div>
+          <div class="hint-chip"><kbd>W</kbd>/<kbd>S</kbd> THRUST / BRAKE</div>
+          <div class="hint-chip"><kbd>L-CLICK</kbd> FIRE // <kbd>R-CLICK</kbd>/<kbd>E</kbd> MISSILE</div>
+          <div class="hint-chip"><kbd>Q</kbd> EMP DISCHARGE // <kbd>SHIFT</kbd> BOOST</div>
+          <div class="hint-chip"><kbd>ESC</kbd> PAUSE MENU</div>
         </div>
 
-        <!-- Mobile Touch Overlay -->
+        <!-- Mobile Touch Controls -->
         <div class="touch-controls" id="touch-controls">
           <div class="touch-stick" id="touch-stick-left">
             <div class="stick-knob" id="stick-knob-left"></div>
           </div>
           <div class="touch-buttons">
             <button class="touch-action-btn boost-btn" id="btn-touch-boost">BOOST</button>
+            <button class="touch-action-btn missile-btn" id="btn-touch-missile">MISSILE</button>
             <button class="touch-action-btn fire-btn" id="btn-touch-fire">FIRE</button>
+          </div>
+        </div>
+
+        <!-- Interactive Pause & Settings Menu -->
+        <div class="hud-modal" id="pause-modal" style="display: none;">
+          <div class="modal-card">
+            <h2 class="modal-title">MISSION PAUSED</h2>
+            <div class="modal-sub">HOVERDRIFT // TACTICAL COMMAND</div>
+            <div class="modal-buttons">
+              <button class="modal-btn primary" id="btn-resume-mission">RESUME MISSION [ESC]</button>
+              <button class="modal-btn" id="btn-restart-mission">RESTART CURRENT MISSION</button>
+            </div>
+
+            <div class="modal-section-title">SELECT MISSION DEPLOYMENT</div>
+            <div class="level-select-grid">
+              <button class="lvl-select-btn" data-lvl="1">M1: PATROL</button>
+              <button class="lvl-select-btn" data-lvl="2">M2: ASTEROIDS</button>
+              <button class="lvl-select-btn" data-lvl="3">M3: ORBITAL</button>
+              <button class="lvl-select-btn" data-lvl="4">M4: NEBULA</button>
+              <button class="lvl-select-btn" data-lvl="5">M5: CAPITAL</button>
+            </div>
+
+            <div class="modal-settings">
+              <div class="setting-item">
+                <span>AUDIO VOLUME</span>
+                <input type="range" id="setting-vol-slider" min="0" max="1" step="0.05" value="0.7">
+              </div>
+              <button class="modal-btn small" id="btn-toggle-mute">MUTE AUDIO</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mission Accomplished Modal -->
+        <div class="hud-modal" id="victory-modal" style="display: none;">
+          <div class="modal-card victory-card">
+            <h1 class="modal-title victory-glow">MISSION ACCOMPLISHED</h1>
+            <div class="modal-sub" id="vic-sub-title">SECTOR SECURED</div>
+            <div class="victory-rank-badge" id="vic-rank">RANK: S</div>
+            <div class="vic-stats-grid">
+              <div class="v-stat"><span>SCORE</span><b id="vic-score">000000</b></div>
+              <div class="v-stat"><span>HOSTILES DESTROYED</span><b id="vic-kills">0</b></div>
+              <div class="v-stat"><span>NEXT MISSION</span><b id="vic-next-title">LEVEL 02</b></div>
+            </div>
+            <button class="modal-btn primary" id="btn-proceed-mission">LAUNCH NEXT MISSION</button>
           </div>
         </div>
       </div>
@@ -4415,6 +5845,8 @@ class TacticalHUD {
     this.scoreEl = document.getElementById('hud-score');
     this.comboEl = document.getElementById('hud-combo');
     this.sectorBadge = document.getElementById('hud-sector-badge');
+    this.missionTitle = document.getElementById('hud-mission-title');
+    this.missionObjective = document.getElementById('hud-mission-objective');
     this.shieldFill = document.getElementById('hud-shield-fill');
     this.shieldVal = document.getElementById('hud-shield-val');
     this.hullFill = document.getElementById('hud-hull-fill');
@@ -4424,28 +5856,85 @@ class TacticalHUD {
     this.heatFill = document.getElementById('hud-heat-fill');
     this.heatVal = document.getElementById('hud-heat-val');
     this.weaponLabel = document.getElementById('hud-weapon-label');
+    this.missilesVal = document.getElementById('hud-missiles-val');
+    this.empSlot = document.getElementById('w-slot-emp');
+    this.camBadge = document.getElementById('hud-cam-badge');
+    this.cockpitOverlay = document.getElementById('cockpit-overlay');
     this.feedEl = document.getElementById('hud-feed');
     this.announcementEl = document.getElementById('hud-announcement');
     this.alertTextEl = document.getElementById('hud-alert-text');
 
-    // Boss Bar Elements
+    // Boss Panel
     this.bossPanel = document.getElementById('hud-boss-panel');
     this.bossName = document.getElementById('hud-boss-name');
     this.bossShield = document.getElementById('hud-boss-shield');
     this.bossHull = document.getElementById('hud-boss-hull');
 
+    // Modals
+    this.pauseModal = document.getElementById('pause-modal');
+    this.victoryModal = document.getElementById('victory-modal');
+
+    // Canvases
     this.trackingCanvas = document.getElementById('hud-tracking-canvas');
     this.trackingCtx = this.trackingCanvas.getContext('2d');
     this.radarCanvas = document.getElementById('hud-radar-canvas');
     this.radarCtx = this.radarCanvas.getContext('2d');
 
+    this._bindModalEvents();
     this._resizeCanvases();
     window.addEventListener('resize', () => this._resizeCanvases());
+  }
+
+  _bindModalEvents() {
+    document.getElementById('btn-resume-mission')?.addEventListener('click', () => {
+      if (this.callbacks.onResume) this.callbacks.onResume();
+    });
+    document.getElementById('btn-restart-mission')?.addEventListener('click', () => {
+      if (this.callbacks.onRestart) this.callbacks.onRestart();
+    });
+    document.getElementById('btn-proceed-mission')?.addEventListener('click', () => {
+      if (this.callbacks.onNextMission) this.callbacks.onNextMission();
+    });
+
+    document.querySelectorAll('.lvl-select-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lvl = parseInt(btn.dataset.lvl, 10);
+        if (this.callbacks.onSelectLevel) this.callbacks.onSelectLevel(lvl);
+      });
+    });
+
+    const volSlider = document.getElementById('setting-vol-slider');
+    volSlider?.addEventListener('input', (e) => {
+      if (this.callbacks.onVolume) this.callbacks.onVolume(parseFloat(e.target.value));
+    });
+
+    document.getElementById('btn-toggle-mute')?.addEventListener('click', () => {
+      if (this.callbacks.onMute) this.callbacks.onMute();
+    });
   }
 
   _resizeCanvases() {
     this.trackingCanvas.width = window.innerWidth;
     this.trackingCanvas.height = window.innerHeight;
+  }
+
+  setCallbacks(cbs) {
+    this.callbacks = cbs;
+  }
+
+  showPauseMenu(show) {
+    this.pauseModal.style.display = show ? 'flex' : 'none';
+  }
+
+  showVictoryModal(show, data = {}) {
+    this.victoryModal.style.display = show ? 'flex' : 'none';
+    if (show && data) {
+      document.getElementById('vic-sub-title').textContent = data.title || 'SECTOR SECURED';
+      document.getElementById('vic-rank').textContent = `RANK: ${data.rank || 'S'}`;
+      document.getElementById('vic-score').textContent = (data.score || 0).toString().padStart(6, '0');
+      document.getElementById('vic-kills').textContent = data.kills || 0;
+      document.getElementById('vic-next-title').textContent = data.nextTitle || 'NEXT SECTOR';
+    }
   }
 
   showAnnouncement(text, durationMs = 2800) {
@@ -4464,310 +5953,315 @@ class TacticalHUD {
     item.textContent = text;
     this.feedEl.appendChild(item);
 
-    while (this.feedEl.children.length > 5) {
-      this.feedEl.removeChild(this.feedEl.firstChild);
-    }
-
     setTimeout(() => {
-      if (item.parentNode) {
-        item.style.opacity = '0';
-        setTimeout(() => item.remove(), 300);
-      }
-    }, 3500);
+      item.style.opacity = '0';
+      item.style.transition = 'opacity 0.5s ease-out';
+      setTimeout(() => item.remove(), 500);
+    }, 4500);
+
+    while (this.feedEl.children.length > 5) {
+      this.feedEl.removeChild(this.feedEl.children[0]);
+    }
   }
 
-  update(player, score, combo, sector, trackingInfo, radarData, time) {
-    // 1. UPDATE VITALS
-    const shieldPct = Math.round((player.shield / player.maxShield) * 100);
-    const hullPct = Math.round((player.hull / player.maxHull) * 100);
-    const energyPct = Math.round((player.energy / player.maxEnergy) * 100);
-    const heatPct = Math.round(player.heat * 100);
+  setMissionInfo(levelNum, levelName, objectiveText) {
+    this.sectorBadge.textContent = `LEVEL 0${levelNum}: ${levelName.toUpperCase()}`;
+    this.missionTitle.textContent = `MISSION 0${levelNum}: ${levelName.toUpperCase()}`;
+    this.missionObjective.textContent = `OBJECTIVE: ${objectiveText}`;
+  }
+
+  setCameraMode(modeName, isCockpit = false) {
+    this.camBadge.innerHTML = `<kbd>C</kbd> CAM: ${modeName.toUpperCase()}`;
+    this.cockpitOverlay.style.display = isCockpit ? 'block' : 'none';
+  }
+
+  update(player, score, combo, levelNum, trackingInfo, radarData, time, missionStats) {
+    // 1. Update Top Bar Score & Combo
+    this.scoreEl.textContent = Math.floor(score).toString().padStart(6, '0');
+    this.comboEl.textContent = `x${combo} COMBO`;
+    this.comboEl.style.opacity = combo > 1 ? '1' : '0.4';
+
+    // 2. Update Vitals
+    const shieldPct = Math.max(0, Math.min(100, (player.shield / player.maxShield) * 100));
+    const hullPct = Math.max(0, Math.min(100, (player.hull / player.maxHull) * 100));
+    const energyPct = Math.max(0, Math.min(100, (player.energy / player.maxEnergy) * 100));
+    const heatPct = Math.max(0, Math.min(100, player.heat * 100));
 
     this.shieldFill.style.width = `${shieldPct}%`;
-    this.shieldVal.textContent = `${shieldPct}%`;
+    this.shieldVal.textContent = `${Math.round(shieldPct)}%`;
 
     this.hullFill.style.width = `${hullPct}%`;
-    this.hullVal.textContent = `${hullPct}%`;
-    if (hullPct <= 25) {
-      this.hullFill.style.background = '#ff2244';
-      this.hullFill.classList.add('pulse-critical');
-    } else if (hullPct <= 50) {
-      this.hullFill.style.background = '#ffaa00';
-      this.hullFill.classList.remove('pulse-critical');
-    } else {
-      this.hullFill.style.background = 'linear-gradient(90deg, #37e88a, #5cff9d)';
-      this.hullFill.classList.remove('pulse-critical');
-    }
+    this.hullVal.textContent = `${Math.round(hullPct)}%`;
 
     this.energyFill.style.width = `${energyPct}%`;
-    this.energyVal.textContent = `${energyPct}%`;
+    this.energyVal.textContent = `${Math.round(energyPct)}%`;
 
     this.heatFill.style.width = `${heatPct}%`;
-    if (player.overheated) {
-      this.heatVal.textContent = 'OVERHEAT';
-      this.heatVal.style.color = '#ff2244';
-      this.heatFill.style.background = '#ff2244';
-    } else {
-      this.heatVal.textContent = `${heatPct}%`;
-      this.heatVal.style.color = '#7d93a8';
-      this.heatFill.style.background = 'linear-gradient(90deg, #ffaa00, #ff4400)';
+    this.heatVal.textContent = player.overheated ? 'OVERHEAT' : `${Math.round(heatPct)}%`;
+    this.heatVal.style.color = player.overheated ? 'var(--danger)' : '#fff';
+
+    // 3. Update Weapons & Ordnance
+    this.weaponLabel.textContent = player.selectedWeapon ? player.selectedWeapon.toUpperCase() : 'CANNONS';
+    this.missilesVal.textContent = player.missiles;
+
+    ['1', '2', '3'].forEach(k => {
+      const el = document.getElementById(`w-slot-${k}`);
+      if (el) el.classList.remove('active');
+    });
+    if (player.selectedWeapon === 'cannons') document.getElementById('w-slot-1')?.classList.add('active');
+    else if (player.selectedWeapon === 'rapid') document.getElementById('w-slot-2')?.classList.add('active');
+    else if (player.selectedWeapon === 'missiles') document.getElementById('w-slot-3')?.classList.add('active');
+
+    if (this.empSlot) {
+      if (player.empCooldown <= 0) {
+        this.empSlot.classList.add('ready');
+        this.empSlot.innerHTML = `<span class="w-key">Q</span> EMP [READY]`;
+      } else {
+        this.empSlot.classList.remove('ready');
+        this.empSlot.innerHTML = `<span class="w-key">Q</span> EMP [${Math.ceil(player.empCooldown)}s]`;
+      }
     }
 
-    // Weapon Level Badge
-    this.weaponLabel.textContent = `LASER LV${player.weaponLevel}`;
-    if (player.weaponLevel >= 2) {
-      this.weaponLabel.style.color = '#ffc247';
-    } else {
-      this.weaponLabel.style.color = 'var(--muted)';
+    // 4. Update Mission Objective Progress
+    if (missionStats && missionStats.objectiveText) {
+      this.missionObjective.textContent = `OBJECTIVE: ${missionStats.objectiveText}`;
     }
 
-    // 2. BOSS HEALTH BAR
-    if (trackingInfo.bossData) {
-      this.bossPanel.style.display = 'flex';
-      this.bossName.textContent = trackingInfo.bossData.name;
-      const bShieldPct = Math.max(0, Math.round((trackingInfo.bossData.shield / trackingInfo.bossData.maxShield) * 100));
-      const bHullPct = Math.max(0, Math.round((trackingInfo.bossData.hp / trackingInfo.bossData.maxHp) * 100));
-      this.bossShield.style.width = `${bShieldPct}%`;
-      this.bossHull.style.width = `${bHullPct}%`;
+    // 5. Boss Bar
+    if (missionStats && missionStats.boss) {
+      const b = missionStats.boss;
+      this.bossPanel.style.display = 'block';
+      this.bossName.textContent = b.name;
+      this.bossShield.style.width = `${Math.max(0, (b.shield / b.maxShield) * 100)}%`;
+      this.bossHull.style.width = `${Math.max(0, (b.hp / b.maxHp) * 100)}%`;
     } else {
       this.bossPanel.style.display = 'none';
     }
 
-    // 3. SCORE & SECTOR
-    this.scoreEl.textContent = score.toString().padStart(6, '0');
-    this.sectorBadge.textContent = `SECTOR ${sector.toString().padStart(2, '0')}`;
-    this.comboEl.textContent = `x${combo} COMBO`;
-    this.comboEl.style.opacity = combo > 1 ? '1' : '0.4';
+    // 6. Draw Predictive Dogfight Lead Pip on Tracking Canvas
+    this._renderTrackingHUD(trackingInfo, time);
 
-    // 4. DRAW 2D TRACKING OVERLAY & RADAR
-    this._renderTrackingOverlay(trackingInfo);
+    // 7. Render 360° Tactical Radar
     this._renderRadar(player, radarData);
   }
 
-  _renderTrackingOverlay(trackingInfo) {
+  _renderTrackingHUD(info, time) {
     const ctx = this.trackingCtx;
-    const w = this.trackingCanvas.width;
-    const h = this.trackingCanvas.height;
-    ctx.clearRect(0, 0, w, h);
-    if (!trackingInfo) return;
+    ctx.clearRect(0, 0, this.trackingCanvas.width, this.trackingCanvas.height);
 
-    // A. Primary Locked Target
-    const target = trackingInfo.primaryTarget;
-    if (target && target.isInView) {
-      const x = target.screenX;
-      const y = target.screenY;
-      const size = target.isBoss ? 48 : Math.max(26, Math.min(60, 4200 / Math.max(10, target.dist)));
+    const centerX = this.trackingCanvas.width / 2;
+    const centerY = this.trackingCanvas.height / 2;
 
-      ctx.save();
-      ctx.strokeStyle = target.isBoss ? '#bf00ff' : '#ff3366';
-      ctx.lineWidth = target.isBoss ? 3 : 2;
-      ctx.shadowColor = ctx.strokeStyle;
-      ctx.shadowBlur = 10;
+    // Center Crosshair
+    ctx.strokeStyle = 'rgba(62, 240, 255, 0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 16, 0, Math.PI * 2);
+    ctx.stroke();
 
-      const arm = size * 0.35;
-      // Top-Left
-      ctx.beginPath();
-      ctx.moveTo(x - size, y - size + arm);
-      ctx.lineTo(x - size, y - size);
-      ctx.lineTo(x - size + arm, y - size);
-      ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(centerX - 24, centerY); ctx.lineTo(centerX - 8, centerY);
+    ctx.moveTo(centerX + 8, centerY); ctx.lineTo(centerX + 24, centerY);
+    ctx.moveTo(centerX, centerY - 24); ctx.lineTo(centerX, centerY - 8);
+    ctx.moveTo(centerX, centerY + 8); ctx.lineTo(centerX, centerY + 24);
+    ctx.stroke();
 
-      // Top-Right
-      ctx.beginPath();
-      ctx.moveTo(x + size - arm, y - size);
-      ctx.lineTo(x + size, y - size);
-      ctx.lineTo(x + size, y - size + arm);
-      ctx.stroke();
+    if (!info || !info.inFront) return;
 
-      // Bottom-Left
-      ctx.beginPath();
-      ctx.moveTo(x - size, y + size - arm);
-      ctx.lineTo(x - size, y + size);
-      ctx.lineTo(x - size + arm, y + size);
-      ctx.stroke();
+    const sx = info.screenX;
+    const sy = info.screenY;
+    const lx = info.leadScreenX;
+    const ly = info.leadScreenY;
 
-      // Bottom-Right
-      ctx.beginPath();
-      ctx.moveTo(x + size - arm, y + size);
-      ctx.lineTo(x + size, y + size);
-      ctx.lineTo(x + size, y + size - arm);
-      ctx.stroke();
+    // Target Diamond Box
+    const isLock = info.isLocked;
+    ctx.strokeStyle = isLock ? '#ff2244' : '#ffc247';
+    ctx.lineWidth = 2;
+    const size = 18;
 
-      // Target Name & Distance
-      ctx.fillStyle = target.isBoss ? '#ff88ff' : '#ff88aa';
-      ctx.font = 'bold 11px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${target.name} [${target.dist}M]`, x, y - size - 8);
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - size);
+    ctx.lineTo(sx + size, sy);
+    ctx.lineTo(sx, sy + size);
+    ctx.lineTo(sx - size, sy);
+    ctx.closePath();
+    ctx.stroke();
 
-      // Micro Health Bar
-      const barW = size * 1.8;
-      const barH = 4;
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(x - barW / 2, y + size + 6, barW, barH);
-      ctx.fillStyle = target.isBoss ? '#bf00ff' : '#ff2244';
-      ctx.fillRect(x - barW / 2, y + size + 6, barW * target.hpRatio, barH);
+    // Target Info Label
+    ctx.fillStyle = isLock ? '#ff2244' : '#ffc247';
+    ctx.font = '10px ui-monospace, monospace';
+    ctx.fillText(`${info.target.name || 'HOSTILE'} [${info.distance}m]`, sx + size + 6, sy - 4);
 
-      ctx.restore();
-    }
+    // Target HP Mini Bar
+    const hpPct = Math.max(0, (info.target.hp / info.target.maxHp));
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.fillRect(sx - size, sy + size + 4, size * 2, 4);
+    ctx.fillStyle = isLock ? '#ff2244' : '#3ef0ff';
+    ctx.fillRect(sx - size, sy + size + 4, size * 2 * hpPct, 4);
 
-    // B. Off-Screen Chevrons
-    if (trackingInfo.allTargets) {
-      ctx.save();
-      trackingInfo.allTargets.forEach(t => {
-        if (!t.isInView) {
-          const cx = w / 2;
-          const cy = h / 2;
-          let dx = t.screenX - cx;
-          let dy = t.screenY - cy;
-          if (t.isBehind) {
-            dx = -dx;
-            dy = -dy;
-          }
+    // Predictive Dogfight Lead Pip (Where to aim!)
+    ctx.strokeStyle = '#3ef0ff';
+    ctx.fillStyle = 'rgba(62, 240, 255, 0.2)';
+    ctx.lineWidth = 1.8;
 
-          const angle = Math.atan2(dy, dx);
-          const margin = 35;
-          const edgeX = Math.max(margin, Math.min(w - margin, cx + Math.cos(angle) * (w / 2 - margin)));
-          const edgeY = Math.max(margin, Math.min(h - margin, cy + Math.sin(angle) * (h / 2 - margin)));
+    ctx.beginPath();
+    ctx.arc(lx, ly, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
 
-          ctx.fillStyle = t.isBoss ? '#bf00ff' : '#ff2244';
-          ctx.save();
-          ctx.translate(edgeX, edgeY);
-          ctx.rotate(angle);
-          ctx.beginPath();
-          ctx.moveTo(t.isBoss ? 12 : 8, 0);
-          ctx.lineTo(-6, -6);
-          ctx.lineTo(-2, 0);
-          ctx.lineTo(-6, 6);
-          ctx.closePath();
-          ctx.fill();
-          ctx.restore();
-        }
-      });
-      ctx.restore();
-    }
+    ctx.beginPath();
+    ctx.moveTo(lx - 5, ly); ctx.lineTo(lx + 5, ly);
+    ctx.moveTo(lx, ly - 5); ctx.lineTo(lx, ly + 5);
+    ctx.stroke();
+
+    // Subtle lead guide dashed line
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(62, 240, 255, 0.35)';
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(lx, ly);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
-  _renderRadar(player, radarData) {
+  _renderRadar(player, data) {
     const ctx = this.radarCtx;
-    const size = 140;
-    const center = size / 2;
-    const radius = center - 6;
-    const radarScale = radius / 360;
+    const w = this.radarCanvas.width;
+    const h = this.radarCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const radarScale = 0.28;
 
-    ctx.clearRect(0, 0, size, size);
+    ctx.clearRect(0, 0, w, h);
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(center, center, radius, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(6, 14, 24, 0.75)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(62, 240, 255, 0.25)';
+    // Range concentric rings
+    ctx.strokeStyle = 'rgba(62, 240, 255, 0.16)';
     ctx.lineWidth = 1;
-    ctx.stroke();
-
-    [0.35, 0.7, 1.0].forEach(rRatio => {
-      ctx.beginPath();
-      ctx.arc(center, center, radius * rRatio, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(62, 240, 255, 0.12)';
-      ctx.stroke();
-    });
-
     ctx.beginPath();
-    ctx.moveTo(center, center - radius);
-    ctx.lineTo(center, center + radius);
-    ctx.moveTo(center - radius, center);
-    ctx.lineTo(center + radius, center);
-    ctx.strokeStyle = 'rgba(62, 240, 255, 0.15)';
+    ctx.arc(cx, cy, 25, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 50, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.translate(center, center);
-    ctx.rotate(-player.heading);
+    const pX = player.position.x;
+    const pZ = player.position.z;
+    const heading = player.heading;
 
-    // 1. Asteroids
-    if (radarData.asteroids) {
-      ctx.fillStyle = 'rgba(150, 170, 190, 0.6)';
-      radarData.asteroids.forEach(ast => {
-        const rx = (ast.x - player.position.x) * radarScale;
-        const rz = (ast.z - player.position.z) * radarScale;
-        if (Math.hypot(rx, rz) <= radius) ctx.fillRect(rx - 1.5, -rz - 1.5, 3, 3);
-      });
-    }
+    const toRadarCoord = (worldX, worldZ) => {
+      const dx = worldX - pX;
+      const dz = worldZ - pZ;
+      const rx = (dx * Math.cos(-heading) - dz * Math.sin(-heading)) * radarScale;
+      const rz = (dx * Math.sin(-heading) + dz * Math.cos(-heading)) * radarScale;
+      return { x: cx + rx, y: cy - rz };
+    };
 
-    // 2. Power-ups & Minerals
-    if (radarData.powerups) {
-      radarData.powerups.forEach(p => {
-        const rx = (p.x - player.position.x) * radarScale;
-        const rz = (p.z - player.position.z) * radarScale;
-        if (Math.hypot(rx, rz) <= radius) {
-          ctx.fillStyle = (p.type === 'shield_boost') ? '#5cff9d' : (p.type === 'weapon_upgrade' ? '#ffc247' : '#3ef0ff');
-          ctx.fillRect(rx - 2, -rz - 2, 4, 4);
+    // Draw Asteroids
+    if (data.asteroids) {
+      ctx.fillStyle = 'rgba(255, 194, 71, 0.45)';
+      data.asteroids.forEach(a => {
+        const pt = toRadarCoord(a.x, a.z);
+        if (Math.hypot(pt.x - cx, pt.y - cy) < 64) {
+          ctx.fillRect(pt.x - 1, pt.y - 1, 2, 2);
         }
       });
     }
 
-    // 3. Enemy Drones & Boss
-    if (radarData.drones) {
-      radarData.drones.forEach(d => {
-        const rx = (d.x - player.position.x) * radarScale;
-        const rz = (d.z - player.position.z) * radarScale;
-        if (Math.hypot(rx, rz) <= radius) {
-          if (d.isBoss) {
-            ctx.fillStyle = '#bf00ff';
-            ctx.beginPath();
-            ctx.arc(rx, -rz, 5, 0, Math.PI * 2);
-            ctx.fill();
-          } else {
-            ctx.fillStyle = '#ff2244';
-            ctx.beginPath();
-            ctx.arc(rx, -rz, 3, 0, Math.PI * 2);
-            ctx.fill();
-          }
+    // Draw Enemies
+    if (data.drones) {
+      data.drones.forEach(d => {
+        const pt = toRadarCoord(d.x, d.z);
+        if (Math.hypot(pt.x - cx, pt.y - cy) < 66) {
+          ctx.fillStyle = d.isBoss ? '#bf00ff' : '#ff2244';
+          const sz = d.isBoss ? 4.5 : 2.5;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, sz, 0, Math.PI * 2);
+          ctx.fill();
         }
       });
     }
 
-    // 4. Player Icon (Chevron)
+    // Draw Player Ship at Center
     ctx.fillStyle = '#3ef0ff';
     ctx.beginPath();
-    ctx.moveTo(0, -6);
-    ctx.lineTo(4, 5);
-    ctx.lineTo(0, 3);
-    ctx.lineTo(-4, 5);
+    ctx.moveTo(cx, cy - 4.5);
+    ctx.lineTo(cx + 3.5, cy + 3.5);
+    ctx.lineTo(cx - 3.5, cy + 3.5);
     ctx.closePath();
     ctx.fill();
-
-    ctx.restore();
   }
 }
 
     /**
  * Main Game Engine & Loop Orchestrator
  * Connects Multi-Ship Selection, Photorealistic Environment, Asteroids,
- * Dynamic Drone Squadrons, Capital Boss Battles, Power-ups, Audio, and HUD.
+ * 5 Mission Levels, 5 Enemy Classes, Capital Boss Battles, Homing Missiles,
+ * EMP Shockwaves, Cockpit / Chase Camera Modes, and Tactical HUD.
  */
 
+const MISSION_DEFINITIONS = [
+  {
+    level: 1,
+    title: 'Deep-Space Patrol',
+    briefing: 'Patrol sector perimeter and eliminate the hostile Scout Interceptor wing.',
+    targetKills: 5,
+    envPreset: 1
+  },
+  {
+    level: 2,
+    title: 'Asteroid Field',
+    briefing: 'Navigate the dense asteroid belt, neutralize 9 enemy fighters, and collect mineral crystals.',
+    targetKills: 9,
+    envPreset: 2
+  },
+  {
+    level: 3,
+    title: 'Orbital Station Defense',
+    briefing: 'Defend Valiance Orbital Space Station against 9 hostile Fighters and Heavy Gunships.',
+    targetKills: 9,
+    envPreset: 3
+  },
+  {
+    level: 4,
+    title: 'Nebula Frontier',
+    briefing: 'Infiltrate the deep cobalt nebula and eliminate 8 Elite Viper Aces.',
+    targetKills: 8,
+    envPreset: 4
+  },
+  {
+    level: 5,
+    title: 'Capital Ship Assault',
+    briefing: 'Assault and destroy the massive Leviathan Omega Capital Dreadnought!',
+    targetKills: 5,
+    envPreset: 5
+  }
+];
+
 class CosmicGame {
-  constructor(canvas, hudContainer, THREE, selectedShipType = 'aether') {
+  constructor(canvas, hudContainer, THREE, selectedShipType = 'crimson') {
     this.canvas = canvas;
     this.hudContainer = hudContainer;
     this.THREE = THREE;
     this.selectedShipType = selectedShipType;
 
-    // Game State
+    // Game & Mission State
     this.running = false;
     this.isPaused = false;
     this.score = 0;
     this.combo = 1;
     this.comboTimer = 0;
-    this.sector = 1;
+    this.currentLevel = 1;
+    this.levelKills = 0;
     this.shake = 0;
+
+    // Camera Modes: 0 = Tactical Chase, 1 = Close Action Chase, 2 = Cockpit View
+    this.cameraMode = 0;
+    this.cameraModes = ['Tactical Chase', 'Close Action', 'Cockpit View'];
 
     // Three.js Core
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x02040a);
-    this.scene.fog = new THREE.FogExp2(0x02040a, 0.0009);
+    this.scene.fog = new THREE.FogExp2(0x02040a, 0.0007);
 
-    this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.5, 5000);
+    this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.4, 6000);
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
       antialias: true,
@@ -4777,7 +6271,7 @@ class CosmicGame {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.25;
 
     // Audio & Systems
     this.audio = new SoundEngine();
@@ -4791,11 +6285,34 @@ class CosmicGame {
 
     // Player Lasers
     this.playerLasers = [];
-    this.laserGeom = new THREE.CylinderGeometry(0.12, 0.12, 2.4, 8);
+    this.laserGeom = new THREE.CylinderGeometry(0.12, 0.12, 2.5, 8);
     this.laserGeom.rotateX(Math.PI / 2);
 
+    this.rapidLaserGeom = new THREE.CylinderGeometry(0.08, 0.08, 1.8, 6);
+    this.rapidLaserGeom.rotateX(Math.PI / 2);
+
     this.lastTime = performance.now();
+    this.lastTargetLockAudio = 0;
+
+    this._bindHUDCallbacks();
     window.addEventListener('resize', () => this._onResize());
+  }
+
+  _bindHUDCallbacks() {
+    this.hud.setCallbacks({
+      onResume: () => this.togglePause(false),
+      onRestart: () => this.startMission(this.currentLevel),
+      onNextMission: () => {
+        this.hud.showVictoryModal(false);
+        this.startMission(Math.min(5, this.currentLevel + 1));
+      },
+      onSelectLevel: (lvl) => {
+        this.togglePause(false);
+        this.startMission(lvl);
+      },
+      onVolume: (val) => this.audio.setVolume(val),
+      onMute: () => this.audio.toggleMute()
+    });
   }
 
   _onResize() {
@@ -4808,33 +6325,43 @@ class CosmicGame {
 
   start() {
     this.audio.unlock();
+    this.audio.startCosmicMusic();
     this.running = true;
     this.score = 0;
     this.combo = 1;
-    this.sector = 1;
-
     this.asteroids.init(this.player.position);
-    this._startSector(1);
-
-    this.hud.addFeedMessage(`PILOT INITIATED: ${this.player.config.name}`, '#3ef0ff');
+    this.startMission(1);
     this.lastTime = performance.now();
     this._loop();
   }
 
-  _startSector(sectorNum) {
-    this.sector = sectorNum;
-    const isBoss = (sectorNum % 3 === 0);
+  startMission(levelNum) {
+    this.currentLevel = levelNum;
+    this.levelKills = 0;
+    const def = MISSION_DEFINITIONS[levelNum - 1] || MISSION_DEFINITIONS[0];
 
-    if (isBoss) {
-      this.hud.showAnnouncement(`ALERT: CAPITAL CLASS BOSS INCOMING!`, 3500);
-      this.hud.addFeedMessage(`CAPITAL WARSHIP DETECTED IN SECTOR ${sectorNum}`, '#bf00ff');
-    } else {
-      this.hud.showAnnouncement(`SECTOR ${sectorNum.toString().padStart(2, '0')}: HOSTILE SQUADRONS`);
-      this.hud.addFeedMessage(`SECTOR ${sectorNum} DRONE SQUADRON DETECTED`, '#ffaa00');
-    }
+    this.player.reset();
+    this.environment.setLevelEnvironment(def.envPreset);
+    this.drones.spawnLevelWave(levelNum, this.player.position);
+
+    this.hud.setMissionInfo(def.level, def.title, `${def.briefing} [0/${def.targetKills}]`);
+    this.hud.showAnnouncement(`MISSION 0${def.level}: ${def.title.toUpperCase()}`, 3500);
+    this.hud.addFeedMessage(`MISSION 0${def.level} INITIATED: ${def.title}`, '#3ef0ff');
 
     this.audio.waveAlert();
-    this.drones.spawnWave(sectorNum, this.player.position);
+  }
+
+  togglePause(forceState = null) {
+    this.isPaused = forceState !== null ? forceState : !this.isPaused;
+    this.hud.showPauseMenu(this.isPaused);
+  }
+
+  cycleCamera() {
+    this.cameraMode = (this.cameraMode + 1) % this.cameraModes.length;
+    const modeName = this.cameraModes[this.cameraMode];
+    const isCockpit = this.cameraMode === 2;
+    this.hud.setCameraMode(modeName, isCockpit);
+    this.hud.addFeedMessage(`CAMERA: ${modeName.toUpperCase()}`, '#ffc247');
   }
 
   _loop = () => {
@@ -4853,8 +6380,24 @@ class CosmicGame {
   };
 
   _update(dt, time) {
-    // 1. SAMPLE INPUT & UPDATE PLAYER
+    // 1. SAMPLE INPUT & CONTROLS
     const inputState = this.input.sample(this.player);
+
+    if (inputState.togglePause) {
+      this.togglePause();
+      return;
+    }
+
+    if (inputState.switchCamera) {
+      this.cycleCamera();
+    }
+
+    if (inputState.weaponSelect) {
+      this.player.selectedWeapon = inputState.weaponSelect;
+      this.hud.addFeedMessage(`WEAPON ARMED: ${inputState.weaponSelect.toUpperCase()}`, '#ffaa00');
+    }
+
+    // Update Player Movement & Physics
     this.player.targetHeading = inputState.targetHeading;
     this.player.update(dt, inputState, time);
 
@@ -4866,33 +6409,60 @@ class CosmicGame {
       this.particles.createThrusterSparks(this.player.position, this.player.heading, this.player.isBoosting);
     }
 
-    // 2. PLAYER WEAPON FIRING
-    if (inputState.fire && this.player.canFire(time)) {
-      this.player.recordShot(time);
+    // 2. WEAPON DISPATCH & FIRING
+    const wType = this.player.selectedWeapon || 'cannons';
+
+    // Primary & Rapid Fire
+    if (inputState.fire && this.player.canFire(time, wType)) {
+      this.player.recordShot(time, wType);
+      const isRapid = wType === 'rapid';
       const laserSpawns = this.player.getLaserSpawns();
 
       laserSpawns.forEach(spawn => {
         const mat = new this.THREE.MeshBasicMaterial({
-          color: spawn.color || this.player.config.laserColor,
+          color: isRapid ? 0x00ffff : spawn.color,
           transparent: true,
           opacity: 0.95
         });
-        const mesh = new this.THREE.Mesh(this.laserGeom, mat);
+        const geom = isRapid ? this.rapidLaserGeom : this.laserGeom;
+        const mesh = new this.THREE.Mesh(geom, mat);
         mesh.position.set(spawn.x, spawn.y, spawn.z);
         mesh.rotation.y = spawn.heading;
         this.scene.add(mesh);
 
         this.playerLasers.push({
           mesh,
-          vx: spawn.vx,
-          vz: spawn.vz,
-          life: 1.5,
-          damage: this.player.weaponLevel >= 2 ? 2 : 1
+          vx: spawn.vx * (isRapid ? 1.15 : 1.0),
+          vz: spawn.vz * (isRapid ? 1.15 : 1.0),
+          life: 1.4,
+          damage: isRapid ? 1.4 : (this.player.weaponLevel >= 2 ? 3 : 2)
         });
       });
 
       this.audio.shoot(this.player.isBoosting);
-      this.addShake(0.06);
+      this.addShake(isRapid ? 0.03 : 0.06);
+    }
+
+    // Secondary Homing Missiles (R-Click / E)
+    if (inputState.fireMissile && this.player.canLaunchMissile(time)) {
+      const trackingInfo = this.drones.getTargetTrackingInfo(this.player, this.camera, this.canvas.width, this.canvas.height);
+      const target = trackingInfo ? trackingInfo.target : null;
+
+      if (this.player.recordMissileLaunch(time)) {
+        this.drones.launchPlayerMissile(this.player, target);
+        this.audio.missileLaunch();
+        this.addShake(0.18);
+        this.hud.addFeedMessage(`HOMING MISSILE LAUNCHED [${this.player.missiles} REMAINING]`, '#3ef0ff');
+      }
+    }
+
+    // Special Weapon: EMP Pulse (Q)
+    if (inputState.triggerEMP && this.player.canTriggerEMP()) {
+      this.player.triggerEMP();
+      this.drones.triggerEMPBlast(this.player.position, 140, this.particles, this.audio);
+      this.addShake(0.45);
+      this.hud.showAnnouncement('EMP DISCHARGE: HOSTILE MISSILES & SHIELDS COLLAPSED', 3000);
+      this.hud.addFeedMessage('EMP SHOCKWAVE DISCHARGED', '#bf00ff');
     }
 
     // 3. UPDATE PLAYER LASERS & COLLISIONS
@@ -4908,9 +6478,10 @@ class CosmicGame {
         if (enemyHit.destroyed) {
           const pts = enemyHit.points * this.combo;
           this.score += pts;
+          this.levelKills++;
           this._incrementCombo();
-          this.hud.addFeedMessage(`+${pts} ${enemyHit.name} DESTROYED`, enemyHit.isBoss ? '#bf00ff' : '#5cff9d');
-          this.addShake(enemyHit.isBoss ? 0.8 : 0.35);
+          this.hud.addFeedMessage(`+${pts} ${enemyHit.name} ELIMINATED`, enemyHit.isBoss ? '#bf00ff' : '#5cff9d');
+          this.addShake(enemyHit.isBoss ? 0.85 : 0.35);
         }
 
         this.scene.remove(laser.mesh);
@@ -4938,44 +6509,41 @@ class CosmicGame {
       }
     }
 
-    // 4. UPDATE ASTEROIDS & DRONES & POWERUPS
+    // 4. UPDATE ASTEROIDS & DRONES
     this.asteroids.update(dt, this.player.position);
-    this.drones.update(dt, this.player, time, this.audio);
+    this.drones.update(dt, this.player, time, this.audio, this.particles);
 
     // Ship vs Asteroid Collision
     const shipAstHit = this.asteroids.checkShipCollision(this.player);
     if (shipAstHit.hit) {
-      this.player.takeDamage(12, time);
+      this.player.takeDamage(15, time);
       this.audio.hit();
-      this.addShake(0.25);
+      this.addShake(0.3);
     }
 
-    // Mineral Pickups from shattered asteroids
+    // Mineral Pickups
     this.asteroids.checkMineralPickups(this.player, (kind) => {
       this.audio.pickup(kind);
       if (kind === 'shield') {
-        this.player.repairShield(25);
-        this.hud.addFeedMessage('SHIELD RESTORED +25', '#5cff9d');
+        this.player.repairShield(30);
+        this.hud.addFeedMessage('SHIELDS CHARGED +30', '#5cff9d');
       } else if (kind === 'energy') {
-        this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + 40);
-        this.hud.addFeedMessage('OVERDRIVE CHARGED +40', '#3ef0ff');
+        this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + 45);
+        this.hud.addFeedMessage('BOOST CELLS CHARGED +45', '#3ef0ff');
       } else {
-        const pts = 200 * this.combo;
+        const pts = 250 * this.combo;
         this.score += pts;
-        this.hud.addFeedMessage(`+${pts} MINERAL CRYSTAL SECURED`, '#ffc247');
+        this.hud.addFeedMessage(`+${pts} MINERAL ORE SECURED`, '#ffc247');
       }
     });
 
-    // 5. CHECK SECTOR WAVE / BOSS COMPLETION
+    // 5. CHECK MISSION OBJECTIVE PROGRESS & COMPLETION
+    const def = MISSION_DEFINITIONS[this.currentLevel - 1] || MISSION_DEFINITIONS[0];
     const totalRemaining = (this.drones.boss ? 1 : 0) + this.drones.drones.length;
-    if (totalRemaining === 0) {
-      this.audio.sectorCleared();
-      const bonus = (this.sector % 3 === 0) ? 5000 : 1500;
-      this.hud.addFeedMessage(`SECTOR ${this.sector} CLEARED! +${bonus} VICTORY BONUS`, '#5cff9d');
-      this.score += bonus;
-      setTimeout(() => {
-        this._startSector(this.sector + 1);
-      }, 3200);
+    const killsProgress = `${this.levelKills}/${def.targetKills}`;
+
+    if (totalRemaining === 0 && !this.victoryModalActive) {
+      this._onMissionComplete(def);
     }
 
     // Combo Decay
@@ -4988,7 +6556,7 @@ class CosmicGame {
     this.particles.update(dt);
     this.environment.update(this.player.position, dt);
 
-    // 7. CAMERA CHASE SMOOTHING & LOOKAHEAD
+    // 7. CAMERA POSITIONING & VIEW MODES
     this._updateCamera(dt);
 
     // 8. UPDATE HUD & TARGET TRACKING
@@ -4999,6 +6567,12 @@ class CosmicGame {
       this.canvas.height
     );
 
+    // Target Lock Chime
+    if (trackingInfo && trackingInfo.isLocked && time - this.lastTargetLockAudio > 1.8) {
+      this.lastTargetLockAudio = time;
+      this.audio.missileLock();
+    }
+
     const radarData = {
       asteroids: this.asteroids.asteroids.map(a => ({ x: a.mesh.position.x, z: a.mesh.position.z })),
       powerups: this.drones.powerups.map(p => ({ x: p.group.position.x, z: p.group.position.z, type: p.type })),
@@ -5008,7 +6582,12 @@ class CosmicGame {
       ]
     };
 
-    this.hud.update(this.player, this.score, this.combo, this.sector, trackingInfo, radarData, time);
+    const missionStats = {
+      objectiveText: `${def.briefing} [${killsProgress}]`,
+      boss: this.drones.boss
+    };
+
+    this.hud.update(this.player, this.score, this.combo, this.currentLevel, trackingInfo, radarData, time, missionStats);
 
     if (this.player.hull <= 0) {
       this._onGameOver();
@@ -5017,39 +6596,74 @@ class CosmicGame {
 
   _incrementCombo() {
     this.combo = Math.min(6, this.combo + 1);
-    this.comboTimer = 4.2;
+    this.comboTimer = 4.5;
   }
 
   _updateCamera(dt) {
     const forwardX = Math.sin(this.player.heading);
     const forwardZ = Math.cos(this.player.heading);
 
-    const targetCamX = this.player.position.x - forwardX * 44;
-    const targetCamZ = this.player.position.z - forwardZ * 44;
-    const targetCamY = 26;
+    if (this.cameraMode === 2) {
+      // MODE 2: FIRST-PERSON COCKPIT VIEW
+      const cockPos = this.player.getCockpitWorldPosition();
+      this.camera.position.copy(cockPos);
+      const lookX = cockPos.x + forwardX * 60;
+      const lookZ = cockPos.z + forwardZ * 60;
+      this.camera.lookAt(lookX, cockPos.y, lookZ);
 
-    this.camera.position.x += (targetCamX - this.camera.position.x) * (1 - Math.exp(-6.5 * dt));
-    this.camera.position.z += (targetCamZ - this.camera.position.z) * (1 - Math.exp(-6.5 * dt));
-    this.camera.position.y += (targetCamY - this.camera.position.y) * (1 - Math.exp(-6.5 * dt));
+      // Subtle cockpit roll alignment
+      this.camera.rotation.z = this.player.roll * 0.8;
+      this.camera.fov = this.player.isBoosting ? 74 : 64;
+      this.camera.updateProjectionMatrix();
+    } else {
+      // MODE 0 (Tactical Chase) & MODE 1 (Close Action)
+      const isClose = this.cameraMode === 1;
+      const camDist = isClose ? 28 : 46;
+      const camHeight = isClose ? 14 : 26;
 
-    const targetFov = this.player.isBoosting ? 70 : 62;
-    this.camera.fov += (targetFov - this.camera.fov) * (1 - Math.exp(-5.0 * dt));
-    this.camera.updateProjectionMatrix();
+      const targetCamX = this.player.position.x - forwardX * camDist;
+      const targetCamZ = this.player.position.z - forwardZ * camDist;
+      const targetCamY = camHeight;
 
-    const lookTargetX = this.player.position.x + forwardX * 20;
-    const lookTargetZ = this.player.position.z + forwardZ * 20;
+      const followSpeed = isClose ? 8.5 : 6.8;
+      this.camera.position.x += (targetCamX - this.camera.position.x) * (1 - Math.exp(-followSpeed * dt));
+      this.camera.position.z += (targetCamZ - this.camera.position.z) * (1 - Math.exp(-followSpeed * dt));
+      this.camera.position.y += (targetCamY - this.camera.position.y) * (1 - Math.exp(-followSpeed * dt));
 
-    if (this.shake > 0) {
-      this.camera.position.x += (Math.random() - 0.5) * this.shake * 3.0;
-      this.camera.position.y += (Math.random() - 0.5) * this.shake * 3.0;
-      this.shake = Math.max(0, this.shake - dt * 2.5);
+      const targetFov = this.player.isBoosting ? 72 : 62;
+      this.camera.fov += (targetFov - this.camera.fov) * (1 - Math.exp(-5.0 * dt));
+      this.camera.updateProjectionMatrix();
+
+      const lookTargetX = this.player.position.x + forwardX * 22;
+      const lookTargetZ = this.player.position.z + forwardZ * 22;
+      this.camera.lookAt(lookTargetX, 0, lookTargetZ);
     }
 
-    this.camera.lookAt(lookTargetX, 0, lookTargetZ);
+    // Camera Shake
+    if (this.shake > 0) {
+      this.camera.position.x += (Math.random() - 0.5) * this.shake * 3.2;
+      this.camera.position.y += (Math.random() - 0.5) * this.shake * 3.2;
+      this.shake = Math.max(0, this.shake - dt * 2.8);
+    }
   }
 
   addShake(amount) {
-    this.shake = Math.min(1.4, this.shake + amount);
+    this.shake = Math.min(1.5, this.shake + amount);
+  }
+
+  _onMissionComplete(def) {
+    this.victoryModalActive = true;
+    this.audio.sectorCleared();
+    const rank = this.combo >= 4 ? 'S' : (this.combo >= 2 ? 'A' : 'B');
+    const nextDef = MISSION_DEFINITIONS[this.currentLevel] || { title: 'MISSION COMPLETE' };
+
+    this.hud.showVictoryModal(true, {
+      title: `${def.title.toUpperCase()} SECURED`,
+      rank,
+      score: this.score,
+      kills: this.levelKills,
+      nextTitle: nextDef.title
+    });
   }
 
   _render() {
@@ -5060,10 +6674,10 @@ class CosmicGame {
     this.running = false;
     this.audio.explode(true);
     this.particles.createShipExplosion(this.player.position, true);
-    this.hud.showAnnouncement('STARFIGHTER DESTROYED - RECONNECTING', 4000);
+    this.hud.showAnnouncement('STARFIGHTER DESTROYED // SIMULATION TERMINATED', 4000);
     setTimeout(() => {
       location.reload();
-    }, 3500);
+    }, 3600);
   }
 }
 
@@ -5281,6 +6895,7 @@ class CosmicGame {
       const stick = document.getElementById('touch-stick-left');
       const knob = document.getElementById('stick-knob-left');
       const btnTouchBoost = document.getElementById('btn-touch-boost');
+      const btnTouchMissile = document.getElementById('btn-touch-missile');
       const btnTouchFire = document.getElementById('btn-touch-fire');
 
       if (stick && knob) {
@@ -5338,6 +6953,10 @@ class CosmicGame {
         if (btnTouchBoost) {
           btnTouchBoost.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.boost = true; });
           btnTouchBoost.addEventListener('touchend', () => { if (mainGame) mainGame.input.touch.boost = false; });
+        }
+        if (btnTouchMissile) {
+          btnTouchMissile.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.missile = true; });
+          btnTouchMissile.addEventListener('touchend', () => { if (mainGame) mainGame.input.touch.missile = false; });
         }
         if (btnTouchFire) {
           btnTouchFire.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.fire = true; });

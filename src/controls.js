@@ -1,7 +1,8 @@
 /**
  * Smooth, Intuitive & Simplified Arcade Flight Controls
  * Handles Keyboard, Mouse Flight Steering, Gamepad, and Mobile Touch.
- * Eliminates jerky mechanics, freezes, and gimbal snapping.
+ * Supports Primary Weapons, Secondary Homing Missiles, EMP Shockwaves,
+ * Camera View Switching, and Pause / Settings Menu.
  */
 export class InputController {
   constructor(canvas, camera, THREE) {
@@ -11,13 +12,15 @@ export class InputController {
 
     // Active Input State
     this.keys = new Set();
+    this.justPressedKeys = new Set();
     this.mouse = {
       x: window.innerWidth / 2,
       y: window.innerHeight / 2,
       worldX: 0,
       worldZ: 0,
       isDown: false,
-      rightDown: false
+      rightDown: false,
+      rightJustPressed: false
     };
 
     // Virtual Touch Stick State
@@ -26,7 +29,8 @@ export class InputController {
       thrust: 0,
       steer: 0,
       fire: false,
-      boost: false
+      boost: false,
+      missile: false
     };
 
     // Gamepad
@@ -34,7 +38,7 @@ export class InputController {
 
     // Raycaster for 3D Cosmic Plane Cursor Projection
     this.raycaster = new THREE.Raycaster();
-    this.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // Y = 0 gameplay plane
+    this.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     this.planeIntersect = new THREE.Vector3();
 
     this._bindEvents();
@@ -42,8 +46,12 @@ export class InputController {
 
   _bindEvents() {
     window.addEventListener('keydown', (e) => {
+      if (!this.keys.has(e.code)) {
+        this.justPressedKeys.add(e.code);
+      }
       this.keys.add(e.code);
-      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyC', 'KeyQ', 'KeyE', 'KeyP', 'Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
         e.preventDefault();
       }
     });
@@ -60,7 +68,10 @@ export class InputController {
 
     window.addEventListener('mousedown', (e) => {
       if (e.button === 0) this.mouse.isDown = true;
-      if (e.button === 2) this.mouse.rightDown = true;
+      if (e.button === 2) {
+        this.mouse.rightDown = true;
+        this.mouse.rightJustPressed = true;
+      }
     });
 
     window.addEventListener('mouseup', (e) => {
@@ -70,14 +81,12 @@ export class InputController {
 
     window.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    // Gamepad connection
     window.addEventListener('gamepadconnected', (e) => {
       this.padIndex = e.gamepad.index;
     });
   }
 
   _updateWorldCursor() {
-    // Project mouse onto 3D horizontal cosmic plane
     const ndcX = (this.mouse.x / window.innerWidth) * 2 - 1;
     const ndcY = -(this.mouse.y / window.innerHeight) * 2 + 1;
 
@@ -92,6 +101,11 @@ export class InputController {
     let thrust = 0;
     let boost = false;
     let fire = false;
+    let fireMissile = false;
+    let triggerEMP = false;
+    let switchCamera = false;
+    let togglePause = false;
+    let weaponSelect = null;
     let targetHeading = ship.heading;
 
     // 1. KEYBOARD AXES
@@ -103,40 +117,64 @@ export class InputController {
     if (keyW) thrust += 1.0;
     if (keyS) thrust -= 0.8;
 
-    if (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') || this.mouse.rightDown) {
+    if (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) {
       boost = true;
     }
     if (this.keys.has('Space') || this.mouse.isDown) {
       fire = true;
     }
 
-    // 2. MOUSE FLIGHT STEERING (Smooth & Intuitive)
+    // Secondary Weapon / Missiles (Right Click or E or F)
+    if (this.mouse.rightJustPressed || this.justPressedKeys.has('KeyE') || this.justPressedKeys.has('KeyF') || this.touch.missile) {
+      fireMissile = true;
+      this.mouse.rightJustPressed = false;
+      this.touch.missile = false;
+    }
+
+    // Special Weapon / EMP (Q or R)
+    if (this.justPressedKeys.has('KeyQ') || this.justPressedKeys.has('KeyR')) {
+      triggerEMP = true;
+    }
+
+    // Camera Switch (C or V)
+    if (this.justPressedKeys.has('KeyC') || this.justPressedKeys.has('KeyV')) {
+      switchCamera = true;
+    }
+
+    // Pause Toggle (ESC or P)
+    if (this.justPressedKeys.has('Escape') || this.justPressedKeys.has('KeyP')) {
+      togglePause = true;
+    }
+
+    // Weapon Selection (1, 2, 3)
+    if (this.justPressedKeys.has('Digit1')) weaponSelect = 'cannons';
+    if (this.justPressedKeys.has('Digit2')) weaponSelect = 'rapid';
+    if (this.justPressedKeys.has('Digit3')) weaponSelect = 'missiles';
+
+    // Clear single-frame actions
+    this.justPressedKeys.clear();
+
+    // 2. MOUSE FLIGHT STEERING
     this._updateWorldCursor();
     const dx = this.mouse.worldX - ship.position.x;
     const dz = this.mouse.worldZ - ship.position.z;
     const cursorDist = Math.hypot(dx, dz);
 
-    // If mouse is moved away from ship center, steer towards it smoothly
-    if (cursorDist > 3.0) {
+    if (cursorDist > 2.5) {
       targetHeading = Math.atan2(dx, dz);
     }
 
-    // Allow keyboard A/D to provide direct turning override if pressed
-    if (keyA) targetHeading += 0.05;
-    if (keyD) targetHeading -= 0.05;
+    if (keyA) targetHeading += 0.06;
+    if (keyD) targetHeading -= 0.06;
 
     // 3. GAMEPAD INPUT
     if (navigator.getGamepads && this.padIndex !== null) {
       const pads = navigator.getGamepads();
       const pad = pads[this.padIndex];
       if (pad && pad.connected) {
-        // Left Stick (Y axis: throttle)
         const stickY = pad.axes[1] || 0;
-        if (Math.abs(stickY) > 0.15) {
-          thrust = -stickY;
-        }
+        if (Math.abs(stickY) > 0.15) thrust = -stickY;
 
-        // Right Stick or Left Stick (Aim direction)
         const aimX = Math.abs(pad.axes[2]) > 0.2 ? pad.axes[2] : (Math.abs(pad.axes[0]) > 0.2 ? pad.axes[0] : 0);
         const aimY = Math.abs(pad.axes[3]) > 0.2 ? pad.axes[3] : (Math.abs(pad.axes[1]) > 0.2 ? pad.axes[1] : 0);
 
@@ -144,13 +182,15 @@ export class InputController {
           targetHeading = Math.atan2(aimX, -aimY);
         }
 
-        // Triggers / Buttons
-        if (pad.buttons[7]?.pressed || pad.buttons[0]?.pressed) fire = true; // R2 or A
-        if (pad.buttons[6]?.pressed || pad.buttons[1]?.pressed) boost = true; // L2 or B
+        if (pad.buttons[7]?.pressed || pad.buttons[0]?.pressed) fire = true;
+        if (pad.buttons[6]?.pressed || pad.buttons[1]?.pressed) boost = true;
+        if (pad.buttons[5]?.pressed) fireMissile = true; // R1
+        if (pad.buttons[4]?.pressed) triggerEMP = true; // L1
+        if (pad.buttons[9]?.pressed) togglePause = true; // Start
       }
     }
 
-    // 4. TOUCH OVERRIDES (if active)
+    // 4. TOUCH OVERRIDES
     if (this.touch.active) {
       if (Math.abs(this.touch.thrust) > 0.05) thrust = this.touch.thrust;
       if (this.touch.boost) boost = true;
@@ -161,8 +201,17 @@ export class InputController {
       thrust,
       boost,
       fire,
+      fireMissile,
+      triggerEMP,
+      switchCamera,
+      togglePause,
+      weaponSelect,
       targetHeading,
-      mouseWorld: { x: this.mouse.worldX, z: this.mouse.worldZ }
+      hasMouseTarget: cursorDist > 2.5,
+      targetWorldX: this.mouse.worldX,
+      targetWorldZ: this.mouse.worldZ,
+      mouseScreenX: this.mouse.x,
+      mouseScreenY: this.mouse.y
     };
   }
 }

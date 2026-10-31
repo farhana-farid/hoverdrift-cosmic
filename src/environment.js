@@ -1,8 +1,12 @@
 /**
- * Hyper-Realistic Photorealistic Cosmic Environment & PBR Image-Based Lighting
- * Features IBL environment reflection map, high-resolution multi-tiered starfields,
- * volumetric glowing nebulae, cinematic gas giant planet with atmospheric rim scattering,
- * realistic solar lens flare, and deep-space dust particles.
+ * Hyper-Realistic Photorealistic Cosmic Environment & Dynamic Level Atmosphere
+ * Features:
+ * - 5 Level Atmosphere Presets (Deep-Space Planet, Asteroid Belt, Orbital Station, Nebula Frontier, Capital Fleet)
+ * - Massive 3D Orbital Space Station ("Valiance Station") with rotating habitat ring, solar arrays & beacons
+ * - Volumetric Glowing Nebulae (Inspired by Reference Image 2 deep cosmic scale)
+ * - Atmospheric rim scattering planets & moons
+ * - 4,800 Multi-Tiered Stars (O, B, A, F, G, M stellar spectrum)
+ * - Drifting space wreckage chunks and cosmic dust particles
  */
 export class CosmicEnvironment {
   constructor(scene, renderer, THREE) {
@@ -16,10 +20,21 @@ export class CosmicEnvironment {
     this.dustCount = 1000;
     this.dustRadius = 280;
 
+    this.nebulaSprites = [];
+    this.spaceStation = null;
+    this.spaceStationRing = null;
+    this.wreckageChunks = [];
+    this.planetGroup = null;
+    this.planetMesh = null;
+    this.sunGroup = null;
+    this.sunLight = null;
+
     this._createPBREnvironmentMap();
     this._createDeepStarfield();
     this._createVolumetricNebulae();
     this._createCinematicPlanet();
+    this._createOrbitalSpaceStation();
+    this._createSpaceWreckage();
     this._createCosmicSunAndLensflare();
     this._createSpaceDust();
 
@@ -39,7 +54,6 @@ export class CosmicEnvironment {
       canvas.height = 512;
       const ctx = canvas.getContext('2d');
 
-      // Deep cosmic gradient
       const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
       bgGrad.addColorStop(0, '#02050e');
       bgGrad.addColorStop(0.5, '#060f1c');
@@ -70,7 +84,6 @@ export class CosmicEnvironment {
       ctx.fillStyle = sunGrad;
       ctx.fillRect(0, 0, 1024, 512);
 
-      // Distant stars reflection specks
       ctx.fillStyle = '#ffffff';
       for (let i = 0; i < 400; i++) {
         ctx.fillRect(Math.random() * 1024, Math.random() * 512, Math.random() > 0.8 ? 2 : 1, 1);
@@ -97,12 +110,12 @@ export class CosmicEnvironment {
     const sizes = new Float32Array(count);
 
     const starPalette = [
-      new THREE.Color(0xffffff), // White A-class
-      new THREE.Color(0xaad8ff), // Brilliant Blue B-class
-      new THREE.Color(0x66c0ff), // Deep Blue O-class
-      new THREE.Color(0xffeedd), // Soft Yellow-White F-class
-      new THREE.Color(0xffd27d), // Warm Amber G-class
-      new THREE.Color(0xff7055)  // Red Supergiant M-class
+      new THREE.Color(0xffffff),
+      new THREE.Color(0xaad8ff),
+      new THREE.Color(0x66c0ff),
+      new THREE.Color(0xffeedd),
+      new THREE.Color(0xffd27d),
+      new THREE.Color(0xff7055)
     ];
 
     for (let i = 0; i < count; i++) {
@@ -150,16 +163,14 @@ export class CosmicEnvironment {
     const nebulaTexture = this._generateNebulaTexture();
 
     const nebulae = [
-      { color: 0x4822cf, size: 1300, x: -1100, y: 220, z: -1400, opacity: 0.38 },
-      { color: 0x0088ff, size: 1500, x: 1400, y: -120, z: -1600, opacity: 0.35 },
-      { color: 0xff1493, size: 1000, x: 900, y: 320, z: 1100, opacity: 0.32 },
+      { color: 0x4822cf, size: 1400, x: -1100, y: 220, z: -1400, opacity: 0.38 },
+      { color: 0x0088ff, size: 1600, x: 1400, y: -120, z: -1600, opacity: 0.35 },
+      { color: 0x1d4ed8, size: 1800, x: 500, y: 180, z: -1800, opacity: 0.36 },
       { color: 0x00e5ff, size: 1200, x: -1300, y: -200, z: 950, opacity: 0.34 },
-      { color: 0xff8800, size: 900, x: -500, y: 400, z: -1800, opacity: 0.28 },
-      { color: 0x9400d3, size: 1400, x: 1800, y: 150, z: 500, opacity: 0.28 },
-      { color: 0x00ffcc, size: 850, x: -800, y: -250, z: -850, opacity: 0.26 },
-      { color: 0x7b2cbf, size: 1100, x: 300, y: -380, z: 1500, opacity: 0.30 },
-      { color: 0x3a0ca3, size: 1600, x: -1600, y: 50, z: -400, opacity: 0.34 },
-      { color: 0xf72585, size: 950, x: 1100, y: -280, z: -900, opacity: 0.26 }
+      { color: 0x7e22ce, size: 1500, x: 1800, y: 150, z: 500, opacity: 0.32 },
+      { color: 0x00ffcc, size: 950, x: -800, y: -250, z: -850, opacity: 0.28 },
+      { color: 0x3b82f6, size: 1300, x: 300, y: -380, z: 1500, opacity: 0.32 },
+      { color: 0x3a0ca3, size: 1700, x: -1600, y: 50, z: -400, opacity: 0.34 }
     ];
 
     this.nebulaSprites = [];
@@ -177,7 +188,7 @@ export class CosmicEnvironment {
       sprite.position.set(data.x, data.y, data.z);
       sprite.scale.set(data.size, data.size * 0.8, 1);
       this.group.add(sprite);
-      this.nebulaSprites.push({ sprite, rotSpeed: (Math.random() - 0.5) * 0.02 });
+      this.nebulaSprites.push({ sprite, baseOpacity: data.opacity });
     });
   }
 
@@ -196,6 +207,7 @@ export class CosmicEnvironment {
     });
     const planet = new THREE.Mesh(planetGeom, planetMat);
     planetGroup.add(planet);
+    this.planetMesh = planet;
 
     const atmoGeom = new THREE.SphereGeometry(395, 32, 32);
     const atmoMat = new THREE.MeshBasicMaterial({
@@ -223,6 +235,116 @@ export class CosmicEnvironment {
 
     this.planetGroup = planetGroup;
     this.group.add(planetGroup);
+  }
+
+  /**
+   * Massive 3D Orbital Space Station ("Valiance Station") for Level 3
+   */
+  _createOrbitalSpaceStation() {
+    const THREE = this.THREE;
+    const stationGroup = new THREE.Group();
+    stationGroup.position.set(240, 25, 300);
+
+    const metalMat = new THREE.MeshStandardMaterial({
+      color: 0x2b3442,
+      metalness: 0.88,
+      roughness: 0.30
+    });
+    const solarMat = new THREE.MeshStandardMaterial({
+      color: 0x092347,
+      emissive: 0x041833,
+      metalness: 0.95,
+      roughness: 0.12
+    });
+    const lightGlowMat = new THREE.MeshBasicMaterial({
+      color: 0x3ef0ff
+    });
+    const beaconRed = new THREE.MeshBasicMaterial({
+      color: 0xff1744
+    });
+
+    // 1. Central Rotating Habitat Ring
+    const ringGeom = new THREE.TorusGeometry(40, 3.8, 16, 48);
+    const ringMesh = new THREE.Mesh(ringGeom, metalMat);
+    ringMesh.rotation.x = Math.PI / 2;
+    stationGroup.add(ringMesh);
+
+    // Habitat Window strips
+    const windowRing = new THREE.Mesh(new THREE.TorusGeometry(40.2, 0.45, 8, 48), lightGlowMat);
+    windowRing.rotation.x = Math.PI / 2;
+    stationGroup.add(windowRing);
+
+    // 4 Structural Radial Spokes
+    for (let s = 0; s < 4; s++) {
+      const spoke = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 80, 8), metalMat);
+      spoke.rotation.z = (s / 4) * Math.PI;
+      stationGroup.add(spoke);
+    }
+
+    // 2. Central Spindle Hub & Docking Tower
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(8.5, 9.5, 68, 16), metalMat);
+    stationGroup.add(hub);
+
+    // Docking clamps
+    [-26, 26].forEach(yPos => {
+      const dockRing = new THREE.Mesh(new THREE.TorusGeometry(11.2, 1.4, 8, 24), metalMat);
+      dockRing.rotation.x = Math.PI / 2;
+      dockRing.position.y = yPos;
+      stationGroup.add(dockRing);
+    });
+
+    // 3. Four Massive Photovoltaic Solar Array Wings
+    [-1, 1].forEach(side => {
+      const solarArm = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 22), metalMat);
+      solarArm.position.set(side * 28, 0, 0);
+      stationGroup.add(solarArm);
+
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(36, 0.4, 16), solarMat);
+      panel.position.set(side * 48, 0, 0);
+      stationGroup.add(panel);
+    });
+
+    // 4. Communication Antennas & Flashing Aviation Beacons
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.35, 32, 8), metalMat);
+    antenna.position.set(0, 48, 0);
+    stationGroup.add(antenna);
+
+    const redBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 8), beaconRed);
+    redBeacon.position.set(0, 64, 0);
+    stationGroup.add(redBeacon);
+
+    stationGroup.visible = false; // Enabled in Level 3
+    this.spaceStation = stationGroup;
+    this.spaceStationRing = ringMesh;
+    this.group.add(stationGroup);
+  }
+
+  /**
+   * Drifting Space Wreckage Chunks for Levels 3 & 4
+   */
+  _createSpaceWreckage() {
+    const THREE = this.THREE;
+    const wreckageGroup = new THREE.Group();
+
+    const wreckMat = new THREE.MeshStandardMaterial({
+      color: 0x1f2633,
+      metalness: 0.90,
+      roughness: 0.45
+    });
+
+    for (let i = 0; i < 8; i++) {
+      const chunk = new THREE.Mesh(new THREE.BoxGeometry(4 + Math.random() * 6, 1.5, 8 + Math.random() * 8), wreckMat);
+      const angle = (i / 8) * Math.PI * 2;
+      const dist = 180 + Math.random() * 120;
+      chunk.position.set(Math.sin(angle) * dist, (Math.random() - 0.5) * 35, Math.cos(angle) * dist);
+      chunk.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      wreckageGroup.add(chunk);
+      this.wreckageChunks.push(chunk);
+    }
+
+    wreckageGroup.visible = false;
+    this.wreckageGroup = wreckageGroup;
+    this.group.add(wreckageGroup);
   }
 
   _createCosmicSunAndLensflare() {
@@ -271,9 +393,10 @@ export class CosmicEnvironment {
     streak.scale.set(4500, 220, 1);
     sunGroup.add(streak);
 
-    const sunLight = new THREE.DirectionalLight(0xfff7ea, 2.0);
+    const sunLight = new THREE.DirectionalLight(0xfff7ea, 2.2);
     sunLight.position.copy(sunGroup.position);
     this.scene.add(sunLight);
+    this.sunLight = sunLight;
 
     const fillLight = new THREE.DirectionalLight(0x1a3048, 0.95);
     fillLight.position.set(2200, -400, 2600);
@@ -285,6 +408,7 @@ export class CosmicEnvironment {
     const hemiLight = new THREE.HemisphereLight(0x284262, 0x070b14, 0.95);
     this.scene.add(hemiLight);
 
+    this.sunGroup = sunGroup;
     this.group.add(sunGroup);
   }
 
@@ -359,56 +483,110 @@ export class CosmicEnvironment {
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#0f3152';
+    const grad = ctx.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, '#102e52');
+    grad.addColorStop(0.3, '#2a6496');
+    grad.addColorStop(0.5, '#5b9bd5');
+    grad.addColorStop(0.7, '#24527a');
+    grad.addColorStop(1, '#0c1e33');
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 256);
 
-    for (let y = 0; y < 256; y += 4) {
-      const alpha = 0.15 + Math.sin(y * 0.08) * 0.12;
-      ctx.fillStyle = `rgba(180, 225, 255, ${alpha})`;
-      ctx.fillRect(0, y, 512, 4);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+    for (let i = 0; i < 16; i++) {
+      const y = Math.random() * 256;
+      const h = 4 + Math.random() * 12;
+      ctx.fillRect(0, y, 512, h);
     }
-
-    for (let i = 0; i < 18; i++) {
-      const cx = Math.random() * 512;
-      const cy = 40 + Math.random() * 176;
-      const rad = 25 + Math.random() * 50;
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
-      grad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
-      grad.addColorStop(1, 'rgba(100, 180, 240, 0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
     return new this.THREE.CanvasTexture(canvas);
   }
 
-  update(playerPos, dt = 0.016) {
-    if (this.starPoints) {
-      this.starPoints.position.set(playerPos.x * 0.94, 0, playerPos.z * 0.94);
-    }
-
-    if (this.planetGroup) {
-      this.planetGroup.rotation.y += 0.008 * dt;
-    }
-
-    if (this.dustParticles && this.dustPositions) {
-      const posAttr = this.dustParticles.geometry.attributes.position;
-      const r = this.dustRadius;
-      for (let i = 0; i < this.dustCount; i++) {
-        let x = this.dustPositions[i * 3];
-        let z = this.dustPositions[i * 3 + 2];
-
-        while (x - playerPos.x > r) x -= r * 2;
-        while (x - playerPos.x < -r) x += r * 2;
-        while (z - playerPos.z > r) z -= r * 2;
-        while (z - playerPos.z < -r) z += r * 2;
-
-        this.dustPositions[i * 3] = x;
-        this.dustPositions[i * 3 + 2] = z;
+  /**
+   * Sets the cosmic environment theme for each of the 5 Levels
+   */
+  setLevelEnvironment(levelNumber) {
+    if (levelNumber === 1) {
+      // Level 1: Deep-Space Planet
+      if (this.planetGroup) {
+        this.planetGroup.visible = true;
+        this.planetGroup.position.set(1600, -320, 2100);
       }
-      posAttr.needsUpdate = true;
+      if (this.spaceStation) this.spaceStation.visible = false;
+      if (this.wreckageGroup) this.wreckageGroup.visible = false;
+      if (this.sunLight) this.sunLight.color.setHex(0xfff7ea);
+    } else if (levelNumber === 2) {
+      // Level 2: Asteroid Field
+      if (this.planetGroup) this.planetGroup.visible = false;
+      if (this.spaceStation) this.spaceStation.visible = false;
+      if (this.wreckageGroup) this.wreckageGroup.visible = false;
+      if (this.sunLight) this.sunLight.color.setHex(0xffeedd);
+    } else if (levelNumber === 3) {
+      // Level 3: Orbital Space Station Battle
+      if (this.planetGroup) {
+        this.planetGroup.visible = true;
+        this.planetGroup.position.set(600, -450, 900);
+      }
+      if (this.spaceStation) this.spaceStation.visible = true;
+      if (this.wreckageGroup) this.wreckageGroup.visible = true;
+      if (this.sunLight) this.sunLight.color.setHex(0xffffff);
+    } else if (levelNumber === 4) {
+      // Level 4: Nebula Frontier (Ref 2 Style Cobalt/Violet Majesty)
+      if (this.planetGroup) this.planetGroup.visible = false;
+      if (this.spaceStation) this.spaceStation.visible = false;
+      if (this.wreckageGroup) this.wreckageGroup.visible = true;
+      if (this.sunLight) this.sunLight.color.setHex(0xcce5ff);
+    } else {
+      // Level 5: Capital Fleet Warzone
+      if (this.planetGroup) {
+        this.planetGroup.visible = true;
+        this.planetGroup.position.set(-1200, -280, 1800);
+      }
+      if (this.spaceStation) this.spaceStation.visible = false;
+      if (this.wreckageGroup) this.wreckageGroup.visible = true;
+      if (this.sunLight) this.sunLight.color.setHex(0xffaa77);
+    }
+  }
+
+  update(playerPos, dt) {
+    if (!this.dustParticles) return;
+
+    // Follow player smoothly
+    this.group.position.x = playerPos.x * 0.98;
+    this.group.position.z = playerPos.z * 0.98;
+
+    // Rotate space station habitat ring
+    if (this.spaceStation && this.spaceStationRing) {
+      this.spaceStationRing.rotation.z += 0.25 * dt;
+    }
+
+    // Tumble space wreckage
+    this.wreckageChunks.forEach(chunk => {
+      chunk.rotation.x += 0.05 * dt;
+      chunk.rotation.y += 0.08 * dt;
+    });
+
+    // Space dust loop around player
+    const positions = this.dustPositions;
+    const r = this.dustRadius;
+    const count = this.dustCount;
+
+    for (let i = 0; i < count; i++) {
+      let x = positions[i * 3];
+      let z = positions[i * 3 + 2];
+
+      const dx = x - playerPos.x;
+      const dz = z - playerPos.z;
+
+      if (dx > r) positions[i * 3] -= r * 2;
+      else if (dx < -r) positions[i * 3] += r * 2;
+
+      if (dz > r) positions[i * 3 + 2] -= r * 2;
+      else if (dz < -r) positions[i * 3 + 2] += r * 2;
+    }
+    this.dustParticles.geometry.attributes.position.needsUpdate = true;
+
+    if (this.planetMesh) {
+      this.planetMesh.rotation.y += 0.015 * dt;
     }
   }
 }

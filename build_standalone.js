@@ -480,6 +480,319 @@ try {
       font-weight: 700;
     }
 
+    /* Mission Objectives, Weapons Rack, Cockpit Overlay & Modals */
+    .hud-mission-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      background: rgba(6, 14, 24, 0.75);
+      border: 1px solid var(--panel-line);
+      border-left: 3px solid var(--cyan);
+      padding: 6px 14px;
+      border-radius: 2px;
+    }
+
+    .mission-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      color: #fff;
+    }
+
+    .mission-objective {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.12em;
+      color: var(--cyan);
+    }
+
+    .cockpit-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .cockpit-frame-left {
+      width: 140px;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(12, 16, 24, 0.95) 0%, rgba(12, 16, 24, 0.6) 70%, transparent 100%);
+      border-right: 2px solid rgba(62, 240, 255, 0.2);
+      clip-path: polygon(0 0, 100% 15%, 80% 85%, 0 100%);
+    }
+
+    .cockpit-frame-right {
+      width: 140px;
+      height: 100%;
+      background: linear-gradient(270deg, rgba(12, 16, 24, 0.95) 0%, rgba(12, 16, 24, 0.6) 70%, transparent 100%);
+      border-left: 2px solid rgba(62, 240, 255, 0.2);
+      clip-path: polygon(100% 0, 0 15%, 20% 85%, 100% 100%);
+    }
+
+    .cockpit-hud-glass {
+      position: absolute;
+      inset: 10%;
+      border: 1px solid rgba(62, 240, 255, 0.12);
+      border-radius: 24px;
+      box-shadow: inset 0 0 40px rgba(62, 240, 255, 0.05);
+      background: radial-gradient(circle at 50% 50%, rgba(62, 240, 255, 0.02) 0%, transparent 80%);
+    }
+
+    .weapons-rack {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px solid var(--panel-line);
+    }
+
+    .w-slot {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      background: rgba(10, 20, 32, 0.6);
+      border: 1px solid var(--panel-line);
+      padding: 4px 6px;
+      border-radius: 2px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .w-slot.active {
+      color: #fff;
+      border-color: var(--cyan);
+      background: rgba(62, 240, 255, 0.2);
+      box-shadow: 0 0 10px rgba(62, 240, 255, 0.3);
+    }
+
+    .w-slot.emp-slot.ready {
+      color: var(--purple);
+      border-color: var(--purple);
+      background: rgba(191, 0, 255, 0.2);
+      box-shadow: 0 0 12px rgba(191, 0, 255, 0.4);
+      animation: alertPulse 1.5s infinite alternate;
+    }
+
+    .w-key {
+      display: inline-block;
+      color: var(--cyan);
+      font-weight: 700;
+      margin-right: 2px;
+    }
+
+    .cam-badge {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.16em;
+      color: var(--cyan);
+      background: rgba(14, 28, 46, 0.85);
+      border: 1px solid var(--cyan);
+      padding: 4px 10px;
+      border-radius: 2px;
+      box-shadow: 0 0 12px var(--cyan-glow);
+    }
+
+    .missile-btn {
+      color: #fff;
+      background: radial-gradient(circle, #ff5500, #b31d00);
+      box-shadow: 0 0 20px rgba(255, 85, 0, 0.5);
+    }
+
+    .hud-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2, 4, 10, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .modal-card {
+      width: 90%;
+      max-width: 520px;
+      background: rgba(8, 18, 30, 0.94);
+      border: 1.5px solid var(--panel-line);
+      border-radius: 6px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(62, 240, 255, 0.2);
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      color: #fff;
+      text-shadow: 0 0 16px var(--cyan);
+    }
+
+    .modal-sub {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      margin-top: -8px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .modal-btn {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      color: #c0daf0;
+      background: rgba(14, 26, 42, 0.8);
+      border: 1px solid var(--panel-line);
+      padding: 10px 18px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .modal-btn:hover {
+      background: rgba(24, 44, 70, 0.9);
+      border-color: var(--cyan);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(62, 240, 255, 0.3);
+    }
+
+    .modal-btn.primary {
+      color: #02040a;
+      background: linear-gradient(90deg, #3ef0ff, #82f6ff);
+      border: none;
+      box-shadow: 0 0 20px var(--cyan-glow);
+    }
+
+    .modal-btn.primary:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 30px rgba(62, 240, 255, 0.8);
+    }
+
+    .modal-btn.small {
+      padding: 6px 12px;
+      font-size: 9px;
+    }
+
+    .modal-section-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--panel-line);
+      padding-bottom: 4px;
+      text-align: left;
+    }
+
+    .level-select-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .lvl-select-btn {
+      font-family: var(--mono);
+      font-size: 8.5px;
+      letter-spacing: 0.1em;
+      background: rgba(10, 22, 36, 0.8);
+      border: 1px solid var(--panel-line);
+      color: #a0c2de;
+      padding: 8px 4px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .lvl-select-btn:hover, .lvl-select-btn.active {
+      background: rgba(62, 240, 255, 0.25);
+      border-color: var(--cyan);
+      color: #fff;
+      box-shadow: 0 0 12px var(--cyan-glow);
+    }
+
+    .modal-settings {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(5, 12, 20, 0.6);
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--panel-line);
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--muted);
+    }
+
+    .setting-item input[type="range"] {
+      accent-color: var(--cyan);
+      cursor: pointer;
+    }
+
+    .victory-card {
+      border-color: var(--green);
+      box-shadow: 0 0 45px rgba(92, 255, 157, 0.35);
+    }
+
+    .victory-glow {
+      color: #fff;
+      text-shadow: 0 0 20px rgba(92, 255, 157, 0.8), 0 0 40px rgba(92, 255, 157, 0.4);
+    }
+
+    .victory-rank-badge {
+      font-family: var(--mono);
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      color: var(--amber);
+      text-shadow: 0 0 25px var(--orange-glow);
+      padding: 8px;
+    }
+
+    .vic-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      background: rgba(4, 10, 18, 0.7);
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid var(--panel-line);
+    }
+
+    .v-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    .v-stat b {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: #fff;
+    }
+
     /* =========================================================
        SCI-FI HANGAR & REFERENCE SHIP SELECTION UI
        ========================================================= */
@@ -1152,6 +1465,7 @@ try {
       const stick = document.getElementById('touch-stick-left');
       const knob = document.getElementById('stick-knob-left');
       const btnTouchBoost = document.getElementById('btn-touch-boost');
+      const btnTouchMissile = document.getElementById('btn-touch-missile');
       const btnTouchFire = document.getElementById('btn-touch-fire');
 
       if (stick && knob) {
@@ -1209,6 +1523,10 @@ try {
         if (btnTouchBoost) {
           btnTouchBoost.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.boost = true; });
           btnTouchBoost.addEventListener('touchend', () => { if (mainGame) mainGame.input.touch.boost = false; });
+        }
+        if (btnTouchMissile) {
+          btnTouchMissile.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.missile = true; });
+          btnTouchMissile.addEventListener('touchend', () => { if (mainGame) mainGame.input.touch.missile = false; });
         }
         if (btnTouchFire) {
           btnTouchFire.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.fire = true; });
