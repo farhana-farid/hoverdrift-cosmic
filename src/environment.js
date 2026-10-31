@@ -24,6 +24,7 @@ export class CosmicEnvironment {
     this.spaceStation = null;
     this.spaceStationRing = null;
     this.wreckageChunks = [];
+    this.distantCruisers = [];
     this.planetGroup = null;
     this.planetMesh = null;
     this.sunGroup = null;
@@ -35,6 +36,7 @@ export class CosmicEnvironment {
     this._createCinematicPlanet();
     this._createOrbitalSpaceStation();
     this._createSpaceWreckage();
+    this._createDistantFleet();
     this._createCosmicSunAndLensflare();
     this._createSpaceDust();
 
@@ -347,6 +349,78 @@ export class CosmicEnvironment {
     this.group.add(wreckageGroup);
   }
 
+  /**
+   * Distant Capital Cruisers & Fighter Patrols in deep space (Reference Image 2 scale)
+   * Drifting at 1400m - 2400m with glowing blue plasma engine wakes and blinking beacons
+   */
+  _createDistantFleet() {
+    const THREE = this.THREE;
+    const fleetGroup = new THREE.Group();
+
+    const cruiserHullMat = new THREE.MeshStandardMaterial({
+      color: 0x2e3c50,
+      metalness: 0.92,
+      roughness: 0.28
+    });
+    const cruiserGlowMat = new THREE.MeshBasicMaterial({ color: 0x3ef0ff });
+    const cruiserTrailMat = new THREE.MeshBasicMaterial({
+      color: 0x00c8ff,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const strobeMat = new THREE.MeshBasicMaterial({ color: 0xff2244 });
+
+    const configs = [
+      { x: -1400, y: 160, z: -1600, scale: 1.2, speed: 5.5, heading: 0.4 },
+      { x: 1800, y: -200, z: -1200, scale: 1.5, speed: 4.2, heading: -0.6 },
+      { x: 300, y: 340, z: -2200, scale: 2.2, speed: 3.5, heading: 0.15 }
+    ];
+
+    configs.forEach(cfg => {
+      const ship = new THREE.Group();
+      ship.position.set(cfg.x, cfg.y, cfg.z);
+      ship.rotation.y = cfg.heading;
+
+      // Fuselage & Wing structure
+      const hull = new THREE.Mesh(new THREE.BoxGeometry(16 * cfg.scale, 5 * cfg.scale, 54 * cfg.scale), cruiserHullMat);
+      ship.add(hull);
+
+      const wings = new THREE.Mesh(new THREE.BoxGeometry(52 * cfg.scale, 1.8 * cfg.scale, 24 * cfg.scale), cruiserHullMat);
+      wings.position.set(0, 0, -6 * cfg.scale);
+      ship.add(wings);
+
+      // Bridge command tower
+      const bridge = new THREE.Mesh(new THREE.BoxGeometry(6 * cfg.scale, 4.5 * cfg.scale, 12 * cfg.scale), cruiserGlowMat);
+      bridge.position.set(0, 4.5 * cfg.scale, -12 * cfg.scale);
+      ship.add(bridge);
+
+      // Twin Long Blue Engine Plasma Plumes
+      [-8 * cfg.scale, 8 * cfg.scale].forEach(ox => {
+        const trailGeom = new THREE.ConeGeometry(2.4 * cfg.scale, 42 * cfg.scale, 8);
+        trailGeom.rotateX(-Math.PI / 2);
+        const trail = new THREE.Mesh(trailGeom, cruiserTrailMat);
+        trail.position.set(ox, 0, -48 * cfg.scale);
+        ship.add(trail);
+      });
+
+      // Flashing Wingtip Navigation Strobes
+      const beaconL = new THREE.Mesh(new THREE.SphereGeometry(1.2 * cfg.scale, 6, 6), strobeMat);
+      beaconL.position.set(-26 * cfg.scale, 0, -6 * cfg.scale);
+      ship.add(beaconL);
+
+      const beaconR = beaconL.clone();
+      beaconR.position.x = 26 * cfg.scale;
+      ship.add(beaconR);
+
+      fleetGroup.add(ship);
+      this.distantCruisers.push({ ship, speed: cfg.speed, heading: cfg.heading, beacons: [beaconL, beaconR] });
+    });
+
+    this.group.add(fleetGroup);
+  }
+
   _createCosmicSunAndLensflare() {
     const THREE = this.THREE;
     const sunGroup = new THREE.Group();
@@ -393,19 +467,23 @@ export class CosmicEnvironment {
     streak.scale.set(4500, 220, 1);
     sunGroup.add(streak);
 
-    const sunLight = new THREE.DirectionalLight(0xfff7ea, 2.2);
+    // Primary Sun Light (Warm Crisp Sunlight)
+    const sunLight = new THREE.DirectionalLight(0xfff7ea, 2.8);
     sunLight.position.copy(sunGroup.position);
     this.scene.add(sunLight);
     this.sunLight = sunLight;
 
-    const fillLight = new THREE.DirectionalLight(0x1a3048, 0.95);
-    fillLight.position.set(2200, -400, 2600);
+    // Cosmic Nebula Blue Fill Light (Ensures hostile hulls stay clearly visible in shadow)
+    const fillLight = new THREE.DirectionalLight(0x5a88ba, 1.4);
+    fillLight.position.set(2200, 400, 2600);
     this.scene.add(fillLight);
 
-    const ambientLight = new THREE.AmbientLight(0x141f2e, 0.9);
+    // Ambient Deep-Space Illumination (Prevents pure black silhouettes)
+    const ambientLight = new THREE.AmbientLight(0x364a64, 1.35);
     this.scene.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0x284262, 0x070b14, 0.95);
+    // Upper/Lower Cosmic Bounce Light
+    const hemiLight = new THREE.HemisphereLight(0x466892, 0x141e2c, 1.25);
     this.scene.add(hemiLight);
 
     this.sunGroup = sunGroup;
@@ -563,6 +641,15 @@ export class CosmicEnvironment {
     this.wreckageChunks.forEach(chunk => {
       chunk.rotation.x += 0.05 * dt;
       chunk.rotation.y += 0.08 * dt;
+    });
+
+    // Animate distant capital fleet cruising in background
+    const sec = performance.now() * 0.001;
+    this.distantCruisers.forEach(c => {
+      c.ship.position.x += Math.sin(c.heading) * c.speed * dt;
+      c.ship.position.z += Math.cos(c.heading) * c.speed * dt;
+      const strobeOn = (sec % 1.6) < 0.18;
+      c.beacons.forEach(b => { b.visible = strobeOn; });
     });
 
     // Space dust loop around player

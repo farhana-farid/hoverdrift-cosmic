@@ -74,8 +74,8 @@ export class CosmicGame {
 
     // Three.js Core
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x02040a);
-    this.scene.fog = new THREE.FogExp2(0x02040a, 0.0007);
+    this.scene.background = new THREE.Color(0x010308);
+    // Deep crystal-clear cosmic space (no artificial fog obscuring celestial bodies)
 
     this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.4, 6000);
     this.renderer = new THREE.WebGLRenderer({
@@ -162,7 +162,7 @@ export class CosmicGame {
 
     this.player.reset();
     this.environment.setLevelEnvironment(def.envPreset);
-    this.drones.spawnLevelWave(levelNum, this.player.position);
+    this.drones.spawnLevelWave(levelNum, this.player.position, this.player.heading);
 
     this.hud.setMissionInfo(def.level, def.title, `${def.briefing} [0/${def.targetKills}]`);
     this.hud.showAnnouncement(`MISSION 0${def.level}: ${def.title.toUpperCase()}`, 3500);
@@ -378,6 +378,7 @@ export class CosmicGame {
 
     // 7. CAMERA POSITIONING & VIEW MODES
     this._updateCamera(dt);
+    this.camera.updateMatrixWorld();
 
     // 8. UPDATE HUD & TARGET TRACKING
     const trackingInfo = this.drones.getTargetTrackingInfo(
@@ -436,34 +437,38 @@ export class CosmicGame {
       this.camera.fov = this.player.isBoosting ? 74 : 64;
       this.camera.updateProjectionMatrix();
     } else {
-      // MODE 0 (Tactical Chase) & MODE 1 (Close Action)
+      // MODE 0 (Tactical Chase) & MODE 1 (Close Action Chase)
+      // Tuned for crystal-clear forward dogfight sightlines (player in lower-third)
       const isClose = this.cameraMode === 1;
-      const camDist = isClose ? 28 : 46;
-      const camHeight = isClose ? 14 : 26;
+      const camDist = isClose ? 22 : 32;
+      const camHeight = isClose ? 6.2 : 9.5;
 
       const targetCamX = this.player.position.x - forwardX * camDist;
       const targetCamZ = this.player.position.z - forwardZ * camDist;
       const targetCamY = camHeight;
 
-      const followSpeed = isClose ? 8.5 : 6.8;
+      const followSpeed = isClose ? 9.5 : 7.8;
       this.camera.position.x += (targetCamX - this.camera.position.x) * (1 - Math.exp(-followSpeed * dt));
       this.camera.position.z += (targetCamZ - this.camera.position.z) * (1 - Math.exp(-followSpeed * dt));
       this.camera.position.y += (targetCamY - this.camera.position.y) * (1 - Math.exp(-followSpeed * dt));
 
-      const targetFov = this.player.isBoosting ? 72 : 62;
+      const targetFov = this.player.isBoosting ? 68 : 60;
       this.camera.fov += (targetFov - this.camera.fov) * (1 - Math.exp(-5.0 * dt));
       this.camera.updateProjectionMatrix();
 
-      const lookTargetX = this.player.position.x + forwardX * 22;
-      const lookTargetZ = this.player.position.z + forwardZ * 22;
-      this.camera.lookAt(lookTargetX, 0, lookTargetZ);
+      // Look comfortably forward into the space battle arena
+      const lookDist = isClose ? 55 : 68;
+      const lookTargetX = this.player.position.x + forwardX * lookDist;
+      const lookTargetZ = this.player.position.z + forwardZ * lookDist;
+      const lookTargetY = isClose ? 2.6 : 3.4;
+      this.camera.lookAt(lookTargetX, lookTargetY, lookTargetZ);
     }
 
-    // Camera Shake
+    // Controlled Camera Shake (Cinematic without disorienting aim)
     if (this.shake > 0) {
-      this.camera.position.x += (Math.random() - 0.5) * this.shake * 3.2;
-      this.camera.position.y += (Math.random() - 0.5) * this.shake * 3.2;
-      this.shake = Math.max(0, this.shake - dt * 2.8);
+      this.camera.position.x += (Math.random() - 0.5) * this.shake * 1.4;
+      this.camera.position.y += (Math.random() - 0.5) * this.shake * 1.4;
+      this.shake = Math.max(0, this.shake - dt * 3.5);
     }
   }
 

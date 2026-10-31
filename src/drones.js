@@ -58,54 +58,88 @@ export class DroneManager {
       emissiveIntensity: 3.5
     });
 
-    // Spacecraft PBR Materials
+    // High-Visibility Spacecraft Materials
+    this.armorHullMat = new THREE.MeshStandardMaterial({
+      color: 0x8fa0b2, // High-albedo brushed titanium alloy (stands out crisply against black space)
+      metalness: 0.86,
+      roughness: 0.26,
+      envMapIntensity: 2.0
+    });
+
     this.armorDarkMat = new THREE.MeshStandardMaterial({
-      color: 0x161a22,
+      color: 0x384454, // Contrast gunmetal plating
       metalness: 0.88,
-      roughness: 0.32
+      roughness: 0.32,
+      envMapIntensity: 1.6
     });
 
     this.armorGunmetalMat = new THREE.MeshStandardMaterial({
-      color: 0x222a36,
-      metalness: 0.92,
+      color: 0x4e5e72, // Mechanical hardpoints & cannon barrels
+      metalness: 0.90,
       roughness: 0.28,
-      envMapIntensity: 1.5
+      envMapIntensity: 1.8
     });
 
     this.crimsonTrimMat = new THREE.MeshStandardMaterial({
-      color: 0xd90429,
-      emissive: 0xff1744,
-      emissiveIntensity: 2.2,
-      roughness: 0.2
+      color: 0xff1744,
+      emissive: 0xff0033,
+      emissiveIntensity: 3.5,
+      metalness: 0.70,
+      roughness: 0.18
     });
 
     this.amberGlowMat = new THREE.MeshStandardMaterial({
-      color: 0xff8800,
-      emissive: 0xff8800,
-      emissiveIntensity: 3.0,
-      roughness: 0.2
+      color: 0xffaa00,
+      emissive: 0xff6600,
+      emissiveIntensity: 4.2,
+      roughness: 0.15
+    });
+
+    // Blazing Engine Exhaust Thruster Materials (Bright plasma visible from any angle)
+    this.engineFlameOuter = new THREE.MeshBasicMaterial({
+      color: 0xff4400,
+      transparent: true,
+      opacity: 0.90,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    this.engineFlameInner = new THREE.MeshBasicMaterial({
+      color: 0xffea00,
+      transparent: true,
+      opacity: 0.98,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    this.bossFlameOuter = new THREE.MeshBasicMaterial({
+      color: 0xbf00ff,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
 
     this.shieldMat = new THREE.MeshBasicMaterial({
       color: 0xff2244,
       wireframe: true,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.55,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
 
     this.bossArmorMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0d14,
-      metalness: 0.94,
+      color: 0x323e50,
+      metalness: 0.92,
       roughness: 0.26,
-      envMapIntensity: 1.6
+      envMapIntensity: 2.0
     });
 
     this.bossCoreMat = new THREE.MeshStandardMaterial({
       color: 0xbf00ff,
       emissive: 0xd946ef,
-      emissiveIntensity: 4.8,
+      emissiveIntensity: 5.2,
       roughness: 0.1
     });
 
@@ -115,53 +149,105 @@ export class DroneManager {
   }
 
   /**
-   * Spawns structured waves tailored to the 5 Mission Levels
+   * Helper to attach dual animated engine plasma plumes to enemy starfighters
    */
-  spawnLevelWave(levelNumber, playerPos) {
+  _attachThrusters(parentGroup, xOffsets, yPos, zPos, scale = 1.0, isBoss = false) {
+    const THREE = this.THREE;
+    const flames = [];
+    xOffsets.forEach(ox => {
+      const outerMat = isBoss ? this.bossFlameOuter : this.engineFlameOuter;
+      const outerGeom = new THREE.ConeGeometry(0.35 * scale, 2.4 * scale, 8);
+      outerGeom.rotateX(-Math.PI / 2);
+      const outer = new THREE.Mesh(outerGeom, outerMat);
+      outer.position.set(ox, yPos, zPos - 1.2 * scale);
+      parentGroup.add(outer);
+
+      const innerGeom = new THREE.ConeGeometry(0.18 * scale, 2.8 * scale, 8);
+      innerGeom.rotateX(-Math.PI / 2);
+      const inner = new THREE.Mesh(innerGeom, this.engineFlameInner);
+      inner.position.set(ox, yPos, zPos - 1.4 * scale);
+      parentGroup.add(inner);
+
+      flames.push({ outer, inner, baseScale: scale });
+    });
+    return flames;
+  }
+
+  /**
+   * Spawns structured waves tailored to the 5 Mission Levels
+   * All hostiles are positioned in tactical combat formations IN FRONT of the player
+   */
+  spawnLevelWave(levelNumber, playerPos, playerHeading = 0) {
     this.clearAll();
 
     if (levelNumber === 1) {
-      // Level 1: Deep-Space Patrol (Small Scout Interceptor Patrol)
-      for (let i = 0; i < 5; i++) {
-        this._createDrone('interceptor', playerPos, i * (Math.PI * 2 / 5), 180 + i * 20);
-      }
+      // Level 1: Deep-Space Patrol — 5 Interceptors in forward tactical V-formation
+      const patrol = [
+        { angleOff: 0, dist: 80 },
+        { angleOff: -0.22, dist: 95 },
+        { angleOff: 0.22, dist: 95 },
+        { angleOff: -0.42, dist: 115 },
+        { angleOff: 0.42, dist: 115 }
+      ];
+      patrol.forEach(p => {
+        this._createDrone('interceptor', playerPos, playerHeading + p.angleOff, p.dist);
+      });
     } else if (levelNumber === 2) {
-      // Level 2: Asteroid Field (Agile Interceptors + Balanced Fighters)
-      for (let i = 0; i < 4; i++) {
-        this._createDrone('interceptor', playerPos, i * (Math.PI / 2), 190);
-      }
-      for (let i = 0; i < 5; i++) {
-        this._createDrone('fighter', playerPos, (i + 0.5) * (Math.PI * 2 / 5), 210);
-      }
+      // Level 2: Asteroid Field — 3 Interceptors & 4 Balanced Fighters in forward echelon
+      const wave = [
+        { type: 'interceptor', angleOff: -0.15, dist: 75 },
+        { type: 'interceptor', angleOff: 0.15, dist: 75 },
+        { type: 'interceptor', angleOff: 0, dist: 90 },
+        { type: 'fighter', angleOff: -0.35, dist: 110 },
+        { type: 'fighter', angleOff: 0.35, dist: 110 },
+        { type: 'fighter', angleOff: -0.55, dist: 130 },
+        { type: 'fighter', angleOff: 0.55, dist: 130 }
+      ];
+      wave.forEach(w => {
+        this._createDrone(w.type, playerPos, playerHeading + w.angleOff, w.dist);
+      });
     } else if (levelNumber === 3) {
-      // Level 3: Orbital Space Station Battle (Fighters + Heavy Gunships)
-      for (let i = 0; i < 6; i++) {
-        this._createDrone('fighter', playerPos, i * (Math.PI * 2 / 6), 200);
-      }
-      for (let i = 0; i < 3; i++) {
-        this._createDrone('gunship', playerPos, i * (Math.PI * 2 / 3), 230);
-      }
+      // Level 3: Orbital Space Station Battle — 4 Fighters & 2 Heavy Gunships
+      const wave = [
+        { type: 'fighter', angleOff: -0.20, dist: 85 },
+        { type: 'fighter', angleOff: 0.20, dist: 85 },
+        { type: 'fighter', angleOff: -0.45, dist: 105 },
+        { type: 'fighter', angleOff: 0.45, dist: 105 },
+        { type: 'gunship', angleOff: -0.28, dist: 130 },
+        { type: 'gunship', angleOff: 0.28, dist: 130 }
+      ];
+      wave.forEach(w => {
+        this._createDrone(w.type, playerPos, playerHeading + w.angleOff, w.dist);
+      });
     } else if (levelNumber === 4) {
-      // Level 4: Nebula Frontier (Heavy Gunships + Elite Viper Aces)
-      for (let i = 0; i < 4; i++) {
-        this._createDrone('gunship', playerPos, i * (Math.PI / 2), 220);
-      }
-      for (let i = 0; i < 4; i++) {
-        this._createDrone('elite', playerPos, (i + 0.5) * (Math.PI / 2), 240);
-      }
+      // Level 4: Nebula Frontier — 3 Elite Viper Aces & 3 Heavy Gunships
+      const wave = [
+        { type: 'elite', angleOff: 0, dist: 80 },
+        { type: 'elite', angleOff: -0.28, dist: 95 },
+        { type: 'elite', angleOff: 0.28, dist: 95 },
+        { type: 'gunship', angleOff: -0.50, dist: 125 },
+        { type: 'gunship', angleOff: 0.50, dist: 125 },
+        { type: 'gunship', angleOff: 0, dist: 140 }
+      ];
+      wave.forEach(w => {
+        this._createDrone(w.type, playerPos, playerHeading + w.angleOff, w.dist);
+      });
     } else {
-      // Level 5: Capital Ship Assault (Massive Capital Dreadnought + Escorts)
-      this._spawnBoss(levelNumber, playerPos);
-      for (let i = 0; i < 2; i++) {
-        this._createDrone('interceptor', playerPos, i * Math.PI, 180);
-      }
-      for (let i = 0; i < 2; i++) {
-        this._createDrone('fighter', playerPos, (i + 0.5) * Math.PI, 210);
-      }
+      // Level 5: Capital Ship Assault — Leviathan Omega Dreadnought + 4 Escorts
+      this._spawnBoss(levelNumber, playerPos, playerHeading);
+      const escorts = [
+        { type: 'interceptor', angleOff: -0.24, dist: 85 },
+        { type: 'interceptor', angleOff: 0.24, dist: 85 },
+        { type: 'fighter', angleOff: -0.42, dist: 105 },
+        { type: 'fighter', angleOff: 0.42, dist: 105 }
+      ];
+      escorts.forEach(e => {
+        this._createDrone(e.type, playerPos, playerHeading + e.angleOff, e.dist);
+      });
     }
   }
 
-  _createDrone(type, playerPos, angle, spawnDist = 200) {
+  _createDrone(type, playerPos, angle, spawnDist = 90) {
     const THREE = this.THREE;
     const x = playerPos.x + Math.sin(angle) * spawnDist;
     const z = playerPos.z + Math.cos(angle) * spawnDist;
@@ -169,147 +255,189 @@ export class DroneManager {
     const group = new THREE.Group();
     let hp, maxHp, shield = 0, maxShield = 0, speed, fireRate, points, radius, name;
     let behavior = 'dogfight';
+    let thrusters = [];
 
     if (type === 'interceptor') {
-      // 1. INTERCEPTOR ("Shadow Dart")
+      // 1. INTERCEPTOR ("Shadow Dart") — Highly agile, forward-swept razor wings
       name = 'SHADOW INTERCEPTOR';
-      hp = maxHp = 3;
-      speed = 58;
+      hp = maxHp = 4;
+      speed = 52;
       fireRate = 1.3;
       points = 200;
-      radius = 2.2;
+      radius = 3.2;
       behavior = 'hit_and_run';
 
-      const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.7, 3.4, 4), this.armorDarkMat);
+      // Titanium needle fuselage (Length ~6.4m)
+      const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.9, 5.2, 6), this.armorHullMat);
       fuselage.rotation.x = Math.PI / 2;
       group.add(fuselage);
 
-      // Forward-swept razor wings
-      [-1, 1].forEach(s => {
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 1.2), this.crimsonTrimMat);
-        wing.position.set(s * 1.0, 0, -0.4);
-        wing.rotation.y = s * -0.35;
-        group.add(wing);
+      // Gunmetal canopy ridge
+      const ridge = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.45, 2.8), this.armorDarkMat);
+      ridge.position.set(0, 0.35, -0.4);
+      group.add(ridge);
 
-        const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.4, 8), this.armorGunmetalMat);
-        cannon.rotation.x = Math.PI / 2;
-        cannon.position.set(s * 1.5, 0, 0.5);
-        group.add(cannon);
-      });
-
-      const eye = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.08, 0.6), this.crimsonTrimMat);
-      eye.position.set(0, 0.16, 0.8);
+      // Glowing crimson sensor eye
+      const eye = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.15, 0.8), this.crimsonTrimMat);
+      eye.position.set(0, 0.32, 1.2);
       group.add(eye);
-    } else if (type === 'fighter') {
-      // 2. FIGHTER ("Phantom Raider")
-      name = 'PHANTOM FIGHTER';
-      hp = maxHp = 8;
-      speed = 38;
-      fireRate = 1.6;
-      points = 350;
-      radius = 2.8;
-      behavior = 'dogfight';
 
-      const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.45, 3.2), this.armorDarkMat);
-      group.add(body);
-
-      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.65, 1.8, 4), this.armorGunmetalMat);
-      nose.rotation.x = Math.PI / 2;
-      nose.rotation.y = Math.PI / 4;
-      nose.position.set(0, 0.08, 2.2);
-      group.add(nose);
-
+      // Forward-swept titanium razor wings with crimson leading edges
       [-1, 1].forEach(s => {
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.12, 1.6), this.armorGunmetalMat);
-        wing.position.set(s * 1.3, 0, -0.3);
-        wing.rotation.y = s * 0.2;
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.12, 1.8), this.armorHullMat);
+        wing.position.set(s * 1.8, 0, -0.6);
+        wing.rotation.y = s * -0.32;
         group.add(wing);
 
-        const wingTrim = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 1.4), this.crimsonTrimMat);
-        wingTrim.position.set(s * 2.1, 0, -0.3);
+        const wingTrim = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.18, 1.9), this.crimsonTrimMat);
+        wingTrim.position.set(s * 2.8, 0, -0.6);
         group.add(wingTrim);
 
-        const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.0, 8), this.crimsonTrimMat);
-        gun.rotation.x = Math.PI / 2;
-        gun.position.set(s * 1.5, -0.06, 1.2);
-        group.add(gun);
+        const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.2, 8), this.armorGunmetalMat);
+        cannon.rotation.x = Math.PI / 2;
+        cannon.position.set(s * 2.4, -0.05, 0.8);
+        group.add(cannon);
 
-        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 0.9), this.armorDarkMat);
-        fin.position.set(s * 0.5, 0.5, -1.2);
+        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.1, 1.2), this.crimsonTrimMat);
+        fin.position.set(s * 1.2, 0.55, -1.6);
         fin.rotation.z = s * -0.22;
         group.add(fin);
       });
+
+      // Twin glowing plasma thrusters on rear
+      thrusters = this._attachThrusters(group, [-0.65, 0.65], 0, -2.4, 1.15);
+
+    } else if (type === 'fighter') {
+      // 2. FIGHTER ("Phantom Raider") — Balanced tactical strike fighter
+      name = 'PHANTOM FIGHTER';
+      hp = maxHp = 8;
+      speed = 36;
+      fireRate = 1.6;
+      points = 350;
+      radius = 4.0;
+      behavior = 'dogfight';
+
+      // Delta-wing chassis with titanium hull & gunmetal inlays (Length ~8.2m)
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.75, 4.8), this.armorHullMat);
+      group.add(body);
+
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.95, 2.8, 4), this.armorHullMat);
+      nose.rotation.x = Math.PI / 2;
+      nose.rotation.y = Math.PI / 4;
+      nose.position.set(0, 0.1, 3.4);
+      group.add(nose);
+
+      // Red tactical scanner cockpit
+      const cockpit = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.45, 1.8), this.crimsonTrimMat);
+      cockpit.position.set(0, 0.55, 0.6);
+      group.add(cockpit);
+
+      [-1, 1].forEach(s => {
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.18, 2.6), this.armorHullMat);
+        wing.position.set(s * 2.2, 0, -0.5);
+        wing.rotation.y = s * 0.18;
+        group.add(wing);
+
+        const wingTrim = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.24, 2.4), this.crimsonTrimMat);
+        wingTrim.position.set(s * 3.4, 0, -0.5);
+        group.add(wingTrim);
+
+        const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 3.2, 8), this.armorGunmetalMat);
+        gun.rotation.x = Math.PI / 2;
+        gun.position.set(s * 2.6, -0.1, 1.6);
+        group.add(gun);
+
+        const muzzleRing = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.04, 8, 16), this.amberGlowMat);
+        muzzleRing.position.set(s * 2.6, -0.1, 3.2);
+        group.add(muzzleRing);
+
+        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.4, 1.4), this.armorDarkMat);
+        fin.position.set(s * 0.9, 0.85, -1.8);
+        fin.rotation.z = s * -0.22;
+        group.add(fin);
+      });
+
+      // Twin glowing plasma thrusters
+      thrusters = this._attachThrusters(group, [-0.85, 0.85], 0, -2.8, 1.35);
+
     } else if (type === 'gunship') {
-      // 3. HEAVY GUNSHIP ("Goliath Fortress")
+      // 3. HEAVY GUNSHIP ("Goliath Fortress") — Massive armored siege platform
       name = 'GOLIATH GUNSHIP';
       hp = maxHp = 22;
       shield = maxShield = 15;
       speed = 22;
-      fireRate = 2.2;
+      fireRate = 2.0;
       points = 700;
-      radius = 4.2;
+      radius = 5.8;
       behavior = 'standoff_flak';
 
-      const mainHull = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 3.2, 1.4, 6), this.armorDarkMat);
+      // Armored siege hull (Width ~12m, Length ~14m)
+      const mainHull = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.8, 2.2, 6), this.armorHullMat);
       mainHull.rotation.x = Math.PI / 2;
       group.add(mainHull);
 
-      const topTurretArmor = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.6, 2.2), this.armorGunmetalMat);
-      topTurretArmor.position.set(0, 0.8, -0.2);
+      const topTurretArmor = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.0, 3.4), this.armorDarkMat);
+      topTurretArmor.position.set(0, 1.3, -0.4);
       group.add(topTurretArmor);
 
-      // Dual Twin Heavy Cannon Turrets
-      [-1.4, 1.4].forEach(s => {
-        const turret = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 3.4, 8), this.crimsonTrimMat);
+      // Dual Twin Heavy Cannon Turrets with glowing muzzle coils
+      [-2.2, 2.2].forEach(s => {
+        const turret = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 4.8, 8), this.armorGunmetalMat);
         turret.rotation.x = Math.PI / 2;
-        turret.position.set(s, 0.4, 1.8);
+        turret.position.set(s, 0.6, 2.4);
         group.add(turret);
 
-        const muzzle = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.05, 8, 16), this.amberGlowMat);
-        muzzle.position.set(s, 0.4, 3.4);
+        const muzzle = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.08, 8, 16), this.amberGlowMat);
+        muzzle.position.set(s, 0.6, 4.8);
         group.add(muzzle);
       });
 
-      // Frontal Shield Dish
-      const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(3.6, 16, 16), this.shieldMat);
-      shieldMesh.scale.set(1.2, 0.6, 1.2);
+      // Frontal Hexagonal Energy Shield Dish
+      const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(5.2, 16, 16), this.shieldMat);
+      shieldMesh.scale.set(1.25, 0.65, 1.25);
       group.add(shieldMesh);
       group.shieldMesh = shieldMesh;
+
+      // Quad Heavy Thrusters
+      thrusters = this._attachThrusters(group, [-2.2, -0.75, 0.75, 2.2], 0, -3.2, 1.45);
+
     } else if (type === 'elite') {
-      // 4. ELITE SPACECRAFT ("Viper Ace")
+      // 4. ELITE SPACECRAFT ("Viper Ace") — Tactical stealth ace with micro-missiles
       name = 'VIPER ACE';
       hp = maxHp = 16;
       shield = maxShield = 14;
-      speed = 48;
+      speed = 46;
       fireRate = 1.4;
       points = 850;
-      radius = 3.0;
+      radius = 4.2;
       behavior = 'elite_ace';
 
-      const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.85, 4.2, 5), this.armorDarkMat);
+      const fuselage = new THREE.Mesh(new THREE.ConeGeometry(1.2, 6.2, 5), this.armorHullMat);
       fuselage.rotation.x = Math.PI / 2;
       fuselage.rotation.y = Math.PI / 5;
       group.add(fuselage);
 
-      const cockpitVisor = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.18, 1.2), this.crimsonTrimMat);
-      cockpitVisor.position.set(0, 0.28, 0.6);
+      const cockpitVisor = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.28, 1.8), this.crimsonTrimMat);
+      cockpitVisor.position.set(0, 0.42, 1.0);
       group.add(cockpitVisor);
 
       [-1, 1].forEach(s => {
-        const sweptWing = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 1.8), this.armorGunmetalMat);
-        sweptWing.position.set(s * 1.5, 0, -0.6);
-        sweptWing.rotation.y = s * -0.3;
+        const sweptWing = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.16, 2.6), this.armorHullMat);
+        sweptWing.position.set(s * 2.2, 0, -0.8);
+        sweptWing.rotation.y = s * -0.28;
         group.add(sweptWing);
 
-        // Micro-seeker missile pods
-        const pod = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 1.2), this.crimsonTrimMat);
-        pod.position.set(s * 1.8, -0.12, 0.2);
+        const pod = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.38, 1.8), this.crimsonTrimMat);
+        pod.position.set(s * 2.8, -0.16, 0.4);
         group.add(pod);
       });
 
-      const shieldMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(3.2, 1), this.shieldMat);
+      const shieldMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(4.6, 1), this.shieldMat);
       group.add(shieldMesh);
       group.shieldMesh = shieldMesh;
+
+      // Twin Afterburner Thruster Flames
+      thrusters = this._attachThrusters(group, [-0.95, 0.95], 0, -3.4, 1.45);
     }
 
     group.position.set(x, 0, z);
@@ -337,88 +465,80 @@ export class DroneManager {
       roll: 0,
       strafeAngle: Math.random() * Math.PI * 2,
       evadeTimer: 0,
-      disabledTimer: 0 // for EMP
+      disabledTimer: 0,
+      thrusters
     });
   }
 
   /**
    * Spawns the massive Capital Dreadnought "Leviathan Omega" (Level 5 Boss)
+   * Positioned directly in front of the player's vector at 135m distance
    */
-  _spawnBoss(levelNumber, playerPos) {
+  _spawnBoss(levelNumber, playerPos, playerHeading = 0) {
     const THREE = this.THREE;
     const bossName = 'LEVIATHAN OMEGA CAPITAL DREADNOUGHT';
     const maxHp = 120;
     const maxShield = 80;
 
-    const spawnDist = 260;
-    const angle = Math.random() * Math.PI * 2;
-    const x = playerPos.x + Math.sin(angle) * spawnDist;
-    const z = playerPos.z + Math.cos(angle) * spawnDist;
+    const spawnDist = 135;
+    const x = playerPos.x + Math.sin(playerHeading) * spawnDist;
+    const z = playerPos.z + Math.cos(playerHeading) * spawnDist;
 
     const group = new THREE.Group();
 
     // 1. Massive 45m Capital Ship Core Superstructure
-    const coreHull = new THREE.Mesh(new THREE.BoxGeometry(9.0, 3.8, 36.0), this.bossArmorMat);
+    const coreHull = new THREE.Mesh(new THREE.BoxGeometry(11.0, 4.5, 42.0), this.bossArmorMat);
     coreHull.castShadow = true;
     group.add(coreHull);
 
     // Multi-Tiered Command Bridge
-    const bridgeTier1 = new THREE.Mesh(new THREE.BoxGeometry(6.4, 2.4, 12.0), this.bossArmorMat);
-    bridgeTier1.position.set(0, 2.8, -6.0);
+    const bridgeTier1 = new THREE.Mesh(new THREE.BoxGeometry(7.5, 2.8, 14.0), this.bossArmorMat);
+    bridgeTier1.position.set(0, 3.2, -7.0);
     group.add(bridgeTier1);
 
-    const bridgeTower = new THREE.Mesh(new THREE.BoxGeometry(4.0, 2.0, 6.0), this.armorGunmetalMat);
-    bridgeTower.position.set(0, 4.8, -7.0);
+    const bridgeTower = new THREE.Mesh(new THREE.BoxGeometry(4.8, 2.4, 7.2), this.armorGunmetalMat);
+    bridgeTower.position.set(0, 5.4, -8.0);
     group.add(bridgeTower);
 
-    const bridgeVisor = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.4, 0.8), this.crimsonTrimMat);
-    bridgeVisor.position.set(0, 5.2, -4.0);
+    const bridgeVisor = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.5, 1.0), this.crimsonTrimMat);
+    bridgeVisor.position.set(0, 5.8, -4.5);
     group.add(bridgeVisor);
 
     // Glowing Alien Hyper-Matter Reactor Core
-    const coreReactor = new THREE.Mesh(new THREE.SphereGeometry(2.8, 24, 24), this.bossCoreMat);
-    coreReactor.position.set(0, 0.8, 3.0);
+    const coreReactor = new THREE.Mesh(new THREE.SphereGeometry(3.4, 24, 24), this.bossCoreMat);
+    coreReactor.position.set(0, 1.0, 4.0);
     group.add(coreReactor);
 
     // 2. Outrigger Battleship Sponsons with Dual Broadside Batteries
-    [-6.8, 6.8].forEach(side => {
-      const sponson = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.8, 28.0), this.bossArmorMat);
+    [-8.0, 8.0].forEach(side => {
+      const sponson = new THREE.Mesh(new THREE.BoxGeometry(4.0, 3.4, 32.0), this.bossArmorMat);
       sponson.position.set(side, 0, -2.0);
       group.add(sponson);
 
       // Rotating Heavy Broadside Turrets
-      [-8.0, -1.0, 6.0].forEach(zOff => {
-        const turretBase = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 0.8, 12), this.armorGunmetalMat);
-        turretBase.position.set(side, 1.6, zOff);
+      [-9.0, -1.0, 7.0].forEach(zOff => {
+        const turretBase = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.6, 1.0, 12), this.armorGunmetalMat);
+        turretBase.position.set(side, 2.0, zOff);
         group.add(turretBase);
 
-        const cannonL = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 4.2, 8), this.crimsonTrimMat);
+        const cannonL = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 5.0, 8), this.crimsonTrimMat);
         cannonL.rotation.x = Math.PI / 2;
-        cannonL.position.set(side - 0.35, 1.8, zOff + 2.2);
+        cannonL.position.set(side - 0.45, 2.2, zOff + 2.5);
         group.add(cannonL);
 
         const cannonR = cannonL.clone();
-        cannonR.position.x = side + 0.35;
+        cannonR.position.x = side + 0.45;
         group.add(cannonR);
       });
     });
 
-    // Rear Quad Engine Thruster Array
-    [-3.0, -1.0, 1.0, 3.0].forEach(xOff => {
-      const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 2.4, 16), this.armorGunmetalMat);
-      bell.rotation.x = Math.PI / 2;
-      bell.position.set(xOff, 0.4, -19.0);
-      group.add(bell);
-
-      const glow = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.15, 8, 16), this.bossCoreMat);
-      glow.position.set(xOff, 0.4, -20.2);
-      group.add(glow);
-    });
-
     // Massive Ellipsoid Shield Bubble
-    const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(18.0, 24, 24), this.shieldMat);
-    shieldMesh.scale.set(1.4, 0.55, 1.8);
+    const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(22.0, 24, 24), this.shieldMat);
+    shieldMesh.scale.set(1.45, 0.60, 1.85);
     group.add(shieldMesh);
+
+    // Quad Massive Capital Thruster Plumes
+    const thrusters = this._attachThrusters(group, [-3.4, -1.2, 1.2, 3.4], 0.6, -21.0, 2.4, true);
 
     group.position.set(x, 0, z);
     this.scene.add(group);
@@ -430,20 +550,21 @@ export class DroneManager {
       maxHp,
       shield: maxShield,
       maxShield,
-      speed: 14,
+      speed: 15,
       fireRate: 2.2,
       lastFireTime: 0,
       lastBeamTime: 0,
       lastMissileTime: 0,
       missileRate: 4.5,
-      heading: angle + Math.PI,
-      radius: 18.0,
+      heading: playerHeading + Math.PI,
+      radius: 22.0,
       points: 8000,
       shieldMesh,
-      phase: 1, // Phase 1 (100-65%), Phase 2 (65-30%), Phase 3 (30-0%)
+      phase: 1,
       isDestroying: false,
       destroyTimer: 0,
-      disabledTimer: 0
+      disabledTimer: 0,
+      thrusters
     };
   }
 
@@ -543,6 +664,15 @@ export class DroneManager {
         if (dist > 85) {
           b.group.position.x += Math.sin(b.heading) * b.speed * dt;
           b.group.position.z += Math.cos(b.heading) * b.speed * dt;
+        }
+
+        // Engine Thruster Animation
+        if (b.thrusters) {
+          const pulse = 1.0 + Math.sin(time * 24) * 0.15;
+          b.thrusters.forEach(t => {
+            t.outer.scale.z = t.baseScale * pulse;
+            t.inner.scale.z = t.baseScale * (pulse * 1.15);
+          });
         }
 
         // Shield Mesh Opacity
@@ -657,6 +787,15 @@ export class DroneManager {
 
       drone.group.position.x += drone.vx * dt;
       drone.group.position.z += drone.vz * dt;
+
+      // Pulse engine plasma exhaust
+      if (drone.thrusters) {
+        const pulse = 1.0 + Math.sin(time * 32 + i * 2) * 0.16;
+        drone.thrusters.forEach(t => {
+          t.outer.scale.z = t.baseScale * pulse;
+          t.inner.scale.z = t.baseScale * (pulse * 1.15);
+        });
+      }
 
       // Firing
       if (drone.disabledTimer <= 0 && dist < 170 && (time - drone.lastFireTime >= drone.fireRate)) {
@@ -1057,7 +1196,10 @@ export class DroneManager {
   }
 
   /**
-   * Calculates Target Tracking & Predictive Dogfight Lead Pip
+   * Comprehensive Multi-Target Tracking Computer
+   * Tracks all active hostiles in 3D space, calculates screen projections,
+   * identifies locked primary targets, generates predictive dogfight lead pips,
+   * and computes off-screen edge clamping with directional chevron angles.
    */
   getTargetTrackingInfo(player, camera, canvasWidth, canvasHeight) {
     const THREE = this.THREE;
@@ -1070,58 +1212,119 @@ export class DroneManager {
 
     if (candidates.length === 0) return null;
 
-    // Find closest target in front of player
-    let bestTarget = null;
-    let minDist = Infinity;
-
     const pPos = player.position;
     const pHeadingVec = new THREE.Vector3(Math.sin(player.heading), 0, Math.cos(player.heading));
+
+    const margin = 36;
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+
+    let bestScore = Infinity;
+    let primaryTarget = null;
+    const allTargets = [];
 
     candidates.forEach(c => {
       const cPos = c.group.position;
       const toVec = new THREE.Vector3().subVectors(cPos, pPos);
       const dist = toVec.length();
 
-      // Dot product to check if candidate is in front
+      // Dot product to check forward direction
       const forwardDot = toVec.clone().normalize().dot(pHeadingVec);
-      const score = dist - forwardDot * 60;
+      const score = dist - forwardDot * 80;
 
-      if (score < minDist) {
-        minDist = score;
-        bestTarget = { candidate: c, dist };
+      // Project 3D world position to NDC [-1, 1]
+      const proj = cPos.clone().project(camera);
+      const inFront = proj.z < 1.0;
+
+      let sx = (proj.x * 0.5 + 0.5) * canvasWidth;
+      let sy = (-proj.y * 0.5 + 0.5) * canvasHeight;
+
+      const isOnScreen = inFront && (sx >= margin && sx <= canvasWidth - margin && sy >= margin && sy <= canvasHeight - margin);
+
+      let edgeX = sx;
+      let edgeY = sy;
+      let edgeAngle = 0;
+
+      if (!isOnScreen) {
+        let dirX = proj.x;
+        let dirY = -proj.y;
+        if (!inFront) {
+          dirX = -dirX;
+          dirY = -dirY;
+        }
+
+        edgeAngle = Math.atan2(dirY, dirX);
+
+        const maxW = (canvasWidth / 2) - margin;
+        const maxH = (canvasHeight / 2) - margin;
+
+        const slope = Math.abs(dirY / (dirX || 0.0001));
+        const boxSlope = maxH / maxW;
+
+        if (slope < boxSlope) {
+          edgeX = centerX + Math.sign(dirX) * maxW;
+          edgeY = centerY + Math.sign(dirX) * maxW * (dirY / (Math.abs(dirX) || 0.0001));
+        } else {
+          edgeY = centerY + Math.sign(dirY) * maxH;
+          edgeX = centerX + Math.sign(dirY) * maxH * (dirX / (Math.abs(dirY) || 0.0001));
+        }
+      }
+
+      // Calculate dogfight lead prediction
+      const laserSpeed = 210;
+      const timeToHit = dist / laserSpeed;
+      const leadWorldPos = cPos.clone();
+      leadWorldPos.x += (c.vx || 0) * timeToHit;
+      leadWorldPos.z += (c.vz || 0) * timeToHit;
+
+      const leadProj = leadWorldPos.clone().project(camera);
+      const leadScreenX = (leadProj.x * 0.5 + 0.5) * canvasWidth;
+      const leadScreenY = (-leadProj.y * 0.5 + 0.5) * canvasHeight;
+
+      const targetData = {
+        target: c,
+        name: c.name || 'HOSTILE',
+        hp: c.hp,
+        maxHp: c.maxHp,
+        shield: c.shield || 0,
+        maxShield: c.maxShield || 0,
+        distance: Math.round(dist),
+        screenX: sx,
+        screenY: sy,
+        leadScreenX,
+        leadScreenY,
+        inFront,
+        isOnScreen,
+        edgeX,
+        edgeY,
+        edgeAngle,
+        isBoss: !!c.isBoss
+      };
+
+      allTargets.push(targetData);
+
+      if (score < bestScore) {
+        bestScore = score;
+        primaryTarget = targetData;
       }
     });
 
-    if (!bestTarget) return null;
-
-    const target = bestTarget.candidate;
-    const tPos = target.group.position.clone();
-
-    // Screen Space Projection of Target
-    const screenPos = tPos.clone().project(camera);
-    const sx = (screenPos.x * 0.5 + 0.5) * canvasWidth;
-    const sy = (-screenPos.y * 0.5 + 0.5) * canvasHeight;
-
-    // Calculate Dogfight Lead Pip (Where to aim)
-    const laserSpeed = 210;
-    const timeToHit = bestTarget.dist / laserSpeed;
-    const leadWorldPos = tPos.clone();
-    leadWorldPos.x += (target.vx || 0) * timeToHit;
-    leadWorldPos.z += (target.vz || 0) * timeToHit;
-
-    const leadScreenPos = leadWorldPos.clone().project(camera);
-    const lx = (leadScreenPos.x * 0.5 + 0.5) * canvasWidth;
-    const ly = (-leadScreenPos.y * 0.5 + 0.5) * canvasHeight;
+    if (primaryTarget) {
+      primaryTarget.isLocked = primaryTarget.distance < 160 && primaryTarget.isOnScreen;
+    }
 
     return {
-      target,
-      screenX: sx,
-      screenY: sy,
-      leadScreenX: lx,
-      leadScreenY: ly,
-      distance: Math.round(bestTarget.dist),
-      inFront: screenPos.z < 1.0,
-      isLocked: bestTarget.dist < 180
+      primary: primaryTarget,
+      targets: allTargets,
+      // Backward compatibility for missile tracking & audio lock
+      target: primaryTarget ? primaryTarget.target : null,
+      screenX: primaryTarget ? primaryTarget.screenX : 0,
+      screenY: primaryTarget ? primaryTarget.screenY : 0,
+      leadScreenX: primaryTarget ? primaryTarget.leadScreenX : 0,
+      leadScreenY: primaryTarget ? primaryTarget.leadScreenY : 0,
+      distance: primaryTarget ? primaryTarget.distance : 0,
+      inFront: primaryTarget ? primaryTarget.inFront : false,
+      isLocked: primaryTarget ? primaryTarget.isLocked : false
     };
   }
 

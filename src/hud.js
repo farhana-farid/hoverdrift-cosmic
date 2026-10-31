@@ -422,7 +422,7 @@ export class TacticalHUD {
     const centerX = this.trackingCanvas.width / 2;
     const centerY = this.trackingCanvas.height / 2;
 
-    // Center Crosshair
+    // 1. Center Flight Crosshair
     ctx.strokeStyle = 'rgba(62, 240, 255, 0.45)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -436,62 +436,162 @@ export class TacticalHUD {
     ctx.moveTo(centerX, centerY + 8); ctx.lineTo(centerX, centerY + 24);
     ctx.stroke();
 
-    if (!info || !info.inFront) return;
+    if (!info) return;
 
-    const sx = info.screenX;
-    const sy = info.screenY;
-    const lx = info.leadScreenX;
-    const ly = info.leadScreenY;
+    const allTargets = info.targets || (info.primary ? [info.primary] : []);
+    const primary = info.primary || null;
 
-    // Target Diamond Box
-    const isLock = info.isLocked;
-    ctx.strokeStyle = isLock ? '#ff2244' : '#ffc247';
-    ctx.lineWidth = 2;
-    const size = 18;
+    // 2. Render Secondary / Off-Screen Hostiles First
+    allTargets.forEach(t => {
+      const isPrimary = primary && (t.target === primary.target);
+      if (isPrimary && t.isOnScreen) return; // Primary on-screen rendered prominently in pass 3
 
-    ctx.beginPath();
-    ctx.moveTo(sx, sy - size);
-    ctx.lineTo(sx + size, sy);
-    ctx.lineTo(sx, sy + size);
-    ctx.lineTo(sx - size, sy);
-    ctx.closePath();
-    ctx.stroke();
+      if (t.isOnScreen) {
+        // Secondary On-Screen Hostile (Clean subtle red tactical bracket)
+        const size = t.isBoss ? 26 : 14;
+        ctx.strokeStyle = t.isBoss ? '#bf00ff' : 'rgba(255, 68, 68, 0.75)';
+        ctx.lineWidth = 1.5;
 
-    // Target Info Label
-    ctx.fillStyle = isLock ? '#ff2244' : '#ffc247';
-    ctx.font = '10px ui-monospace, monospace';
-    ctx.fillText(`${info.target.name || 'HOSTILE'} [${info.distance}m]`, sx + size + 6, sy - 4);
+        ctx.beginPath();
+        // Top-Left corner
+        ctx.moveTo(t.screenX - size, t.screenY - size + 5);
+        ctx.lineTo(t.screenX - size, t.screenY - size);
+        ctx.lineTo(t.screenX - size + 5, t.screenY - size);
+        // Top-Right corner
+        ctx.moveTo(t.screenX + size - 5, t.screenY - size);
+        ctx.lineTo(t.screenX + size, t.screenY - size);
+        ctx.lineTo(t.screenX + size, t.screenY - size + 5);
+        // Bottom-Right corner
+        ctx.moveTo(t.screenX + size, t.screenY + size - 5);
+        ctx.lineTo(t.screenX + size, t.screenY + size);
+        ctx.lineTo(t.screenX + size - 5, t.screenY + size);
+        // Bottom-Left corner
+        ctx.moveTo(t.screenX - size + 5, t.screenY + size);
+        ctx.lineTo(t.screenX - size, t.screenY + size);
+        ctx.lineTo(t.screenX - size, t.screenY + size - 5);
+        ctx.stroke();
 
-    // Target HP Mini Bar
-    const hpPct = Math.max(0, (info.target.hp / info.target.maxHp));
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.fillRect(sx - size, sy + size + 4, size * 2, 4);
-    ctx.fillStyle = isLock ? '#ff2244' : '#3ef0ff';
-    ctx.fillRect(sx - size, sy + size + 4, size * 2 * hpPct, 4);
+        // Distance readout
+        ctx.fillStyle = 'rgba(255, 100, 100, 0.85)';
+        ctx.font = '9px ui-monospace, monospace';
+        ctx.fillText(`${t.distance}m`, t.screenX + size + 4, t.screenY + 3);
+      } else {
+        // Off-Screen Directional Indicator (Edge Chevron + Distance)
+        const angle = t.edgeAngle;
+        const ex = t.edgeX;
+        const ey = t.edgeY;
 
-    // Predictive Dogfight Lead Pip (Where to aim!)
-    ctx.strokeStyle = '#3ef0ff';
-    ctx.fillStyle = 'rgba(62, 240, 255, 0.2)';
-    ctx.lineWidth = 1.8;
+        ctx.save();
+        ctx.translate(ex, ey);
+        ctx.rotate(angle);
 
-    ctx.beginPath();
-    ctx.arc(lx, ly, 10, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+        ctx.fillStyle = t.isBoss ? '#bf00ff' : (isPrimary ? '#ff2244' : 'rgba(255, 68, 68, 0.85)');
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.0;
 
-    ctx.beginPath();
-    ctx.moveTo(lx - 5, ly); ctx.lineTo(lx + 5, ly);
-    ctx.moveTo(lx, ly - 5); ctx.lineTo(lx, ly + 5);
-    ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(9, 0);
+        ctx.lineTo(-6, -6);
+        ctx.lineTo(-3, 0);
+        ctx.lineTo(-6, 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
 
-    // Subtle lead guide dashed line
-    ctx.setLineDash([4, 4]);
-    ctx.strokeStyle = 'rgba(62, 240, 255, 0.35)';
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    ctx.lineTo(lx, ly);
-    ctx.stroke();
-    ctx.setLineDash([]);
+        ctx.restore();
+
+        // Off-screen distance tag pinned adjacent to chevron
+        ctx.fillStyle = '#ff8888';
+        ctx.font = '8.5px ui-monospace, monospace';
+        const tagX = Math.max(12, Math.min(this.trackingCanvas.width - 50, ex + Math.cos(angle) * 14 - 15));
+        const tagY = Math.max(16, Math.min(this.trackingCanvas.height - 10, ey + Math.sin(angle) * 14 + 4));
+        ctx.fillText(`${t.distance}m`, tagX, tagY);
+      }
+    });
+
+    // 3. Render Primary Locked Target with Full Dogfight Computer
+    if (primary && primary.isOnScreen) {
+      const sx = primary.screenX;
+      const sy = primary.screenY;
+      const lx = primary.leadScreenX;
+      const ly = primary.leadScreenY;
+
+      const isLock = primary.isLocked;
+      const size = primary.isBoss ? 32 : 20;
+
+      // Primary Diamond Target Reticle
+      ctx.strokeStyle = isLock ? '#ff2244' : '#3ef0ff';
+      ctx.lineWidth = 2.0;
+
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - size);
+      ctx.lineTo(sx + size, sy);
+      ctx.lineTo(sx, sy + size);
+      ctx.lineTo(sx - size, sy);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Corner Tech Brackets
+      const bSize = size + 6;
+      ctx.strokeStyle = isLock ? 'rgba(255, 34, 68, 0.8)' : 'rgba(62, 240, 255, 0.7)';
+      ctx.lineWidth = 1.5;
+
+      ctx.beginPath();
+      ctx.moveTo(sx - bSize, sy - bSize + 6); ctx.lineTo(sx - bSize, sy - bSize); ctx.lineTo(sx - bSize + 6, sy - bSize);
+      ctx.moveTo(sx + bSize - 6, sy - bSize); ctx.lineTo(sx + bSize, sy - bSize); ctx.lineTo(sx + bSize, sy - bSize + 6);
+      ctx.moveTo(sx + bSize, sy + bSize - 6); ctx.lineTo(sx + bSize, sy + bSize); ctx.lineTo(sx + bSize - 6, sy + bSize);
+      ctx.moveTo(sx - bSize + 6, sy + bSize); ctx.lineTo(sx - bSize, sy + bSize); ctx.lineTo(sx - bSize, sy + bSize - 6);
+      ctx.stroke();
+
+      // Target Name & Distance Banner
+      ctx.fillStyle = isLock ? '#ff3b3b' : '#3ef0ff';
+      ctx.font = '10.5px ui-monospace, monospace';
+      ctx.fillText(`${primary.name} [${primary.distance}m]`, sx + size + 8, sy - 6);
+
+      // Segmented Shield & Hull Mini Health Bars
+      const barW = size * 2.2;
+      const barH = 3.5;
+      const barX = sx - barW / 2;
+      const barY = sy + size + 8;
+
+      if (primary.maxShield > 0) {
+        const shPct = Math.max(0, primary.shield / primary.maxShield);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.fillRect(barX, barY - 5, barW, 2.5);
+        ctx.fillStyle = '#bf00ff';
+        ctx.fillRect(barX, barY - 5, barW * shPct, 2.5);
+      }
+
+      const hpPct = Math.max(0, primary.hp / primary.maxHp);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.fillRect(barX, barY, barW, barH);
+      ctx.fillStyle = isLock ? '#ff2244' : '#5cff9d';
+      ctx.fillRect(barX, barY, barW * hpPct, barH);
+
+      // Predictive Dogfight Lead Pip (Aim Here to Hit!)
+      ctx.strokeStyle = '#3ef0ff';
+      ctx.fillStyle = 'rgba(62, 240, 255, 0.25)';
+      ctx.lineWidth = 1.8;
+
+      ctx.beginPath();
+      ctx.arc(lx, ly, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(lx - 6, ly); ctx.lineTo(lx + 6, ly);
+      ctx.moveTo(lx, ly - 6); ctx.lineTo(lx, ly + 6);
+      ctx.stroke();
+
+      // Subtle dashed flight vector lead guide
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(62, 240, 255, 0.4)';
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(lx, ly);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
   }
 
   _renderRadar(player, data) {
