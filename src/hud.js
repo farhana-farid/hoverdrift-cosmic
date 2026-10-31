@@ -47,13 +47,21 @@ export class TacticalHUD {
             <div class="alert-box" id="hud-alert-text">MISSION UPDATED</div>
           </div>
 
-          <!-- Score & Multiplier -->
-          <div class="hud-score-panel">
-            <div class="score-display">
-              <span class="score-label">SCORE</span>
-              <span class="score-val" id="hud-score">000000</span>
+          <div class="hud-top-right">
+            <!-- Score & Multiplier -->
+            <div class="hud-score-panel">
+              <div class="score-display">
+                <span class="score-label">SCORE</span>
+                <span class="score-val" id="hud-score">000000</span>
+              </div>
+              <div class="combo-badge" id="hud-combo">x1 COMBO</div>
             </div>
-            <div class="combo-badge" id="hud-combo">x1 COMBO</div>
+
+            <!-- Mobile & Tactical Action Buttons -->
+            <div class="hud-top-actions">
+              <button class="hud-action-pill" id="hud-btn-cam">CAM</button>
+              <button class="hud-action-pill" id="hud-btn-pause">PAUSE ⏸</button>
+            </div>
           </div>
         </header>
 
@@ -281,6 +289,132 @@ export class TacticalHUD {
     document.getElementById('btn-toggle-mute')?.addEventListener('click', () => {
       if (this.callbacks.onMute) this.callbacks.onMute();
     });
+
+    document.getElementById('hud-btn-pause')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (this.callbacks.onTogglePause) this.callbacks.onTogglePause();
+    });
+
+    document.getElementById('hud-btn-cam')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (this.callbacks.onCycleCamera) this.callbacks.onCycleCamera();
+    });
+  }
+
+  bindTouchInput(inputController) {
+    if (!inputController) return;
+    const stick = document.getElementById('touch-stick-left');
+    const knob = document.getElementById('stick-knob-left');
+    const btnTouchBoost = document.getElementById('btn-touch-boost');
+    const btnTouchMissile = document.getElementById('btn-touch-missile');
+    const btnTouchFire = document.getElementById('btn-touch-fire');
+
+    if (stick && knob) {
+      let activeTouchId = null;
+      let startX = 0, startY = 0;
+
+      stick.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const touch = e.changedTouches[0];
+        activeTouchId = touch.identifier;
+        const rect = stick.getBoundingClientRect();
+        startX = rect.left + rect.width / 2;
+        startY = rect.top + rect.height / 2;
+        inputController.touch.active = true;
+      }, { passive: false });
+
+      window.addEventListener('touchmove', (e) => {
+        if (activeTouchId === null) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const touch = e.changedTouches[i];
+          if (touch.identifier === activeTouchId) {
+            e.preventDefault();
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+            const dist = Math.hypot(dx, dy);
+            const maxRadius = 45;
+            const clampedDist = Math.min(maxRadius, dist);
+            const angle = Math.atan2(dy, dx);
+            const knobX = Math.cos(angle) * clampedDist;
+            const knobY = Math.sin(angle) * clampedDist;
+
+            knob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
+
+            inputController.touch.thrust = -dy / maxRadius;
+            inputController.touch.steer = dx / maxRadius;
+          }
+        }
+      }, { passive: false });
+
+      const resetStick = (e) => {
+        if (activeTouchId === null) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === activeTouchId) {
+            activeTouchId = null;
+            knob.style.transition = 'transform 0.15s ease-out';
+            knob.style.transform = 'translate(-50%, -50%)';
+            setTimeout(() => { knob.style.transition = ''; }, 160);
+            inputController.touch.thrust = 0;
+            inputController.touch.steer = 0;
+            inputController.touch.active = false;
+          }
+        }
+      };
+
+      window.addEventListener('touchend', resetStick, { passive: true });
+      window.addEventListener('touchcancel', resetStick, { passive: true });
+    }
+
+    if (btnTouchBoost) {
+      btnTouchBoost.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.boost = true;
+      }, { passive: false });
+      btnTouchBoost.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.boost = false;
+      }, { passive: false });
+      btnTouchBoost.addEventListener('touchcancel', () => {
+        inputController.touch.boost = false;
+      }, { passive: true });
+    }
+
+    if (btnTouchMissile) {
+      btnTouchMissile.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.missile = true;
+      }, { passive: false });
+      btnTouchMissile.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.missile = false;
+      }, { passive: false });
+      btnTouchMissile.addEventListener('touchcancel', () => {
+        inputController.touch.missile = false;
+      }, { passive: true });
+    }
+
+    if (btnTouchFire) {
+      btnTouchFire.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.fire = true;
+      }, { passive: false });
+      btnTouchFire.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.fire = false;
+      }, { passive: false });
+      btnTouchFire.addEventListener('touchcancel', () => {
+        inputController.touch.fire = false;
+      }, { passive: true });
+    }
   }
 
   _resizeCanvases() {

@@ -246,6 +246,44 @@ try {
       100% { transform: scale(1.02); opacity: 1.0; }
     }
 
+    .hud-top-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .hud-top-actions {
+      display: flex;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .hud-action-pill {
+      background: rgba(10, 22, 38, 0.85);
+      border: 1px solid var(--panel-line);
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 5px 11px;
+      border-radius: 3px;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .hud-action-pill:hover, .hud-action-pill:active {
+      transform: scale(0.96);
+      background: rgba(62, 240, 255, 0.22);
+      border-color: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan-glow);
+      color: #fff;
+    }
+
     .hud-score-panel {
       display: flex;
       flex-direction: column;
@@ -1080,13 +1118,14 @@ try {
       pointer-events: auto;
       touch-action: none;
       position: absolute;
-      bottom: 28px;
-      left: 24px;
-      width: 120px;
-      height: 120px;
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+      left: calc(20px + env(safe-area-inset-left, 0px));
+      width: 124px;
+      height: 124px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(62, 240, 255, 0.15) 0%, rgba(6, 14, 24, 0.6) 100%);
-      border: 1.5px solid rgba(62, 240, 255, 0.35);
+      background: radial-gradient(circle, rgba(62, 240, 255, 0.12) 0%, rgba(6, 14, 24, 0.72) 100%);
+      border: 1.5px solid rgba(62, 240, 255, 0.4);
+      box-shadow: 0 0 18px rgba(62, 240, 255, 0.22);
     }
 
     .stick-knob {
@@ -1094,38 +1133,57 @@ try {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 46px;
-      height: 46px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       background: radial-gradient(circle, var(--cyan) 0%, #157b8c 100%);
       box-shadow: 0 0 16px var(--cyan);
+      pointer-events: none;
     }
 
     .touch-buttons {
       pointer-events: auto;
       position: absolute;
-      bottom: 28px;
-      right: 24px;
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+      right: calc(18px + env(safe-area-inset-right, 0px));
       display: flex;
-      gap: 14px;
+      gap: 12px;
+      align-items: center;
+      touch-action: none;
     }
 
     .touch-action-btn {
-      width: 68px;
-      height: 68px;
+      width: 62px;
+      height: 62px;
       border-radius: 50%;
       font-family: inherit;
       font-size: 10px;
       font-weight: 800;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.12em;
       cursor: pointer;
-      border: none;
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform 0.1s ease, filter 0.1s ease;
+    }
+
+    .touch-action-btn:active {
+      transform: scale(0.92);
+      filter: brightness(1.25);
     }
 
     .boost-btn {
       color: #2b1800;
       background: radial-gradient(circle, #ffc247, #ff8c00);
-      box-shadow: 0 0 20px var(--orange-glow);
+      box-shadow: 0 0 18px var(--orange-glow);
+    }
+
+    .missile-btn {
+      color: #fff;
+      background: radial-gradient(circle, #ff4422, #b31d00);
+      box-shadow: 0 0 18px rgba(255, 68, 34, 0.6);
     }
 
     .fire-btn {
@@ -1134,11 +1192,70 @@ try {
       box-shadow: 0 0 20px var(--cyan-glow);
     }
 
-    @media (max-width: 960px) {
-      .hangar-content { grid-template-columns: 1fr; overflow-y: auto; }
+    @media (max-width: 960px), (pointer: coarse), (hover: none) {
+      .hangar-overlay {
+        padding: calc(12px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px));
+      }
+      .hangar-content { 
+        grid-template-columns: 1fr; 
+        overflow-y: auto; 
+        -webkit-overflow-scrolling: touch;
+        gap: 14px;
+      }
+      .hangar-turntable-container {
+        height: 260px;
+        min-height: 240px;
+        order: -1;
+      }
+      .hangar-footer {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .btn-launch-mission {
+        width: 100%;
+        padding: 14px 20px;
+        font-size: 13px;
+      }
       .hud-hints { display: none; }
-      .hud-vitals { width: 250px; bottom: 85px; }
+      .hud-radar-panel { display: none; }
+      .hud-top {
+        padding: calc(10px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) 8px calc(14px + env(safe-area-inset-left, 0px));
+      }
+      .hud-title { font-size: 13px; }
+      .hud-sector { font-size: 9px; }
+      .mission-title { font-size: 11px; }
+      .mission-objective { font-size: 10px; }
+      .hud-vitals { 
+        width: min(250px, 44vw); 
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px)); 
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 12px;
+      }
       .touch-controls { display: block; }
+    }
+
+    @media (max-width: 600px) and (orientation: portrait) {
+      .touch-stick {
+        width: 110px;
+        height: 110px;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        left: calc(12px + env(safe-area-inset-left, 0px));
+      }
+      .touch-action-btn {
+        width: 54px;
+        height: 54px;
+        font-size: 9px;
+      }
+      .touch-buttons {
+        gap: 8px;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        right: calc(12px + env(safe-area-inset-right, 0px));
+      }
+      .hud-vitals {
+        bottom: calc(144px + env(safe-area-inset-bottom, 0px));
+        width: 220px;
+      }
     }
   </style>
 </head>
@@ -1449,7 +1566,11 @@ try {
       }
       animateTurntable();
 
-      btnLaunch.addEventListener('click', () => {
+      btnLaunch.addEventListener('click', (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         turntableRunning = false;
         hangarOverlay.style.opacity = '0';
         hangarOverlay.style.transition = 'opacity 0.5s ease-out';
@@ -1461,110 +1582,12 @@ try {
         }
       });
 
-      // Mobile Touch stick helpers
-      const stick = document.getElementById('touch-stick-left');
-      const knob = document.getElementById('stick-knob-left');
-      const btnTouchBoost = document.getElementById('btn-touch-boost');
-      const btnTouchMissile = document.getElementById('btn-touch-missile');
-      const btnTouchFire = document.getElementById('btn-touch-fire');
-
-      if (stick && knob) {
-        let activeTouchId = null;
-        let startX = 0, startY = 0;
-
-        stick.addEventListener('touchstart', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const touch = e.changedTouches[0];
-          activeTouchId = touch.identifier;
-          const rect = stick.getBoundingClientRect();
-          startX = rect.left + rect.width / 2;
-          startY = rect.top + rect.height / 2;
-          if (mainGame) mainGame.input.touch.active = true;
-        }, { passive: false });
-
-        window.addEventListener('touchmove', (e) => {
-          if (activeTouchId === null) return;
-          for (let i = 0; i < e.changedTouches.length; i++) {
-            const touch = e.changedTouches[i];
-            if (touch.identifier === activeTouchId) {
-              e.preventDefault();
-              const dx = touch.clientX - startX;
-              const dy = touch.clientY - startY;
-              const dist = Math.hypot(dx, dy);
-              const maxRadius = 45;
-              const clampedDist = Math.min(maxRadius, dist);
-              const angle = Math.atan2(dy, dx);
-              const knobX = Math.cos(angle) * clampedDist;
-              const knobY = Math.sin(angle) * clampedDist;
-
-              knob.style.transform = 'translate(calc(-50% + ' + knobX + 'px), calc(-50% + ' + knobY + 'px))';
-
-              if (mainGame) {
-                mainGame.input.touch.thrust = -dy / maxRadius;
-                mainGame.input.touch.steer = dx / maxRadius;
-              }
-            }
-          }
-        }, { passive: false });
-
-        const resetStick = (e) => {
-          if (activeTouchId === null) return;
-          for (let i = 0; i < e.changedTouches.length; i++) {
-            if (e.changedTouches[i].identifier === activeTouchId) {
-              activeTouchId = null;
-              knob.style.transition = 'transform 0.15s ease-out';
-              knob.style.transform = 'translate(-50%, -50%)';
-              setTimeout(() => { knob.style.transition = ''; }, 160);
-              if (mainGame) {
-                mainGame.input.touch.thrust = 0;
-                mainGame.input.touch.steer = 0;
-                mainGame.input.touch.active = false;
-              }
-            }
-          }
-        };
-
-        window.addEventListener('touchend', resetStick, { passive: true });
-        window.addEventListener('touchcancel', resetStick, { passive: true });
-
-        if (btnTouchBoost) {
-          btnTouchBoost.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (mainGame) mainGame.input.touch.boost = true;
-          }, { passive: false });
-          btnTouchBoost.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (mainGame) mainGame.input.touch.boost = false;
-          }, { passive: false });
-        }
-        if (btnTouchMissile) {
-          btnTouchMissile.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (mainGame) mainGame.input.touch.missile = true;
-          }, { passive: false });
-          btnTouchMissile.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (mainGame) mainGame.input.touch.missile = false;
-          }, { passive: false });
-        }
-        if (btnTouchFire) {
-          btnTouchFire.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (mainGame) mainGame.input.touch.fire = true;
-          }, { passive: false });
-          btnTouchFire.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (mainGame) mainGame.input.touch.fire = false;
-          }, { passive: false });
-        }
-      }
+      // Global one-shot touch unlock for Web Audio (iOS Safari & Android Chrome)
+      const unlockAudio = () => {
+        if (mainGame && mainGame.audio) mainGame.audio.unlock();
+      };
+      window.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+      window.addEventListener('click', unlockAudio, { once: true, passive: true });
     });
   </script>
 </body>

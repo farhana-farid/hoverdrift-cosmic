@@ -93,6 +93,7 @@ export class CosmicGame {
     this.audio = new SoundEngine();
     this.hud = new TacticalHUD(this.hudContainer);
     this.input = new InputController(this.canvas, this.camera, THREE);
+    this.hud.bindTouchInput(this.input);
     this.particles = new ParticleSystem(this.scene, THREE);
     this.environment = new CosmicEnvironment(this.scene, this.renderer, THREE);
     this.player = new Starfighter(this.scene, THREE, this.selectedShipType);
@@ -112,6 +113,7 @@ export class CosmicGame {
 
     this._bindHUDCallbacks();
     window.addEventListener('resize', () => this._onResize());
+    window.addEventListener('orientationchange', () => setTimeout(() => this._onResize(), 150));
   }
 
   _bindHUDCallbacks() {
@@ -126,6 +128,8 @@ export class CosmicGame {
         this.togglePause(false);
         this.startMission(lvl);
       },
+      onTogglePause: () => this.togglePause(),
+      onCycleCamera: () => this.cycleCamera(),
       onVolume: (val) => this.audio.setVolume(val),
       onSensitivity: (val) => {
         if (this.player) this.player.sensitivity = val;
