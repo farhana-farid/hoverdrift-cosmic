@@ -484,15 +484,20 @@ try {
        SCI-FI HANGAR & REFERENCE SHIP SELECTION UI
        ========================================================= */
     .hangar-overlay {
-      position: absolute;
+      position: fixed;
       inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
       z-index: 20;
       display: flex;
       flex-direction: column;
-      background: radial-gradient(circle at 50% 40%, rgba(8, 18, 32, 0.90) 0%, rgba(2, 4, 10, 0.98) 75%);
+      justify-content: space-between;
+      background: radial-gradient(circle at 50% 40%, rgba(8, 18, 32, 0.94) 0%, rgba(2, 4, 10, 0.99) 80%);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      padding: 24px 32px;
+      padding: 12px 24px;
+      box-sizing: border-box;
     }
 
     .hangar-header {
@@ -500,13 +505,14 @@ try {
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid var(--panel-line);
-      padding-bottom: 14px;
+      padding-bottom: 8px;
+      flex-shrink: 0;
     }
 
     .hangar-title {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 900;
-      letter-spacing: 0.28em;
+      letter-spacing: 0.24em;
       color: #fff;
       text-shadow: 0 0 20px var(--cyan-glow);
     }
@@ -516,55 +522,59 @@ try {
     }
 
     .hangar-subtitle {
-      font-size: 11px;
+      font-size: 10px;
       font-family: var(--mono);
-      letter-spacing: 0.18em;
+      letter-spacing: 0.16em;
       color: var(--muted);
     }
 
     .hangar-content {
       display: grid;
-      grid-template-columns: 380px 1fr 360px;
-      gap: 24px;
+      grid-template-columns: 310px 1fr 290px;
+      gap: 16px;
       flex: 1;
-      align-items: center;
-      padding: 16px 0;
+      min-height: 0;
+      align-items: stretch;
+      padding: 8px 0;
+      overflow: hidden;
     }
 
     .ship-cards-list {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      justify-content: center;
+      gap: 10px;
+      height: 100%;
     }
 
     .ship-card {
-      background: rgba(10, 20, 34, 0.65);
+      background: rgba(10, 20, 34, 0.70);
       border: 1px solid var(--panel-line);
       border-radius: 4px;
-      padding: 12px;
+      padding: 8px 10px;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
       display: grid;
-      grid-template-columns: 100px 1fr;
-      gap: 14px;
+      grid-template-columns: 88px 1fr;
+      gap: 10px;
       align-items: center;
     }
 
     .ship-card:hover {
-      background: rgba(16, 32, 54, 0.85);
+      background: rgba(16, 32, 54, 0.88);
       border-color: var(--cyan);
       transform: translateX(4px);
     }
 
     .ship-card.active {
-      background: linear-gradient(90deg, rgba(62, 240, 255, 0.18), rgba(6, 14, 24, 0.85));
+      background: linear-gradient(90deg, rgba(62, 240, 255, 0.22), rgba(6, 14, 24, 0.90));
       border-color: var(--cyan);
-      box-shadow: 0 0 22px rgba(62, 240, 255, 0.25);
+      box-shadow: 0 0 22px rgba(62, 240, 255, 0.30);
     }
 
     .card-thumb {
-      width: 100px;
-      height: 72px;
+      width: 88px;
+      height: 60px;
       border-radius: 3px;
       background-size: cover;
       background-position: center;
@@ -575,43 +585,45 @@ try {
     .card-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
     .card-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.12em;
       color: #fff;
     }
 
     .card-type {
       font-family: var(--mono);
-      font-size: 8.5px;
+      font-size: 8px;
       color: var(--cyan);
       letter-spacing: 0.12em;
     }
 
     .card-desc {
-      font-size: 10px;
+      font-size: 9.5px;
       color: #8faec9;
-      line-height: 1.35;
+      line-height: 1.3;
     }
 
     .hangar-turntable-container {
       position: relative;
+      width: 100%;
       height: 100%;
-      min-height: 380px;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
     }
 
     #hangar-turntable-canvas {
       width: 100%;
       height: 100%;
-      max-height: 520px;
+      max-height: 100%;
       display: block;
       cursor: grab;
     }
@@ -622,21 +634,27 @@ try {
 
     .turntable-hint {
       position: absolute;
-      bottom: 12px;
+      bottom: 8px;
       font-family: var(--mono);
-      font-size: 9px;
+      font-size: 8.5px;
       letter-spacing: 0.2em;
       color: var(--muted);
+      background: rgba(4, 10, 18, 0.7);
+      padding: 3px 10px;
+      border-radius: 3px;
+      border: 1px solid var(--panel-line);
     }
 
     .ship-stats-panel {
-      background: rgba(8, 16, 28, 0.85);
+      background: rgba(8, 16, 28, 0.88);
       border: 1px solid var(--panel-line);
       border-radius: 4px;
-      padding: 20px;
+      padding: 12px 14px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      justify-content: space-between;
+      height: 100%;
+      box-sizing: border-box;
     }
 
     .stats-header {
@@ -692,13 +710,14 @@ try {
       justify-content: space-between;
       align-items: center;
       border-top: 1px solid var(--panel-line);
-      padding-top: 16px;
+      padding-top: 10px;
+      flex-shrink: 0;
     }
 
     .mission-brief {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
     .brief-dot {
@@ -711,29 +730,29 @@ try {
     }
 
     .brief-text {
-      font-size: 11px;
-      letter-spacing: 0.18em;
+      font-size: 10px;
+      letter-spacing: 0.16em;
       color: #a8c7e2;
     }
 
     .btn-launch-mission {
       font-family: inherit;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
-      letter-spacing: 0.28em;
+      letter-spacing: 0.24em;
       color: #02040a;
       background: linear-gradient(90deg, #3ef0ff, #82f6ff);
       border: none;
-      padding: 16px 48px;
+      padding: 12px 36px;
       border-radius: 3px;
       cursor: pointer;
-      box-shadow: 0 0 32px var(--cyan-glow);
+      box-shadow: 0 0 28px var(--cyan-glow);
       transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
     }
 
     .btn-launch-mission:hover {
       transform: translateY(-2px) scale(1.03);
-      box-shadow: 0 0 48px rgba(62, 240, 255, 0.75);
+      box-shadow: 0 0 42px rgba(62, 240, 255, 0.85);
     }
 
     .touch-controls {
@@ -940,35 +959,65 @@ try {
 
       // Hangar 3D Turntable Scene
       const hangarScene = new THREE.Scene();
-      const hangarCamera = new THREE.PerspectiveCamera(45, turntableCanvas.clientWidth / turntableCanvas.clientHeight, 0.1, 100);
-      hangarCamera.position.set(0, 3.2, 8.2);
-      hangarCamera.lookAt(0, 0.2, 0);
+      const hangarCamera = new THREE.PerspectiveCamera(45, (turntableCanvas.clientWidth || 600) / (turntableCanvas.clientHeight || 450), 0.1, 100);
+      hangarCamera.position.set(3.4, 1.8, 4.4);
+      hangarCamera.lookAt(0, 0.1, 0.2);
 
       const hangarRenderer = new THREE.WebGLRenderer({
         canvas: turntableCanvas,
         antialias: true,
         alpha: true
       });
-      hangarRenderer.setSize(turntableCanvas.clientWidth, turntableCanvas.clientHeight);
+      hangarRenderer.setSize(turntableCanvas.clientWidth || 600, turntableCanvas.clientHeight || 450, false);
       hangarRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       hangarRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-      hangarRenderer.toneMappingExposure = 1.25;
+      hangarRenderer.toneMappingExposure = 1.35;
 
-      // Hangar PBR Environment & Lighting
-      const hSun = new THREE.DirectionalLight(0xfff5ea, 2.8);
-      hSun.position.set(6, 9, 7);
+      // Hangar PBR Environment & 3-Point Studio Lighting
+      const hSun = new THREE.DirectionalLight(0xfff5ea, 3.2);
+      hSun.position.set(6, 8, 6);
       hangarScene.add(hSun);
 
-      const hRim = new THREE.DirectionalLight(0x3ef0ff, 2.2);
-      hRim.position.set(-7, 3, -7);
+      const hFill = new THREE.DirectionalLight(0x4da6ff, 1.6);
+      hFill.position.set(-5, 3, 5);
+      hangarScene.add(hFill);
+
+      const hRim = new THREE.DirectionalLight(0x3ef0ff, 2.8);
+      hRim.position.set(-6, 4, -6);
       hangarScene.add(hRim);
 
-      const hAmb = new THREE.AmbientLight(0x1a2638, 1.4);
+      const hAmb = new THREE.AmbientLight(0x182436, 1.5);
       hangarScene.add(hAmb);
 
-      const grid = new THREE.GridHelper(12, 24, 0x3ef0ff, 0x162c42);
-      grid.position.y = -0.6;
-      hangarScene.add(grid);
+      // Sci-Fi Circular Turntable Docking Pad
+      const padGroup = new THREE.Group();
+      const padGeom = new THREE.CylinderGeometry(3.4, 3.6, 0.14, 36);
+      const padMat = new THREE.MeshStandardMaterial({
+        color: 0x0c1420,
+        metalness: 0.88,
+        roughness: 0.32
+      });
+      const padMesh = new THREE.Mesh(padGeom, padMat);
+      padMesh.position.y = -0.07;
+      padGroup.add(padMesh);
+
+      const ringGeom = new THREE.TorusGeometry(3.42, 0.035, 8, 36);
+      ringGeom.rotateX(Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x3ef0ff });
+      const ringMesh = new THREE.Mesh(ringGeom, ringMat);
+      ringMesh.position.y = 0.01;
+      padGroup.add(ringMesh);
+
+      const innerRing = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.02, 8, 32), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
+      innerRing.rotation.x = Math.PI / 2;
+      innerRing.position.y = 0.01;
+      padGroup.add(innerRing);
+
+      const grid = new THREE.GridHelper(12, 24, 0x3ef0ff, 0x14283c);
+      grid.position.y = -0.15;
+      padGroup.add(grid);
+
+      hangarScene.add(padGroup);
 
       let previewShipGroup = new THREE.Group();
       hangarScene.add(previewShipGroup);
@@ -979,7 +1028,18 @@ try {
         }
 
         const tempShip = new Starfighter(previewShipGroup, THREE, type);
-        tempShip.group.position.set(0, 0, 0);
+        tempShip.group.position.set(0, 0.12, 0);
+
+        // Hide thruster flames while parked in hangar
+        if (tempShip.thrusterFlames) {
+          tempShip.thrusterFlames.forEach(f => {
+            if (f.outer) f.outer.visible = false;
+            if (f.inner) f.inner.visible = false;
+          });
+        }
+
+        // Beautiful front 3/4 perspective angle
+        previewShipGroup.rotation.y = -0.45;
 
         const cfg = SHIP_CONFIGS[type];
         document.getElementById('stats-ship-title').textContent = cfg.name + ' // STATS';
@@ -1030,12 +1090,47 @@ try {
         }
       });
 
+      // Touch Drag Support for Mobile / Tablets
+      turntableCanvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 0) {
+          isDragging = true;
+          prevMouseX = e.touches[0].clientX;
+          autoRotate = false;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchend', () => {
+        isDragging = false;
+        setTimeout(() => autoRotate = true, 2000);
+      });
+
+      window.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches.length > 0) {
+          const deltaX = e.touches[0].clientX - prevMouseX;
+          previewShipGroup.rotation.y += deltaX * 0.015;
+          prevMouseX = e.touches[0].clientX;
+        }
+      }, { passive: true });
+
+      function resizeTurntable() {
+        if (!turntableCanvas.parentElement) return;
+        const w = turntableCanvas.clientWidth;
+        const h = turntableCanvas.clientHeight;
+        if (w > 0 && h > 0) {
+          hangarCamera.aspect = w / h;
+          hangarCamera.updateProjectionMatrix();
+          hangarRenderer.setSize(w, h, false);
+        }
+      }
+      window.addEventListener('resize', resizeTurntable);
+      setTimeout(resizeTurntable, 80);
+
       let turntableRunning = true;
       function animateTurntable() {
         if (!turntableRunning) return;
         requestAnimationFrame(animateTurntable);
         if (autoRotate) {
-          previewShipGroup.rotation.y += 0.008;
+          previewShipGroup.rotation.y += 0.004;
         }
         hangarRenderer.render(hangarScene, hangarCamera);
       }
