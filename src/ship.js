@@ -118,6 +118,8 @@ export class Starfighter {
     // Movement & Physics State
     this.position = new THREE.Vector3(0, 0, 0);
     this.velocity = new THREE.Vector3(0, 0, 0);
+    this._forwardVec = new THREE.Vector3(0, 0, 0);
+    this._desiredVel = new THREE.Vector3(0, 0, 0);
     this.heading = 0;
     this.targetHeading = 0;
     this.roll = 0;
@@ -934,13 +936,13 @@ export class Starfighter {
     const targetPitch = forwardThrust * -0.06;
     this.pitch += (targetPitch - this.pitch) * 8 * dt;
 
-    // C. Linear Velocity Update (Decoupled Throttle & Momentum)
-    const forwardVec = new THREE.Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
+    // C. Linear Velocity Update (Decoupled Throttle & Momentum - 0 allocations)
+    this._forwardVec.set(Math.sin(this.heading), 0, Math.cos(this.heading));
     
     if (Math.abs(forwardThrust) > 0.02) {
       const speedMult = forwardThrust > 0 ? forwardThrust * targetSpeed : forwardThrust * (targetSpeed * 0.45);
-      const desiredVel = forwardVec.clone().multiplyScalar(speedMult);
-      this.velocity.lerp(desiredVel, Math.min(1.0, accel * dt * 0.16));
+      this._desiredVel.copy(this._forwardVec).multiplyScalar(speedMult);
+      this.velocity.lerp(this._desiredVel, Math.min(1.0, accel * dt * 0.16));
     } else {
       // Natural cruising space drag - ship smoothly decelerates without harsh jolts
       this.velocity.multiplyScalar(Math.pow(0.88, dt * 60));

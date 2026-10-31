@@ -32,22 +32,24 @@ export class AsteroidManager {
     this.crystalGeom = new THREE.OctahedronGeometry(0.8, 0);
 
     this.crystalMats = {
-      score: new THREE.MeshBasicMaterial({
-        color: 0xffc247,
-        wireframe: false
-      }),
-      shield: new THREE.MeshBasicMaterial({
-        color: 0x5cff9d,
-        wireframe: false
-      }),
-      energy: new THREE.MeshBasicMaterial({
-        color: 0x3ef0ff,
-        wireframe: false
-      })
+      score: new THREE.MeshBasicMaterial({ color: 0xffc247 }),
+      shield: new THREE.MeshBasicMaterial({ color: 0x5cff9d }),
+      energy: new THREE.MeshBasicMaterial({ color: 0x3ef0ff })
     };
+
+    // Pre-allocated Procedural Geometry Library (reused across all 45 asteroids)
+    this.geomLibrary = [
+      this._createAsteroidGeometry(12),
+      this._createAsteroidGeometry(9.5),
+      this._createAsteroidGeometry(6.5),
+      this._createAsteroidGeometry(5.0),
+      this._createAsteroidGeometry(3.6),
+      this._createAsteroidGeometry(2.4)
+    ];
   }
 
   init(playerPos) {
+    if (this.asteroids.length > 0) return;
     for (let i = 0; i < this.maxAsteroids; i++) {
       this._spawnAsteroid(playerPos, true);
     }
@@ -55,14 +57,12 @@ export class AsteroidManager {
 
   _createAsteroidGeometry(radius) {
     const THREE = this.THREE;
-    // Displace vertices on an icosahedron to generate unique jagged asteroid shapes
     const geom = new THREE.IcosahedronGeometry(radius, 1);
     const pos = geom.attributes.position;
     const vertex = new THREE.Vector3();
 
     for (let i = 0; i < pos.count; i++) {
       vertex.fromBufferAttribute(pos, i);
-      // Pseudo-random crater displacement
       const noise = (Math.sin(vertex.x * 2.1) + Math.cos(vertex.y * 1.8) + Math.sin(vertex.z * 2.4)) * 0.18;
       const scale = 1.0 + noise + (Math.random() - 0.5) * 0.22;
       vertex.multiplyScalar(scale);
@@ -75,7 +75,6 @@ export class AsteroidManager {
   _spawnAsteroid(playerPos, initial = false) {
     const THREE = this.THREE;
 
-    // Determine position: full 360-degree distribution
     let angle = Math.random() * Math.PI * 2;
     let dist = initial
       ? 50 + Math.random() * (this.spawnRadius - 50)
@@ -83,37 +82,23 @@ export class AsteroidManager {
 
     const x = playerPos.x + Math.sin(angle) * dist;
     const z = playerPos.z + Math.cos(angle) * dist;
-    const y = (Math.random() - 0.5) * 45; // Gentle cosmic depth variation
+    const y = (Math.random() - 0.5) * 45;
 
-    // Determine Size Tier: Large (9-14m), Medium (5-8m), Small (2.5-4m)
-    const tierRoll = Math.random();
-    let radius, maxHp, points;
-    if (tierRoll > 0.65) {
-      radius = 9 + Math.random() * 5;
-      maxHp = 6;
-      points = 250;
-    } else if (tierRoll > 0.25) {
-      radius = 5 + Math.random() * 3.5;
-      maxHp = 3;
-      points = 150;
-    } else {
-      radius = 2.5 + Math.random() * 2;
-      maxHp = 1;
-      points = 80;
-    }
+    // Pick from pre-allocated geometry library
+    const geomIdx = Math.floor(Math.random() * this.geomLibrary.length);
+    const geom = this.geomLibrary[geomIdx];
+    const radius = [12, 9.5, 6.5, 5.0, 3.6, 2.4][geomIdx];
+    const maxHp = geomIdx < 2 ? 6 : (geomIdx < 4 ? 3 : 1);
+    const points = geomIdx < 2 ? 250 : (geomIdx < 4 ? 150 : 80);
 
-    const geom = this._createAsteroidGeometry(radius);
     const mat = (Math.random() > 0.3) ? this.rockMat : this.mineralMat;
     const mesh = new THREE.Mesh(geom, mat);
 
     mesh.position.set(x, y, z);
     mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
 
     this.scene.add(mesh);
 
-    // Drifting velocity and tumble
     const driftSpeed = 1.5 + Math.random() * 3.5;
     const driftAngle = Math.random() * Math.PI * 2;
 
@@ -133,10 +118,8 @@ export class AsteroidManager {
   }
 
   update(dt, playerPos, onAsteroidDestroyed) {
-    const THREE = this.THREE;
-
-    // 1. UPDATE ASTEROIDS
-    for (let i = this.asteroids.length - 1; i >= 0; i--) {
+    // 1. UPDATE ASTEROIDS WITH SEAMLESS STREAM REPOSITIONING (0 ALLOCATIONS)
+    for (let i = 0; i < this.asteroids.length; i++) {
       const ast = this.asteroids[i];
       ast.mesh.position.x += ast.vx * dt;
       ast.mesh.position.y += ast.vy * dt;
@@ -146,13 +129,15 @@ export class AsteroidManager {
       ast.mesh.rotation.y += ast.rotY * dt;
       ast.mesh.rotation.z += ast.rotZ * dt;
 
-      // Boundless Streaming: If an asteroid drifts too far, recycle it ahead of the player
+      // Boundless Streaming: Instant reposition ahead of player without destroy/recreate
       const distToPlayer = Math.hypot(ast.mesh.position.x - playerPos.x, ast.mesh.position.z - playerPos.z);
       if (distToPlayer > this.despawnRadius) {
-        this.scene.remove(ast.mesh);
-        ast.mesh.geometry.dispose();
-        this.asteroids.splice(i, 1);
-        this._spawnAsteroid(playerPos, false);
+        const angle = Math.random() * Math.PI * 2;
+        const dist = this.spawnRadius * (0.85 + Math.random() * 0.25);
+        ast.mesh.position.x = playerPos.x + Math.sin(angle) * dist;
+        ast.mesh.position.z = playerPos.z + Math.cos(angle) * dist;
+        ast.mesh.position.y = (Math.random() - 0.5) * 45;
+        ast.hp = ast.maxHp;
       }
     }
 
@@ -204,10 +189,13 @@ export class AsteroidManager {
       // Spawn Mineral Crystals
       this._spawnMineralCrystals(pos, radius > 7 ? 3 : 1);
 
-      // Remove Asteroid
-      this.scene.remove(ast.mesh);
-      ast.mesh.geometry.dispose();
-      this.asteroids.splice(asteroidIndex, 1);
+      // Instantly recycle asteroid ahead into deep space (0 allocations)
+      const angle = Math.random() * Math.PI * 2;
+      const dist = this.spawnRadius * (0.85 + Math.random() * 0.25);
+      ast.mesh.position.x = pos.x + Math.sin(angle) * dist;
+      ast.mesh.position.z = pos.z + Math.cos(angle) * dist;
+      ast.mesh.position.y = (Math.random() - 0.5) * 45;
+      ast.hp = ast.maxHp;
 
       return { destroyed: true, points, pos };
     } else {

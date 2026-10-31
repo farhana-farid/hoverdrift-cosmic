@@ -2076,6 +2076,8 @@ class Starfighter {
     // Movement & Physics State
     this.position = new THREE.Vector3(0, 0, 0);
     this.velocity = new THREE.Vector3(0, 0, 0);
+    this._forwardVec = new THREE.Vector3(0, 0, 0);
+    this._desiredVel = new THREE.Vector3(0, 0, 0);
     this.heading = 0;
     this.targetHeading = 0;
     this.roll = 0;
@@ -2892,13 +2894,13 @@ class Starfighter {
     const targetPitch = forwardThrust * -0.06;
     this.pitch += (targetPitch - this.pitch) * 8 * dt;
 
-    // C. Linear Velocity Update (Decoupled Throttle & Momentum)
-    const forwardVec = new THREE.Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
+    // C. Linear Velocity Update (Decoupled Throttle & Momentum - 0 allocations)
+    this._forwardVec.set(Math.sin(this.heading), 0, Math.cos(this.heading));
     
     if (Math.abs(forwardThrust) > 0.02) {
       const speedMult = forwardThrust > 0 ? forwardThrust * targetSpeed : forwardThrust * (targetSpeed * 0.45);
-      const desiredVel = forwardVec.clone().multiplyScalar(speedMult);
-      this.velocity.lerp(desiredVel, Math.min(1.0, accel * dt * 0.16));
+      this._desiredVel.copy(this._forwardVec).multiplyScalar(speedMult);
+      this.velocity.lerp(this._desiredVel, Math.min(1.0, accel * dt * 0.16));
     } else {
       // Natural cruising space drag - ship smoothly decelerates without harsh jolts
       this.velocity.multiplyScalar(Math.pow(0.88, dt * 60));
@@ -3761,10 +3763,11 @@ class CosmicEnvironment {
       c.beacons.forEach(b => { b.visible = strobeOn; });
     });
 
-    // Space dust loop around player
+    // Space dust loop around player (only update GPU buffer if wrapping occurred)
     const positions = this.dustPositions;
     const r = this.dustRadius;
     const count = this.dustCount;
+    let wrapped = false;
 
     for (let i = 0; i < count; i++) {
       let x = positions[i * 3];
@@ -3773,13 +3776,15 @@ class CosmicEnvironment {
       const dx = x - playerPos.x;
       const dz = z - playerPos.z;
 
-      if (dx > r) positions[i * 3] -= r * 2;
-      else if (dx < -r) positions[i * 3] += r * 2;
+      if (dx > r) { positions[i * 3] -= r * 2; wrapped = true; }
+      else if (dx < -r) { positions[i * 3] += r * 2; wrapped = true; }
 
-      if (dz > r) positions[i * 3 + 2] -= r * 2;
-      else if (dz < -r) positions[i * 3 + 2] += r * 2;
+      if (dz > r) { positions[i * 3 + 2] -= r * 2; wrapped = true; }
+      else if (dz < -r) { positions[i * 3 + 2] += r * 2; wrapped = true; }
     }
-    this.dustParticles.geometry.attributes.position.needsUpdate = true;
+    if (wrapped) {
+      this.dustParticles.geometry.attributes.position.needsUpdate = true;
+    }
 
     if (this.planetMesh) {
       this.planetMesh.rotation.y += 0.015 * dt;
@@ -3821,22 +3826,24 @@ class AsteroidManager {
     this.crystalGeom = new THREE.OctahedronGeometry(0.8, 0);
 
     this.crystalMats = {
-      score: new THREE.MeshBasicMaterial({
-        color: 0xffc247,
-        wireframe: false
-      }),
-      shield: new THREE.MeshBasicMaterial({
-        color: 0x5cff9d,
-        wireframe: false
-      }),
-      energy: new THREE.MeshBasicMaterial({
-        color: 0x3ef0ff,
-        wireframe: false
-      })
+      score: new THREE.MeshBasicMaterial({ color: 0xffc247 }),
+      shield: new THREE.MeshBasicMaterial({ color: 0x5cff9d }),
+      energy: new THREE.MeshBasicMaterial({ color: 0x3ef0ff })
     };
+
+    // Pre-allocated Procedural Geometry Library (reused across all 45 asteroids)
+    this.geomLibrary = [
+      this._createAsteroidGeometry(12),
+      this._createAsteroidGeometry(9.5),
+      this._createAsteroidGeometry(6.5),
+      this._createAsteroidGeometry(5.0),
+      this._createAsteroidGeometry(3.6),
+      this._createAsteroidGeometry(2.4)
+    ];
   }
 
   init(playerPos) {
+    if (this.asteroids.length > 0) return;
     for (let i = 0; i < this.maxAsteroids; i++) {
       this._spawnAsteroid(playerPos, true);
     }
@@ -3844,14 +3851,12 @@ class AsteroidManager {
 
   _createAsteroidGeometry(radius) {
     const THREE = this.THREE;
-    // Displace vertices on an icosahedron to generate unique jagged asteroid shapes
     const geom = new THREE.IcosahedronGeometry(radius, 1);
     const pos = geom.attributes.position;
     const vertex = new THREE.Vector3();
 
     for (let i = 0; i < pos.count; i++) {
       vertex.fromBufferAttribute(pos, i);
-      // Pseudo-random crater displacement
       const noise = (Math.sin(vertex.x * 2.1) + Math.cos(vertex.y * 1.8) + Math.sin(vertex.z * 2.4)) * 0.18;
       const scale = 1.0 + noise + (Math.random() - 0.5) * 0.22;
       vertex.multiplyScalar(scale);
@@ -3864,7 +3869,6 @@ class AsteroidManager {
   _spawnAsteroid(playerPos, initial = false) {
     const THREE = this.THREE;
 
-    // Determine position: full 360-degree distribution
     let angle = Math.random() * Math.PI * 2;
     let dist = initial
       ? 50 + Math.random() * (this.spawnRadius - 50)
@@ -3872,37 +3876,23 @@ class AsteroidManager {
 
     const x = playerPos.x + Math.sin(angle) * dist;
     const z = playerPos.z + Math.cos(angle) * dist;
-    const y = (Math.random() - 0.5) * 45; // Gentle cosmic depth variation
+    const y = (Math.random() - 0.5) * 45;
 
-    // Determine Size Tier: Large (9-14m), Medium (5-8m), Small (2.5-4m)
-    const tierRoll = Math.random();
-    let radius, maxHp, points;
-    if (tierRoll > 0.65) {
-      radius = 9 + Math.random() * 5;
-      maxHp = 6;
-      points = 250;
-    } else if (tierRoll > 0.25) {
-      radius = 5 + Math.random() * 3.5;
-      maxHp = 3;
-      points = 150;
-    } else {
-      radius = 2.5 + Math.random() * 2;
-      maxHp = 1;
-      points = 80;
-    }
+    // Pick from pre-allocated geometry library
+    const geomIdx = Math.floor(Math.random() * this.geomLibrary.length);
+    const geom = this.geomLibrary[geomIdx];
+    const radius = [12, 9.5, 6.5, 5.0, 3.6, 2.4][geomIdx];
+    const maxHp = geomIdx < 2 ? 6 : (geomIdx < 4 ? 3 : 1);
+    const points = geomIdx < 2 ? 250 : (geomIdx < 4 ? 150 : 80);
 
-    const geom = this._createAsteroidGeometry(radius);
     const mat = (Math.random() > 0.3) ? this.rockMat : this.mineralMat;
     const mesh = new THREE.Mesh(geom, mat);
 
     mesh.position.set(x, y, z);
     mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
 
     this.scene.add(mesh);
 
-    // Drifting velocity and tumble
     const driftSpeed = 1.5 + Math.random() * 3.5;
     const driftAngle = Math.random() * Math.PI * 2;
 
@@ -3922,10 +3912,8 @@ class AsteroidManager {
   }
 
   update(dt, playerPos, onAsteroidDestroyed) {
-    const THREE = this.THREE;
-
-    // 1. UPDATE ASTEROIDS
-    for (let i = this.asteroids.length - 1; i >= 0; i--) {
+    // 1. UPDATE ASTEROIDS WITH SEAMLESS STREAM REPOSITIONING (0 ALLOCATIONS)
+    for (let i = 0; i < this.asteroids.length; i++) {
       const ast = this.asteroids[i];
       ast.mesh.position.x += ast.vx * dt;
       ast.mesh.position.y += ast.vy * dt;
@@ -3935,13 +3923,15 @@ class AsteroidManager {
       ast.mesh.rotation.y += ast.rotY * dt;
       ast.mesh.rotation.z += ast.rotZ * dt;
 
-      // Boundless Streaming: If an asteroid drifts too far, recycle it ahead of the player
+      // Boundless Streaming: Instant reposition ahead of player without destroy/recreate
       const distToPlayer = Math.hypot(ast.mesh.position.x - playerPos.x, ast.mesh.position.z - playerPos.z);
       if (distToPlayer > this.despawnRadius) {
-        this.scene.remove(ast.mesh);
-        ast.mesh.geometry.dispose();
-        this.asteroids.splice(i, 1);
-        this._spawnAsteroid(playerPos, false);
+        const angle = Math.random() * Math.PI * 2;
+        const dist = this.spawnRadius * (0.85 + Math.random() * 0.25);
+        ast.mesh.position.x = playerPos.x + Math.sin(angle) * dist;
+        ast.mesh.position.z = playerPos.z + Math.cos(angle) * dist;
+        ast.mesh.position.y = (Math.random() - 0.5) * 45;
+        ast.hp = ast.maxHp;
       }
     }
 
@@ -3993,10 +3983,13 @@ class AsteroidManager {
       // Spawn Mineral Crystals
       this._spawnMineralCrystals(pos, radius > 7 ? 3 : 1);
 
-      // Remove Asteroid
-      this.scene.remove(ast.mesh);
-      ast.mesh.geometry.dispose();
-      this.asteroids.splice(asteroidIndex, 1);
+      // Instantly recycle asteroid ahead into deep space (0 allocations)
+      const angle = Math.random() * Math.PI * 2;
+      const dist = this.spawnRadius * (0.85 + Math.random() * 0.25);
+      ast.mesh.position.x = pos.x + Math.sin(angle) * dist;
+      ast.mesh.position.z = pos.z + Math.cos(angle) * dist;
+      ast.mesh.position.y = (Math.random() - 0.5) * 45;
+      ast.hp = ast.maxHp;
 
       return { destroyed: true, points, pos };
     } else {
@@ -4233,6 +4226,27 @@ class DroneManager {
     // Power-up geometries
     this.powerupGeom = new THREE.OctahedronGeometry(1.2, 0);
     this.powerupRingGeom = new THREE.TorusGeometry(1.6, 0.08, 8, 24);
+
+    // Pre-allocated beam laser geometry (0 runtime allocations)
+    this.beamLaserGeom = new THREE.CylinderGeometry(0.35, 0.35, 4.5, 8);
+    this.beamLaserGeom.rotateX(Math.PI / 2);
+
+    // Reusable Scratch Vectors to eliminate 3,000+ Vector3 allocations/sec
+    this._pHeadingVec = new THREE.Vector3();
+    this._toVec = new THREE.Vector3();
+    this._tempPos = new THREE.Vector3();
+    this._tempLead = new THREE.Vector3();
+    this._projVec = new THREE.Vector3();
+  }
+
+  _disposeGroup(group) {
+    if (!group) return;
+    group.traverse(child => {
+      if (child.isMesh && child.geometry) {
+        child.geometry.dispose();
+      }
+    });
+    this.scene.remove(group);
   }
 
   /**
@@ -4734,7 +4748,7 @@ class DroneManager {
         if (b.destroyTimer > 3.8) {
           particles.createShipExplosion(b.group.position, true);
           audio.explode(true);
-          this.scene.remove(b.group);
+          this._disposeGroup(b.group);
           this.boss = null;
         }
       } else {
@@ -5092,8 +5106,7 @@ class DroneManager {
 
   _bossSweepBeam(boss, player, audio) {
     const THREE = this.THREE;
-    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 4.5, 8), this.beamLaserMat);
-    mesh.rotation.x = Math.PI / 2;
+    const mesh = new THREE.Mesh(this.beamLaserGeom, this.beamLaserMat);
     mesh.position.copy(boss.group.position);
     mesh.position.y += 0.8;
 
@@ -5238,7 +5251,7 @@ class DroneManager {
       this._spawnPowerup(drone.group.position, pType);
     }
 
-    this.scene.remove(drone.group);
+    this._disposeGroup(drone.group);
     const idx = this.drones.indexOf(drone);
     if (idx !== -1) this.drones.splice(idx, 1);
   }
@@ -5300,7 +5313,7 @@ class DroneManager {
     if (candidates.length === 0) return null;
 
     const pPos = player.position;
-    const pHeadingVec = new THREE.Vector3(Math.sin(player.heading), 0, Math.cos(player.heading));
+    this._pHeadingVec.set(Math.sin(player.heading), 0, Math.cos(player.heading));
 
     const margin = 36;
     const centerX = canvasWidth / 2;
@@ -5312,19 +5325,21 @@ class DroneManager {
 
     candidates.forEach(c => {
       const cPos = c.group.position;
-      const toVec = new THREE.Vector3().subVectors(cPos, pPos);
-      const dist = toVec.length();
+      const dx = cPos.x - pPos.x;
+      const dz = cPos.z - pPos.z;
+      const dist = Math.hypot(dx, dz);
 
-      // Dot product to check forward direction
-      const forwardDot = toVec.clone().normalize().dot(pHeadingVec);
+      // Fast forward dot product without vector allocations
+      const invDist = dist > 0.001 ? (1.0 / dist) : 0;
+      const forwardDot = (dx * invDist) * this._pHeadingVec.x + (dz * invDist) * this._pHeadingVec.z;
       const score = dist - forwardDot * 80;
 
-      // Project 3D world position to NDC [-1, 1]
-      const proj = cPos.clone().project(camera);
-      const inFront = proj.z < 1.0;
+      // Project 3D world position to NDC [-1, 1] using scratch vector
+      this._projVec.copy(cPos).project(camera);
+      const inFront = this._projVec.z < 1.0;
 
-      let sx = (proj.x * 0.5 + 0.5) * canvasWidth;
-      let sy = (-proj.y * 0.5 + 0.5) * canvasHeight;
+      let sx = (this._projVec.x * 0.5 + 0.5) * canvasWidth;
+      let sy = (-this._projVec.y * 0.5 + 0.5) * canvasHeight;
 
       const isOnScreen = inFront && (sx >= margin && sx <= canvasWidth - margin && sy >= margin && sy <= canvasHeight - margin);
 
@@ -5333,8 +5348,8 @@ class DroneManager {
       let edgeAngle = 0;
 
       if (!isOnScreen) {
-        let dirX = proj.x;
-        let dirY = -proj.y;
+        let dirX = this._projVec.x;
+        let dirY = -this._projVec.y;
         if (!inFront) {
           dirX = -dirX;
           dirY = -dirY;
@@ -5357,16 +5372,17 @@ class DroneManager {
         }
       }
 
-      // Calculate dogfight lead prediction
+      // Calculate dogfight lead prediction using scratch vector (0 allocations)
       const laserSpeed = 210;
       const timeToHit = dist / laserSpeed;
-      const leadWorldPos = cPos.clone();
-      leadWorldPos.x += (c.vx || 0) * timeToHit;
-      leadWorldPos.z += (c.vz || 0) * timeToHit;
+      this._tempLead.set(
+        cPos.x + (c.vx || 0) * timeToHit,
+        cPos.y,
+        cPos.z + (c.vz || 0) * timeToHit
+      ).project(camera);
 
-      const leadProj = leadWorldPos.clone().project(camera);
-      const leadScreenX = (leadProj.x * 0.5 + 0.5) * canvasWidth;
-      const leadScreenY = (-leadProj.y * 0.5 + 0.5) * canvasHeight;
+      const leadScreenX = (this._tempLead.x * 0.5 + 0.5) * canvasWidth;
+      const leadScreenY = (-this._tempLead.y * 0.5 + 0.5) * canvasHeight;
 
       const targetData = {
         target: c,
@@ -5416,11 +5432,11 @@ class DroneManager {
   }
 
   clearAll() {
-    this.drones.forEach(d => this.scene.remove(d.group));
+    this.drones.forEach(d => this._disposeGroup(d.group));
     this.drones = [];
 
     if (this.boss) {
-      this.scene.remove(this.boss.group);
+      this._disposeGroup(this.boss.group);
       this.boss = null;
     }
 
@@ -5458,6 +5474,36 @@ class ParticleSystem {
     this.ringGeom = new THREE.RingGeometry(0.8, 1.4, 32);
     this.ringGeom.rotateX(-Math.PI / 2);
 
+    // Pre-allocated static materials (avoids runtime shader compiling, GC pauses & memory leaks)
+    this.ringMatHeavy = new THREE.MeshBasicMaterial({
+      color: 0xff4d79,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.ringMatNormal = new THREE.MeshBasicMaterial({
+      color: 0xff7733,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.empRingMat = new THREE.MeshBasicMaterial({
+      color: 0x3ef0ff,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    this.shardMatHeavy = new THREE.MeshBasicMaterial({ color: 0xff3355 });
+    this.shardMatNormal = new THREE.MeshBasicMaterial({ color: 0xff8822 });
+    this.rockShardMat = new THREE.MeshBasicMaterial({ color: 0x5a6476 });
+
     // Particle Point Cloud for Fast Spark Rendering
     this.maxSparks = 1200;
     this.sparkPositions = new Float32Array(this.maxSparks * 3);
@@ -5488,18 +5534,11 @@ class ParticleSystem {
 
   createShipExplosion(pos, isHeavy = false) {
     const THREE = this.THREE;
-    const count = isHeavy ? 120 : 70;
-    const shardCount = isHeavy ? 24 : 14;
+    const count = isHeavy ? 100 : 55;
+    const shardCount = isHeavy ? 16 : 10;
 
-    // 1. Shockwave Expansion Ring
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: isHeavy ? 0xff4d79 : 0xff7733,
-      transparent: true,
-      opacity: 0.95,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
+    // 1. Shockwave Expansion Ring (Shared Material)
+    const ringMat = isHeavy ? this.ringMatHeavy : this.ringMatNormal;
     const ring = new THREE.Mesh(this.ringGeom, ringMat);
     ring.position.copy(pos);
     ring.position.y = 0.5;
@@ -5514,16 +5553,11 @@ class ParticleSystem {
       decay: 1.6
     });
 
-    // 2. Tumbling Hull Debris Shards
-    const shardMat = new THREE.MeshStandardMaterial({
-      color: 0x222834,
-      metalness: 0.85,
-      roughness: 0.35,
-      emissive: isHeavy ? 0xff2244 : 0xff6600,
-      emissiveIntensity: 1.2
-    });
+    // 2. Tumbling Hull Debris Shards (Shared Fast Material)
+    const shardMat = isHeavy ? this.shardMatHeavy : this.shardMatNormal;
 
     for (let i = 0; i < shardCount; i++) {
+      if (this.shards.length >= 50) break; // Hard limit active shards to prevent frame drops
       const shard = new THREE.Mesh(this.shardGeom, shardMat);
       shard.position.copy(pos);
       shard.scale.setScalar(0.6 + Math.random() * 0.9);
@@ -5541,7 +5575,7 @@ class ParticleSystem {
         rotX: (Math.random() - 0.5) * 12,
         rotY: (Math.random() - 0.5) * 12,
         rotZ: (Math.random() - 0.5) * 12,
-        life: 1.8 + Math.random() * 0.8
+        life: 1.6 + Math.random() * 0.6
       });
     }
 
@@ -5574,18 +5608,13 @@ class ParticleSystem {
 
   createRockExplosion(pos, radius) {
     const THREE = this.THREE;
-    const shardCount = Math.floor(radius * 1.5);
-    const sparkCount = Math.floor(radius * 5);
+    const shardCount = Math.min(10, Math.floor(radius * 1.2));
+    const sparkCount = Math.min(30, Math.floor(radius * 3.5));
 
-    // Tumbling Rock Shards
-    const rockShardMat = new THREE.MeshStandardMaterial({
-      color: 0x485060,
-      roughness: 0.9,
-      flatShading: true
-    });
-
+    // Tumbling Rock Shards (Shared Fast Material)
     for (let i = 0; i < shardCount; i++) {
-      const shard = new THREE.Mesh(this.shardGeom, rockShardMat);
+      if (this.shards.length >= 50) break;
+      const shard = new THREE.Mesh(this.shardGeom, this.rockShardMat);
       shard.position.copy(pos);
       shard.scale.setScalar(0.4 + Math.random() * (radius * 0.25));
 
@@ -5697,15 +5726,7 @@ class ParticleSystem {
 
   createEMPShockwave(pos, radius = 140) {
     const THREE = this.THREE;
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0x3ef0ff,
-      transparent: true,
-      opacity: 0.95,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    const ring = new THREE.Mesh(this.ringGeom, ringMat);
+    const ring = new THREE.Mesh(this.ringGeom, this.empRingMat);
     ring.position.copy(pos);
     ring.position.y = 0.5;
     this.scene.add(ring);
@@ -5778,7 +5799,6 @@ class ParticleSystem {
 
       if (sw.life <= 0 || sw.scale >= sw.maxScale) {
         this.scene.remove(sw.mesh);
-        sw.mesh.material.dispose();
         this.shockwaves.splice(i, 1);
       }
     }
@@ -5800,7 +5820,6 @@ class ParticleSystem {
       shard.life -= dt;
       if (shard.life <= 0) {
         this.scene.remove(shard.mesh);
-        shard.mesh.material.dispose();
         this.shards.splice(i, 1);
       }
     }
@@ -6339,7 +6358,20 @@ class TacticalHUD {
     this.weaponLabel = document.getElementById('hud-weapon-label');
     this.missilesVal = document.getElementById('hud-missiles-val');
     this.empSlot = document.getElementById('w-slot-emp');
+    this.wSlot1 = document.getElementById('w-slot-1');
+    this.wSlot2 = document.getElementById('w-slot-2');
+    this.wSlot3 = document.getElementById('w-slot-3');
     this.camBadge = document.getElementById('hud-cam-badge');
+
+    // DOM Dirty-Checking State (eliminates 60 FPS layout recalculations & UI stutter)
+    this._lastScore = -1;
+    this._lastCombo = -1;
+    this._lastShield = -1;
+    this._lastHull = -1;
+    this._lastEnergy = -1;
+    this._lastHeat = -1;
+    this._lastWeapon = '';
+    this._lastMissiles = -1;
     this.cockpitOverlay = document.getElementById('cockpit-overlay');
     this.feedEl = document.getElementById('hud-feed');
     this.announcementEl = document.getElementById('hud-announcement');
@@ -6591,41 +6623,68 @@ class TacticalHUD {
   }
 
   update(player, score, combo, levelNum, trackingInfo, radarData, time, missionStats) {
-    // 1. Update Top Bar Score & Combo
-    this.scoreEl.textContent = Math.floor(score).toString().padStart(6, '0');
-    this.comboEl.textContent = `x${combo} COMBO`;
-    this.comboEl.style.opacity = combo > 1 ? '1' : '0.4';
+    // 1. Dirty-check Score & Combo
+    const intScore = Math.floor(score);
+    if (this._lastScore !== intScore) {
+      this._lastScore = intScore;
+      this.scoreEl.textContent = intScore.toString().padStart(6, '0');
+    }
+    if (this._lastCombo !== combo) {
+      this._lastCombo = combo;
+      this.comboEl.textContent = `x${combo} COMBO`;
+      this.comboEl.style.opacity = combo > 1 ? '1' : '0.4';
+    }
 
-    // 2. Update Vitals
-    const shieldPct = Math.max(0, Math.min(100, (player.shield / player.maxShield) * 100));
-    const hullPct = Math.max(0, Math.min(100, (player.hull / player.maxHull) * 100));
-    const energyPct = Math.max(0, Math.min(100, (player.energy / player.maxEnergy) * 100));
-    const heatPct = Math.max(0, Math.min(100, player.heat * 100));
+    // 2. Dirty-check Vitals (rounded to integers to eliminate fractional layout thrashing)
+    const sRound = Math.round(Math.max(0, Math.min(100, (player.shield / player.maxShield) * 100)));
+    if (this._lastShield !== sRound) {
+      this._lastShield = sRound;
+      this.shieldFill.style.width = `${sRound}%`;
+      this.shieldVal.textContent = `${sRound}%`;
+    }
 
-    this.shieldFill.style.width = `${shieldPct}%`;
-    this.shieldVal.textContent = `${Math.round(shieldPct)}%`;
+    const hRound = Math.round(Math.max(0, Math.min(100, (player.hull / player.maxHull) * 100)));
+    if (this._lastHull !== hRound) {
+      this._lastHull = hRound;
+      this.hullFill.style.width = `${hRound}%`;
+      this.hullVal.textContent = `${hRound}%`;
+    }
 
-    this.hullFill.style.width = `${hullPct}%`;
-    this.hullVal.textContent = `${Math.round(hullPct)}%`;
+    const eRound = Math.round(Math.max(0, Math.min(100, (player.energy / player.maxEnergy) * 100)));
+    if (this._lastEnergy !== eRound) {
+      this._lastEnergy = eRound;
+      this.energyFill.style.width = `${eRound}%`;
+      this.energyVal.textContent = `${eRound}%`;
+    }
 
-    this.energyFill.style.width = `${energyPct}%`;
-    this.energyVal.textContent = `${Math.round(energyPct)}%`;
+    const heatRound = player.overheated ? -99 : Math.round(Math.max(0, Math.min(100, player.heat * 100)));
+    if (this._lastHeat !== heatRound) {
+      this._lastHeat = heatRound;
+      if (player.overheated) {
+        this.heatFill.style.width = '100%';
+        this.heatVal.textContent = 'OVERHEAT';
+        this.heatVal.style.color = 'var(--danger)';
+      } else {
+        this.heatFill.style.width = `${heatRound}%`;
+        this.heatVal.textContent = `${heatRound}%`;
+        this.heatVal.style.color = '#fff';
+      }
+    }
 
-    this.heatFill.style.width = `${heatPct}%`;
-    this.heatVal.textContent = player.overheated ? 'OVERHEAT' : `${Math.round(heatPct)}%`;
-    this.heatVal.style.color = player.overheated ? 'var(--danger)' : '#fff';
+    // 3. Dirty-check Weapons & Missiles
+    const curW = player.selectedWeapon || 'cannons';
+    if (this._lastWeapon !== curW) {
+      this._lastWeapon = curW;
+      this.weaponLabel.textContent = curW.toUpperCase();
+      this.wSlot1?.classList.toggle('active', curW === 'cannons');
+      this.wSlot2?.classList.toggle('active', curW === 'rapid');
+      this.wSlot3?.classList.toggle('active', curW === 'missiles');
+    }
 
-    // 3. Update Weapons & Ordnance
-    this.weaponLabel.textContent = player.selectedWeapon ? player.selectedWeapon.toUpperCase() : 'CANNONS';
-    this.missilesVal.textContent = player.missiles;
-
-    ['1', '2', '3'].forEach(k => {
-      const el = document.getElementById(`w-slot-${k}`);
-      if (el) el.classList.remove('active');
-    });
-    if (player.selectedWeapon === 'cannons') document.getElementById('w-slot-1')?.classList.add('active');
-    else if (player.selectedWeapon === 'rapid') document.getElementById('w-slot-2')?.classList.add('active');
-    else if (player.selectedWeapon === 'missiles') document.getElementById('w-slot-3')?.classList.add('active');
+    if (this._lastMissiles !== player.missiles) {
+      this._lastMissiles = player.missiles;
+      this.missilesVal.textContent = player.missiles;
+    }
 
     if (this.empSlot) {
       if (player.empCooldown <= 0) {
@@ -6999,13 +7058,23 @@ class CosmicGame {
     this.asteroids = new AsteroidManager(this.scene, THREE);
     this.drones = new DroneManager(this.scene, THREE);
 
-    // Player Lasers
-    this.playerLasers = [];
+    // Pre-allocated Shared Laser Materials (0 shader compiling & 0 memory leaks)
+    this.laserMatStandard = new THREE.MeshBasicMaterial({ color: 0x3ef0ff, transparent: true, opacity: 0.95 });
+    this.laserMatRapid = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.95 });
+    this.laserMatCrimson = new THREE.MeshBasicMaterial({ color: 0xff2244, transparent: true, opacity: 0.95 });
+
+    // High-Performance Laser Object Pool
     this.laserGeom = new THREE.CylinderGeometry(0.12, 0.12, 2.5, 8);
     this.laserGeom.rotateX(Math.PI / 2);
 
-    this.rapidLaserGeom = new THREE.CylinderGeometry(0.08, 0.08, 1.8, 6);
-    this.rapidLaserGeom.rotateX(Math.PI / 2);
+    this.laserPool = [];
+    this.playerLasers = [];
+    for (let i = 0; i < 70; i++) {
+      const mesh = new THREE.Mesh(this.laserGeom, this.laserMatStandard);
+      mesh.visible = false;
+      this.scene.add(mesh);
+      this.laserPool.push(mesh);
+    }
 
     this.lastTime = performance.now();
     this.lastTargetLockAudio = 0;
@@ -7013,6 +7082,12 @@ class CosmicGame {
     this._bindHUDCallbacks();
     window.addEventListener('resize', () => this._onResize());
     window.addEventListener('orientationchange', () => setTimeout(() => this._onResize(), 150));
+  }
+
+  _recycleLaser(laser, index) {
+    laser.mesh.visible = false;
+    this.playerLasers.splice(index, 1);
+    this.laserPool.push(laser.mesh);
   }
 
   _bindHUDCallbacks() {
@@ -7142,16 +7217,22 @@ class CosmicGame {
       const laserSpawns = this.player.getLaserSpawns();
 
       laserSpawns.forEach(spawn => {
-        const mat = new this.THREE.MeshBasicMaterial({
-          color: isRapid ? 0x00ffff : spawn.color,
-          transparent: true,
-          opacity: 0.95
-        });
-        const geom = isRapid ? this.rapidLaserGeom : this.laserGeom;
-        const mesh = new this.THREE.Mesh(geom, mat);
+        let mesh = this.laserPool.pop();
+        if (!mesh) {
+          if (this.playerLasers.length > 0) {
+            const oldest = this.playerLasers.shift();
+            mesh = oldest.mesh;
+          } else {
+            mesh = new this.THREE.Mesh(this.laserGeom, this.laserMatStandard);
+            this.scene.add(mesh);
+          }
+        }
+
+        mesh.material = isRapid ? this.laserMatRapid : (this.selectedShipType === 'crimson' ? this.laserMatCrimson : this.laserMatStandard);
+        mesh.scale.set(isRapid ? 0.75 : 1.0, isRapid ? 0.75 : 1.0, isRapid ? 0.75 : 1.0);
         mesh.position.set(spawn.x, spawn.y, spawn.z);
         mesh.rotation.y = spawn.heading;
-        this.scene.add(mesh);
+        mesh.visible = true;
 
         this.playerLasers.push({
           mesh,
@@ -7207,8 +7288,7 @@ class CosmicGame {
           this.addShake(enemyHit.isBoss ? 0.85 : 0.35);
         }
 
-        this.scene.remove(laser.mesh);
-        this.playerLasers.splice(i, 1);
+        this._recycleLaser(laser, i);
         continue;
       }
 
@@ -7221,14 +7301,12 @@ class CosmicGame {
           this.hud.addFeedMessage(`+${pts} ASTEROID SHATTERED`, '#ffc247');
         }
 
-        this.scene.remove(laser.mesh);
-        this.playerLasers.splice(i, 1);
+        this._recycleLaser(laser, i);
         continue;
       }
 
       if (laser.life <= 0) {
-        this.scene.remove(laser.mesh);
-        this.playerLasers.splice(i, 1);
+        this._recycleLaser(laser, i);
       }
     }
 

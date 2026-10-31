@@ -18,6 +18,36 @@ export class ParticleSystem {
     this.ringGeom = new THREE.RingGeometry(0.8, 1.4, 32);
     this.ringGeom.rotateX(-Math.PI / 2);
 
+    // Pre-allocated static materials (avoids runtime shader compiling, GC pauses & memory leaks)
+    this.ringMatHeavy = new THREE.MeshBasicMaterial({
+      color: 0xff4d79,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.ringMatNormal = new THREE.MeshBasicMaterial({
+      color: 0xff7733,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.empRingMat = new THREE.MeshBasicMaterial({
+      color: 0x3ef0ff,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    this.shardMatHeavy = new THREE.MeshBasicMaterial({ color: 0xff3355 });
+    this.shardMatNormal = new THREE.MeshBasicMaterial({ color: 0xff8822 });
+    this.rockShardMat = new THREE.MeshBasicMaterial({ color: 0x5a6476 });
+
     // Particle Point Cloud for Fast Spark Rendering
     this.maxSparks = 1200;
     this.sparkPositions = new Float32Array(this.maxSparks * 3);
@@ -48,18 +78,11 @@ export class ParticleSystem {
 
   createShipExplosion(pos, isHeavy = false) {
     const THREE = this.THREE;
-    const count = isHeavy ? 120 : 70;
-    const shardCount = isHeavy ? 24 : 14;
+    const count = isHeavy ? 100 : 55;
+    const shardCount = isHeavy ? 16 : 10;
 
-    // 1. Shockwave Expansion Ring
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: isHeavy ? 0xff4d79 : 0xff7733,
-      transparent: true,
-      opacity: 0.95,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
+    // 1. Shockwave Expansion Ring (Shared Material)
+    const ringMat = isHeavy ? this.ringMatHeavy : this.ringMatNormal;
     const ring = new THREE.Mesh(this.ringGeom, ringMat);
     ring.position.copy(pos);
     ring.position.y = 0.5;
@@ -74,16 +97,11 @@ export class ParticleSystem {
       decay: 1.6
     });
 
-    // 2. Tumbling Hull Debris Shards
-    const shardMat = new THREE.MeshStandardMaterial({
-      color: 0x222834,
-      metalness: 0.85,
-      roughness: 0.35,
-      emissive: isHeavy ? 0xff2244 : 0xff6600,
-      emissiveIntensity: 1.2
-    });
+    // 2. Tumbling Hull Debris Shards (Shared Fast Material)
+    const shardMat = isHeavy ? this.shardMatHeavy : this.shardMatNormal;
 
     for (let i = 0; i < shardCount; i++) {
+      if (this.shards.length >= 50) break; // Hard limit active shards to prevent frame drops
       const shard = new THREE.Mesh(this.shardGeom, shardMat);
       shard.position.copy(pos);
       shard.scale.setScalar(0.6 + Math.random() * 0.9);
@@ -101,7 +119,7 @@ export class ParticleSystem {
         rotX: (Math.random() - 0.5) * 12,
         rotY: (Math.random() - 0.5) * 12,
         rotZ: (Math.random() - 0.5) * 12,
-        life: 1.8 + Math.random() * 0.8
+        life: 1.6 + Math.random() * 0.6
       });
     }
 
@@ -134,18 +152,13 @@ export class ParticleSystem {
 
   createRockExplosion(pos, radius) {
     const THREE = this.THREE;
-    const shardCount = Math.floor(radius * 1.5);
-    const sparkCount = Math.floor(radius * 5);
+    const shardCount = Math.min(10, Math.floor(radius * 1.2));
+    const sparkCount = Math.min(30, Math.floor(radius * 3.5));
 
-    // Tumbling Rock Shards
-    const rockShardMat = new THREE.MeshStandardMaterial({
-      color: 0x485060,
-      roughness: 0.9,
-      flatShading: true
-    });
-
+    // Tumbling Rock Shards (Shared Fast Material)
     for (let i = 0; i < shardCount; i++) {
-      const shard = new THREE.Mesh(this.shardGeom, rockShardMat);
+      if (this.shards.length >= 50) break;
+      const shard = new THREE.Mesh(this.shardGeom, this.rockShardMat);
       shard.position.copy(pos);
       shard.scale.setScalar(0.4 + Math.random() * (radius * 0.25));
 
@@ -257,15 +270,7 @@ export class ParticleSystem {
 
   createEMPShockwave(pos, radius = 140) {
     const THREE = this.THREE;
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0x3ef0ff,
-      transparent: true,
-      opacity: 0.95,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    const ring = new THREE.Mesh(this.ringGeom, ringMat);
+    const ring = new THREE.Mesh(this.ringGeom, this.empRingMat);
     ring.position.copy(pos);
     ring.position.y = 0.5;
     this.scene.add(ring);
@@ -338,7 +343,6 @@ export class ParticleSystem {
 
       if (sw.life <= 0 || sw.scale >= sw.maxScale) {
         this.scene.remove(sw.mesh);
-        sw.mesh.material.dispose();
         this.shockwaves.splice(i, 1);
       }
     }
@@ -360,7 +364,6 @@ export class ParticleSystem {
       shard.life -= dt;
       if (shard.life <= 0) {
         this.scene.remove(shard.mesh);
-        shard.mesh.material.dispose();
         this.shards.splice(i, 1);
       }
     }

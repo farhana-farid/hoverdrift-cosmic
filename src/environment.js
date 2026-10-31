@@ -652,10 +652,11 @@ export class CosmicEnvironment {
       c.beacons.forEach(b => { b.visible = strobeOn; });
     });
 
-    // Space dust loop around player
+    // Space dust loop around player (only update GPU buffer if wrapping occurred)
     const positions = this.dustPositions;
     const r = this.dustRadius;
     const count = this.dustCount;
+    let wrapped = false;
 
     for (let i = 0; i < count; i++) {
       let x = positions[i * 3];
@@ -664,13 +665,15 @@ export class CosmicEnvironment {
       const dx = x - playerPos.x;
       const dz = z - playerPos.z;
 
-      if (dx > r) positions[i * 3] -= r * 2;
-      else if (dx < -r) positions[i * 3] += r * 2;
+      if (dx > r) { positions[i * 3] -= r * 2; wrapped = true; }
+      else if (dx < -r) { positions[i * 3] += r * 2; wrapped = true; }
 
-      if (dz > r) positions[i * 3 + 2] -= r * 2;
-      else if (dz < -r) positions[i * 3 + 2] += r * 2;
+      if (dz > r) { positions[i * 3 + 2] -= r * 2; wrapped = true; }
+      else if (dz < -r) { positions[i * 3 + 2] += r * 2; wrapped = true; }
     }
-    this.dustParticles.geometry.attributes.position.needsUpdate = true;
+    if (wrapped) {
+      this.dustParticles.geometry.attributes.position.needsUpdate = true;
+    }
 
     if (this.planetMesh) {
       this.planetMesh.rotation.y += 0.015 * dt;

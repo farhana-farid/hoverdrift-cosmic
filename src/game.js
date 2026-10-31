@@ -100,13 +100,23 @@ export class CosmicGame {
     this.asteroids = new AsteroidManager(this.scene, THREE);
     this.drones = new DroneManager(this.scene, THREE);
 
-    // Player Lasers
-    this.playerLasers = [];
+    // Pre-allocated Shared Laser Materials (0 shader compiling & 0 memory leaks)
+    this.laserMatStandard = new THREE.MeshBasicMaterial({ color: 0x3ef0ff, transparent: true, opacity: 0.95 });
+    this.laserMatRapid = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.95 });
+    this.laserMatCrimson = new THREE.MeshBasicMaterial({ color: 0xff2244, transparent: true, opacity: 0.95 });
+
+    // High-Performance Laser Object Pool
     this.laserGeom = new THREE.CylinderGeometry(0.12, 0.12, 2.5, 8);
     this.laserGeom.rotateX(Math.PI / 2);
 
-    this.rapidLaserGeom = new THREE.CylinderGeometry(0.08, 0.08, 1.8, 6);
-    this.rapidLaserGeom.rotateX(Math.PI / 2);
+    this.laserPool = [];
+    this.playerLasers = [];
+    for (let i = 0; i < 70; i++) {
+      const mesh = new THREE.Mesh(this.laserGeom, this.laserMatStandard);
+      mesh.visible = false;
+      this.scene.add(mesh);
+      this.laserPool.push(mesh);
+    }
 
     this.lastTime = performance.now();
     this.lastTargetLockAudio = 0;
@@ -114,6 +124,12 @@ export class CosmicGame {
     this._bindHUDCallbacks();
     window.addEventListener('resize', () => this._onResize());
     window.addEventListener('orientationchange', () => setTimeout(() => this._onResize(), 150));
+  }
+
+  _recycleLaser(laser, index) {
+    laser.mesh.visible = false;
+    this.playerLasers.splice(index, 1);
+    this.laserPool.push(laser.mesh);
   }
 
   _bindHUDCallbacks() {
@@ -243,16 +259,22 @@ export class CosmicGame {
       const laserSpawns = this.player.getLaserSpawns();
 
       laserSpawns.forEach(spawn => {
-        const mat = new this.THREE.MeshBasicMaterial({
-          color: isRapid ? 0x00ffff : spawn.color,
-          transparent: true,
-          opacity: 0.95
-        });
-        const geom = isRapid ? this.rapidLaserGeom : this.laserGeom;
-        const mesh = new this.THREE.Mesh(geom, mat);
+        let mesh = this.laserPool.pop();
+        if (!mesh) {
+          if (this.playerLasers.length > 0) {
+            const oldest = this.playerLasers.shift();
+            mesh = oldest.mesh;
+          } else {
+            mesh = new this.THREE.Mesh(this.laserGeom, this.laserMatStandard);
+            this.scene.add(mesh);
+          }
+        }
+
+        mesh.material = isRapid ? this.laserMatRapid : (this.selectedShipType === 'crimson' ? this.laserMatCrimson : this.laserMatStandard);
+        mesh.scale.set(isRapid ? 0.75 : 1.0, isRapid ? 0.75 : 1.0, isRapid ? 0.75 : 1.0);
         mesh.position.set(spawn.x, spawn.y, spawn.z);
         mesh.rotation.y = spawn.heading;
-        this.scene.add(mesh);
+        mesh.visible = true;
 
         this.playerLasers.push({
           mesh,
@@ -308,8 +330,7 @@ export class CosmicGame {
           this.addShake(enemyHit.isBoss ? 0.85 : 0.35);
         }
 
-        this.scene.remove(laser.mesh);
-        this.playerLasers.splice(i, 1);
+        this._recycleLaser(laser, i);
         continue;
       }
 
@@ -322,14 +343,12 @@ export class CosmicGame {
           this.hud.addFeedMessage(`+${pts} ASTEROID SHATTERED`, '#ffc247');
         }
 
-        this.scene.remove(laser.mesh);
-        this.playerLasers.splice(i, 1);
+        this._recycleLaser(laser, i);
         continue;
       }
 
       if (laser.life <= 0) {
-        this.scene.remove(laser.mesh);
-        this.playerLasers.splice(i, 1);
+        this._recycleLaser(laser, i);
       }
     }
 

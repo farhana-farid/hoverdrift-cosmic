@@ -228,7 +228,20 @@ export class TacticalHUD {
     this.weaponLabel = document.getElementById('hud-weapon-label');
     this.missilesVal = document.getElementById('hud-missiles-val');
     this.empSlot = document.getElementById('w-slot-emp');
+    this.wSlot1 = document.getElementById('w-slot-1');
+    this.wSlot2 = document.getElementById('w-slot-2');
+    this.wSlot3 = document.getElementById('w-slot-3');
     this.camBadge = document.getElementById('hud-cam-badge');
+
+    // DOM Dirty-Checking State (eliminates 60 FPS layout recalculations & UI stutter)
+    this._lastScore = -1;
+    this._lastCombo = -1;
+    this._lastShield = -1;
+    this._lastHull = -1;
+    this._lastEnergy = -1;
+    this._lastHeat = -1;
+    this._lastWeapon = '';
+    this._lastMissiles = -1;
     this.cockpitOverlay = document.getElementById('cockpit-overlay');
     this.feedEl = document.getElementById('hud-feed');
     this.announcementEl = document.getElementById('hud-announcement');
@@ -480,41 +493,68 @@ export class TacticalHUD {
   }
 
   update(player, score, combo, levelNum, trackingInfo, radarData, time, missionStats) {
-    // 1. Update Top Bar Score & Combo
-    this.scoreEl.textContent = Math.floor(score).toString().padStart(6, '0');
-    this.comboEl.textContent = `x${combo} COMBO`;
-    this.comboEl.style.opacity = combo > 1 ? '1' : '0.4';
+    // 1. Dirty-check Score & Combo
+    const intScore = Math.floor(score);
+    if (this._lastScore !== intScore) {
+      this._lastScore = intScore;
+      this.scoreEl.textContent = intScore.toString().padStart(6, '0');
+    }
+    if (this._lastCombo !== combo) {
+      this._lastCombo = combo;
+      this.comboEl.textContent = `x${combo} COMBO`;
+      this.comboEl.style.opacity = combo > 1 ? '1' : '0.4';
+    }
 
-    // 2. Update Vitals
-    const shieldPct = Math.max(0, Math.min(100, (player.shield / player.maxShield) * 100));
-    const hullPct = Math.max(0, Math.min(100, (player.hull / player.maxHull) * 100));
-    const energyPct = Math.max(0, Math.min(100, (player.energy / player.maxEnergy) * 100));
-    const heatPct = Math.max(0, Math.min(100, player.heat * 100));
+    // 2. Dirty-check Vitals (rounded to integers to eliminate fractional layout thrashing)
+    const sRound = Math.round(Math.max(0, Math.min(100, (player.shield / player.maxShield) * 100)));
+    if (this._lastShield !== sRound) {
+      this._lastShield = sRound;
+      this.shieldFill.style.width = `${sRound}%`;
+      this.shieldVal.textContent = `${sRound}%`;
+    }
 
-    this.shieldFill.style.width = `${shieldPct}%`;
-    this.shieldVal.textContent = `${Math.round(shieldPct)}%`;
+    const hRound = Math.round(Math.max(0, Math.min(100, (player.hull / player.maxHull) * 100)));
+    if (this._lastHull !== hRound) {
+      this._lastHull = hRound;
+      this.hullFill.style.width = `${hRound}%`;
+      this.hullVal.textContent = `${hRound}%`;
+    }
 
-    this.hullFill.style.width = `${hullPct}%`;
-    this.hullVal.textContent = `${Math.round(hullPct)}%`;
+    const eRound = Math.round(Math.max(0, Math.min(100, (player.energy / player.maxEnergy) * 100)));
+    if (this._lastEnergy !== eRound) {
+      this._lastEnergy = eRound;
+      this.energyFill.style.width = `${eRound}%`;
+      this.energyVal.textContent = `${eRound}%`;
+    }
 
-    this.energyFill.style.width = `${energyPct}%`;
-    this.energyVal.textContent = `${Math.round(energyPct)}%`;
+    const heatRound = player.overheated ? -99 : Math.round(Math.max(0, Math.min(100, player.heat * 100)));
+    if (this._lastHeat !== heatRound) {
+      this._lastHeat = heatRound;
+      if (player.overheated) {
+        this.heatFill.style.width = '100%';
+        this.heatVal.textContent = 'OVERHEAT';
+        this.heatVal.style.color = 'var(--danger)';
+      } else {
+        this.heatFill.style.width = `${heatRound}%`;
+        this.heatVal.textContent = `${heatRound}%`;
+        this.heatVal.style.color = '#fff';
+      }
+    }
 
-    this.heatFill.style.width = `${heatPct}%`;
-    this.heatVal.textContent = player.overheated ? 'OVERHEAT' : `${Math.round(heatPct)}%`;
-    this.heatVal.style.color = player.overheated ? 'var(--danger)' : '#fff';
+    // 3. Dirty-check Weapons & Missiles
+    const curW = player.selectedWeapon || 'cannons';
+    if (this._lastWeapon !== curW) {
+      this._lastWeapon = curW;
+      this.weaponLabel.textContent = curW.toUpperCase();
+      this.wSlot1?.classList.toggle('active', curW === 'cannons');
+      this.wSlot2?.classList.toggle('active', curW === 'rapid');
+      this.wSlot3?.classList.toggle('active', curW === 'missiles');
+    }
 
-    // 3. Update Weapons & Ordnance
-    this.weaponLabel.textContent = player.selectedWeapon ? player.selectedWeapon.toUpperCase() : 'CANNONS';
-    this.missilesVal.textContent = player.missiles;
-
-    ['1', '2', '3'].forEach(k => {
-      const el = document.getElementById(`w-slot-${k}`);
-      if (el) el.classList.remove('active');
-    });
-    if (player.selectedWeapon === 'cannons') document.getElementById('w-slot-1')?.classList.add('active');
-    else if (player.selectedWeapon === 'rapid') document.getElementById('w-slot-2')?.classList.add('active');
-    else if (player.selectedWeapon === 'missiles') document.getElementById('w-slot-3')?.classList.add('active');
+    if (this._lastMissiles !== player.missiles) {
+      this._lastMissiles = player.missiles;
+      this.missilesVal.textContent = player.missiles;
+    }
 
     if (this.empSlot) {
       if (player.empCooldown <= 0) {
