@@ -144,6 +144,18 @@ export class CosmicGame {
         this.togglePause(false);
         this.startMission(lvl);
       },
+      onRedeploy: () => {
+        this.togglePause(false);
+        this.startMission(this.currentLevel);
+      },
+      onGoHangar: () => {
+        this.togglePause(true);
+        const hangar = document.getElementById('hangar-overlay');
+        if (hangar) {
+          hangar.style.display = 'flex';
+          hangar.style.opacity = '1';
+        }
+      },
       onTogglePause: () => this.togglePause(),
       onCycleCamera: () => this.cycleCamera(),
       onVolume: (val) => this.audio.setVolume(val),
@@ -176,6 +188,7 @@ export class CosmicGame {
   }
 
   startMission(levelNum) {
+    this.isPaused = false;
     this.currentLevel = levelNum;
     this.levelKills = 0;
     const def = MISSION_DEFINITIONS[levelNum - 1] || MISSION_DEFINITIONS[0];
@@ -359,9 +372,12 @@ export class CosmicGame {
     // Ship vs Asteroid Collision
     const shipAstHit = this.asteroids.checkShipCollision(this.player);
     if (shipAstHit.hit) {
-      this.player.takeDamage(15, time);
+      if (this.player.takeDamage(12)) {
+        this._onGameOver();
+        return;
+      }
       this.audio.hit();
-      this.addShake(0.3);
+      this.addShake(0.25);
     }
 
     // Mineral Pickups
@@ -519,12 +535,15 @@ export class CosmicGame {
   }
 
   _onGameOver() {
-    this.running = false;
+    if (this.isPaused) return;
+    this.isPaused = true;
     this.audio.explode(true);
     this.particles.createShipExplosion(this.player.position, true);
-    this.hud.showAnnouncement('STARFIGHTER DESTROYED // SIMULATION TERMINATED', 4000);
-    setTimeout(() => {
-      location.reload();
-    }, 3600);
+    const def = MISSION_DEFINITIONS[this.currentLevel - 1] || { title: 'PATROL' };
+    this.hud.showGameOverModal(true, {
+      score: this.score,
+      sector: `LEVEL 0${this.currentLevel}: ${def.title.toUpperCase()}`,
+      kills: this.levelKills
+    });
   }
 }

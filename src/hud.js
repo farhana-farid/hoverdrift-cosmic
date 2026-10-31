@@ -208,6 +208,23 @@ export class TacticalHUD {
             <button class="modal-btn primary" id="btn-proceed-mission">LAUNCH NEXT MISSION</button>
           </div>
         </div>
+
+        <!-- Mission Failed / Redeploy Modal -->
+        <div class="hud-modal" id="gameover-modal" style="display: none;">
+          <div class="modal-card" style="border-color: rgba(255, 34, 68, 0.45); box-shadow: 0 0 32px rgba(255, 34, 68, 0.25);">
+            <h1 class="modal-title" style="color: var(--danger); text-shadow: 0 0 20px rgba(255, 34, 68, 0.7);">STARFIGHTER DESTROYED</h1>
+            <div class="modal-sub">TACTICAL EMERGENCY EVACUATION PROTOCOL</div>
+            <div class="vic-stats-grid">
+              <div class="v-stat"><span>SCORE</span><b id="go-score">000000</b></div>
+              <div class="v-stat"><span>SECTOR</span><b id="go-sector">SECTOR 01</b></div>
+              <div class="v-stat"><span>HOSTILES ELIMINATED</span><b id="go-kills">0</b></div>
+            </div>
+            <div class="modal-buttons" style="margin-top: 14px;">
+              <button class="modal-btn primary" id="btn-redeploy-mission" style="background: linear-gradient(90deg, #ff2244, #ff6600); border-color: #ff3366; color: #fff;">REDEPLOY STARFIGHTER [RETRY]</button>
+              <button class="modal-btn" id="btn-go-hangar">RETURN TO HANGAR BAY</button>
+            </div>
+          </div>
+        </div>
       </div>
     `;
 
@@ -256,6 +273,7 @@ export class TacticalHUD {
     // Modals
     this.pauseModal = document.getElementById('pause-modal');
     this.victoryModal = document.getElementById('victory-modal');
+    this.gameOverModal = document.getElementById('gameover-modal');
 
     // Canvases
     this.trackingCanvas = document.getElementById('hud-tracking-canvas');
@@ -313,6 +331,16 @@ export class TacticalHUD {
       e.preventDefault();
       e.stopPropagation();
       if (this.callbacks.onCycleCamera) this.callbacks.onCycleCamera();
+    });
+
+    document.getElementById('btn-redeploy-mission')?.addEventListener('click', () => {
+      this.showGameOverModal(false);
+      if (this.callbacks.onRedeploy) this.callbacks.onRedeploy();
+    });
+
+    document.getElementById('btn-go-hangar')?.addEventListener('click', () => {
+      this.showGameOverModal(false);
+      if (this.callbacks.onGoHangar) this.callbacks.onGoHangar();
     });
   }
 
@@ -451,6 +479,18 @@ export class TacticalHUD {
       document.getElementById('vic-score').textContent = (data.score || 0).toString().padStart(6, '0');
       document.getElementById('vic-kills').textContent = data.kills || 0;
       document.getElementById('vic-next-title').textContent = data.nextTitle || 'NEXT SECTOR';
+    }
+  }
+
+  showGameOverModal(show, data = {}) {
+    this.gameOverModal.style.display = show ? 'flex' : 'none';
+    if (show && data) {
+      const sEl = document.getElementById('go-score');
+      const secEl = document.getElementById('go-sector');
+      const kEl = document.getElementById('go-kills');
+      if (sEl) sEl.textContent = (data.score || 0).toString().padStart(6, '0');
+      if (secEl) secEl.textContent = data.sector || 'SECTOR 01';
+      if (kEl) kEl.textContent = data.kills || 0;
     }
   }
 

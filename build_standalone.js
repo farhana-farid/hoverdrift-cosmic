@@ -1194,27 +1194,68 @@ try {
 
     @media (max-width: 960px), (pointer: coarse), (hover: none) {
       .hangar-overlay {
-        padding: calc(12px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px));
+        height: 100vh;
+        height: 100dvh;
+        padding: calc(8px + env(safe-area-inset-top, 0px)) 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .hangar-header {
+        padding-bottom: 6px;
+      }
+      .hangar-title {
+        font-size: 16px;
+        letter-spacing: 0.16em;
+      }
+      .hangar-subtitle {
+        font-size: 9px;
       }
       .hangar-content { 
-        grid-template-columns: 1fr; 
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 0px;
+        min-height: 0;
         overflow-y: auto; 
         -webkit-overflow-scrolling: touch;
-        gap: 14px;
+        gap: 10px;
+        padding: 6px 0 16px 0;
       }
       .hangar-turntable-container {
-        height: 260px;
-        min-height: 240px;
+        height: 180px;
+        min-height: 160px;
+        max-height: 200px;
         order: -1;
+        flex-shrink: 0;
+      }
+      .ship-cards-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .hangar-stats-panel {
+        flex-shrink: 0;
       }
       .hangar-footer {
+        flex-shrink: 0;
         flex-direction: column;
-        gap: 12px;
+        gap: 6px;
+        padding-top: 8px;
+        background: rgba(2, 4, 10, 0.96);
+        border-top: 1px solid rgba(62, 240, 255, 0.35);
+      }
+      .mission-brief {
+        display: none;
       }
       .btn-launch-mission {
         width: 100%;
         padding: 14px 20px;
-        font-size: 13px;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
       }
       .hud-hints { display: none; }
       .hud-radar-panel { display: none; }
@@ -1372,7 +1413,7 @@ try {
     // =========================================================
     // HANGAR 3D PREVIEW & MISSION LAUNCH CONTROLLER
     // =========================================================
-    window.addEventListener('DOMContentLoaded', () => {
+    function bootGameApp() {
       const mainCanvas = document.getElementById('viewport');
       const hudContainer = document.getElementById('hud-container');
       const hangarOverlay = document.getElementById('hangar-overlay');
@@ -1380,170 +1421,204 @@ try {
       const turntableCanvas = document.getElementById('hangar-turntable-canvas');
 
       // Populate reference image thumbnails
-      document.getElementById('thumb-dreadnought').style.backgroundImage = 'url(' + SHIP_IMAGES.dreadnought + ')';
-      document.getElementById('thumb-aether').style.backgroundImage = 'url(' + SHIP_IMAGES.aether + ')';
-      document.getElementById('thumb-crimson').style.backgroundImage = 'url(' + SHIP_IMAGES.crimson + ')';
+      if (document.getElementById('thumb-dreadnought')) document.getElementById('thumb-dreadnought').style.backgroundImage = 'url(' + SHIP_IMAGES.dreadnought + ')';
+      if (document.getElementById('thumb-aether')) document.getElementById('thumb-aether').style.backgroundImage = 'url(' + SHIP_IMAGES.aether + ')';
+      if (document.getElementById('thumb-crimson')) document.getElementById('thumb-crimson').style.backgroundImage = 'url(' + SHIP_IMAGES.crimson + ')';
 
       let selectedShip = 'dreadnought';
       let mainGame = null;
 
       // Hangar 3D Turntable Scene
-      const hangarScene = new THREE.Scene();
-      const hangarCamera = new THREE.PerspectiveCamera(45, (turntableCanvas.clientWidth || 600) / (turntableCanvas.clientHeight || 450), 0.1, 100);
-      hangarCamera.position.set(3.4, 1.8, 4.4);
-      hangarCamera.lookAt(0, 0.1, 0.2);
+      let hangarScene = null;
+      let hangarCamera = null;
+      let hangarRenderer = null;
+      let previewShipGroup = null;
 
-      const hangarRenderer = new THREE.WebGLRenderer({
-        canvas: turntableCanvas,
-        antialias: true,
-        alpha: true
-      });
-      hangarRenderer.setSize(turntableCanvas.clientWidth || 600, turntableCanvas.clientHeight || 450, false);
-      hangarRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      hangarRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-      hangarRenderer.toneMappingExposure = 1.35;
+      try {
+        hangarScene = new THREE.Scene();
+        hangarCamera = new THREE.PerspectiveCamera(45, (turntableCanvas.clientWidth || 600) / (turntableCanvas.clientHeight || 450), 0.1, 100);
+        hangarCamera.position.set(3.4, 1.8, 4.4);
+        hangarCamera.lookAt(0, 0.1, 0.2);
 
-      // Hangar PBR Environment & 3-Point Studio Lighting
-      const hSun = new THREE.DirectionalLight(0xfff5ea, 3.2);
-      hSun.position.set(6, 8, 6);
-      hangarScene.add(hSun);
+        hangarRenderer = new THREE.WebGLRenderer({
+          canvas: turntableCanvas,
+          antialias: true,
+          alpha: true,
+          powerPreference: 'low-power'
+        });
+        hangarRenderer.setSize(turntableCanvas.clientWidth || 600, turntableCanvas.clientHeight || 450, false);
+        hangarRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        hangarRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+        hangarRenderer.toneMappingExposure = 1.35;
 
-      const hFill = new THREE.DirectionalLight(0x4da6ff, 1.6);
-      hFill.position.set(-5, 3, 5);
-      hangarScene.add(hFill);
+        // Hangar PBR Environment & 3-Point Studio Lighting
+        const hSun = new THREE.DirectionalLight(0xfff5ea, 3.2);
+        hSun.position.set(6, 8, 6);
+        hangarScene.add(hSun);
 
-      const hRim = new THREE.DirectionalLight(0x3ef0ff, 2.8);
-      hRim.position.set(-6, 4, -6);
-      hangarScene.add(hRim);
+        const hFill = new THREE.DirectionalLight(0x4da6ff, 1.6);
+        hFill.position.set(-5, 3, 5);
+        hangarScene.add(hFill);
 
-      const hAmb = new THREE.AmbientLight(0x182436, 1.5);
-      hangarScene.add(hAmb);
+        const hRim = new THREE.DirectionalLight(0x3ef0ff, 2.8);
+        hRim.position.set(-6, 4, -6);
+        hangarScene.add(hRim);
 
-      // Sci-Fi Circular Turntable Docking Pad
-      const padGroup = new THREE.Group();
-      const padGeom = new THREE.CylinderGeometry(3.4, 3.6, 0.14, 36);
-      const padMat = new THREE.MeshStandardMaterial({
-        color: 0x0c1420,
-        metalness: 0.88,
-        roughness: 0.32
-      });
-      const padMesh = new THREE.Mesh(padGeom, padMat);
-      padMesh.position.y = -0.07;
-      padGroup.add(padMesh);
+        const hAmb = new THREE.AmbientLight(0x182436, 1.5);
+        hangarScene.add(hAmb);
 
-      const ringGeom = new THREE.TorusGeometry(3.42, 0.035, 8, 36);
-      ringGeom.rotateX(Math.PI / 2);
-      const ringMat = new THREE.MeshBasicMaterial({ color: 0x3ef0ff });
-      const ringMesh = new THREE.Mesh(ringGeom, ringMat);
-      ringMesh.position.y = 0.01;
-      padGroup.add(ringMesh);
+        // Sci-Fi Circular Turntable Docking Pad
+        const padGroup = new THREE.Group();
+        const padGeom = new THREE.CylinderGeometry(3.4, 3.6, 0.14, 36);
+        const padMat = new THREE.MeshStandardMaterial({
+          color: 0x0c1420,
+          metalness: 0.88,
+          roughness: 0.32
+        });
+        const padMesh = new THREE.Mesh(padGeom, padMat);
+        padMesh.position.y = -0.07;
+        padGroup.add(padMesh);
 
-      const innerRing = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.02, 8, 32), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
-      innerRing.rotation.x = Math.PI / 2;
-      innerRing.position.y = 0.01;
-      padGroup.add(innerRing);
+        const ringGeom = new THREE.TorusGeometry(3.42, 0.035, 8, 36);
+        ringGeom.rotateX(Math.PI / 2);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x3ef0ff });
+        const ringMesh = new THREE.Mesh(ringGeom, ringMat);
+        ringMesh.position.y = 0.01;
+        padGroup.add(ringMesh);
 
-      const grid = new THREE.GridHelper(12, 24, 0x3ef0ff, 0x14283c);
-      grid.position.y = -0.15;
-      padGroup.add(grid);
+        const innerRing = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.02, 8, 32), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
+        innerRing.rotation.x = Math.PI / 2;
+        innerRing.position.y = 0.01;
+        padGroup.add(innerRing);
 
-      hangarScene.add(padGroup);
+        const grid = new THREE.GridHelper(12, 24, 0x3ef0ff, 0x14283c);
+        grid.position.y = -0.15;
+        padGroup.add(grid);
 
-      let previewShipGroup = new THREE.Group();
-      hangarScene.add(previewShipGroup);
+        hangarScene.add(padGroup);
+
+        previewShipGroup = new THREE.Group();
+        hangarScene.add(previewShipGroup);
+      } catch (err) {
+        console.warn('Hangar 3D Turntable initialization skipped (fallback mode):', err);
+      }
 
       function updatePreviewModel(type) {
-        while (previewShipGroup.children.length > 0) {
-          previewShipGroup.remove(previewShipGroup.children[0]);
+        if (hangarScene && previewShipGroup) {
+          while (previewShipGroup.children.length > 0) {
+            previewShipGroup.remove(previewShipGroup.children[0]);
+          }
+
+          const tempShip = new Starfighter(previewShipGroup, THREE, type);
+          tempShip.group.position.set(0, 0.12, 0);
+
+          if (tempShip.thrusterFlames) {
+            tempShip.thrusterFlames.forEach(f => {
+              if (f.outer) f.outer.visible = false;
+              if (f.inner) f.inner.visible = false;
+            });
+          }
+
+          previewShipGroup.rotation.y = -0.45;
         }
-
-        const tempShip = new Starfighter(previewShipGroup, THREE, type);
-        tempShip.group.position.set(0, 0.12, 0);
-
-        // Hide thruster flames while parked in hangar
-        if (tempShip.thrusterFlames) {
-          tempShip.thrusterFlames.forEach(f => {
-            if (f.outer) f.outer.visible = false;
-            if (f.inner) f.inner.visible = false;
-          });
-        }
-
-        // Beautiful front 3/4 perspective angle
-        previewShipGroup.rotation.y = -0.45;
 
         const cfg = SHIP_CONFIGS[type];
-        document.getElementById('stats-ship-title').textContent = cfg.name + ' // STATS';
-        document.getElementById('stat-speed-val').textContent = cfg.stats.speed + '%';
-        document.getElementById('stat-speed-bar').style.width = cfg.stats.speed + '%';
-        document.getElementById('stat-agility-val').textContent = cfg.stats.agility + '%';
-        document.getElementById('stat-agility-bar').style.width = cfg.stats.agility + '%';
-        document.getElementById('stat-shields-val').textContent = cfg.stats.shields + '%';
-        document.getElementById('stat-shields-bar').style.width = cfg.stats.shields + '%';
-        document.getElementById('stat-hull-val').textContent = cfg.stats.hull + '%';
-        document.getElementById('stat-hull-bar').style.width = cfg.stats.hull + '%';
-        document.getElementById('stat-firepower-val').textContent = cfg.stats.firepower + '%';
-        document.getElementById('stat-firepower-bar').style.width = cfg.stats.firepower + '%';
+        if (cfg) {
+          const t = document.getElementById('stats-ship-title');
+          if (t) t.textContent = cfg.name + ' // STATS';
+          const sVal = document.getElementById('stat-speed-val');
+          const sBar = document.getElementById('stat-speed-bar');
+          if (sVal) sVal.textContent = cfg.stats.speed + '%';
+          if (sBar) sBar.style.width = cfg.stats.speed + '%';
+
+          const aVal = document.getElementById('stat-agility-val');
+          const aBar = document.getElementById('stat-agility-bar');
+          if (aVal) aVal.textContent = cfg.stats.agility + '%';
+          if (aBar) aBar.style.width = cfg.stats.agility + '%';
+
+          const shVal = document.getElementById('stat-shields-val');
+          const shBar = document.getElementById('stat-shields-bar');
+          if (shVal) shVal.textContent = cfg.stats.shields + '%';
+          if (shBar) shBar.style.width = cfg.stats.shields + '%';
+
+          const hVal = document.getElementById('stat-hull-val');
+          const hBar = document.getElementById('stat-hull-bar');
+          if (hVal) hVal.textContent = cfg.stats.hull + '%';
+          if (hBar) hBar.style.width = cfg.stats.hull + '%';
+
+          const fVal = document.getElementById('stat-firepower-val');
+          const fBar = document.getElementById('stat-firepower-bar');
+          if (fVal) fVal.textContent = cfg.stats.firepower + '%';
+          if (fBar) fBar.style.width = cfg.stats.firepower + '%';
+        }
       }
 
       updatePreviewModel('dreadnought');
 
       ['dreadnought', 'aether', 'crimson'].forEach(id => {
         const card = document.getElementById('card-' + id);
-        card.addEventListener('click', () => {
-          document.querySelectorAll('.ship-card').forEach(c => c.classList.remove('active'));
-          card.classList.add('active');
-          selectedShip = id;
-          updatePreviewModel(id);
-        });
+        if (card) {
+          const selectCard = (e) => {
+            if (e && e.cancelable) e.preventDefault();
+            document.querySelectorAll('.ship-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            selectedShip = id;
+            updatePreviewModel(id);
+          };
+          card.addEventListener('click', selectCard);
+          card.addEventListener('touchend', selectCard);
+        }
       });
 
       let isDragging = false;
       let prevMouseX = 0;
       let autoRotate = true;
 
-      turntableCanvas.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        prevMouseX = e.clientX;
-        autoRotate = false;
-      });
-
-      window.addEventListener('mouseup', () => {
-        isDragging = false;
-        setTimeout(() => autoRotate = true, 2000);
-      });
-
-      window.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-          const deltaX = e.clientX - prevMouseX;
-          previewShipGroup.rotation.y += deltaX * 0.015;
-          prevMouseX = e.clientX;
-        }
-      });
-
-      // Touch Drag Support for Mobile / Tablets
-      turntableCanvas.addEventListener('touchstart', (e) => {
-        if (e.touches.length > 0) {
+      if (turntableCanvas) {
+        turntableCanvas.addEventListener('mousedown', (e) => {
           isDragging = true;
-          prevMouseX = e.touches[0].clientX;
+          prevMouseX = e.clientX;
           autoRotate = false;
-        }
-      }, { passive: true });
+        });
 
-      window.addEventListener('touchend', () => {
-        isDragging = false;
-        setTimeout(() => autoRotate = true, 2000);
-      });
+        window.addEventListener('mouseup', () => {
+          isDragging = false;
+          setTimeout(() => autoRotate = true, 2000);
+        });
 
-      window.addEventListener('touchmove', (e) => {
-        if (isDragging && e.touches.length > 0) {
-          const deltaX = e.touches[0].clientX - prevMouseX;
-          previewShipGroup.rotation.y += deltaX * 0.015;
-          prevMouseX = e.touches[0].clientX;
-        }
-      }, { passive: true });
+        window.addEventListener('mousemove', (e) => {
+          if (isDragging && previewShipGroup) {
+            const deltaX = e.clientX - prevMouseX;
+            previewShipGroup.rotation.y += deltaX * 0.015;
+            prevMouseX = e.clientX;
+          }
+        });
+
+        // Touch Drag Support for Mobile / Tablets
+        turntableCanvas.addEventListener('touchstart', (e) => {
+          if (e.touches.length > 0) {
+            isDragging = true;
+            prevMouseX = e.touches[0].clientX;
+            autoRotate = false;
+          }
+        }, { passive: true });
+
+        window.addEventListener('touchend', () => {
+          isDragging = false;
+          setTimeout(() => autoRotate = true, 2000);
+        });
+
+        window.addEventListener('touchmove', (e) => {
+          if (isDragging && e.touches.length > 0 && previewShipGroup) {
+            const deltaX = e.touches[0].clientX - prevMouseX;
+            previewShipGroup.rotation.y += deltaX * 0.015;
+            prevMouseX = e.touches[0].clientX;
+          }
+        }, { passive: true });
+      }
 
       function resizeTurntable() {
-        if (!turntableCanvas.parentElement) return;
+        if (!turntableCanvas || !turntableCanvas.parentElement || !hangarCamera || !hangarRenderer) return;
         const w = turntableCanvas.clientWidth;
         const h = turntableCanvas.clientHeight;
         if (w > 0 && h > 0) {
@@ -1559,28 +1634,52 @@ try {
       function animateTurntable() {
         if (!turntableRunning) return;
         requestAnimationFrame(animateTurntable);
-        if (autoRotate) {
+        if (autoRotate && previewShipGroup) {
           previewShipGroup.rotation.y += 0.004;
         }
-        hangarRenderer.render(hangarScene, hangarCamera);
+        if (hangarRenderer && hangarScene && hangarCamera) {
+          hangarRenderer.render(hangarScene, hangarCamera);
+        }
       }
-      animateTurntable();
+      if (hangarRenderer) {
+        animateTurntable();
+      }
 
-      btnLaunch.addEventListener('click', (e) => {
-        if (e) {
+      function launchGame(e) {
+        if (e && e.cancelable) {
           e.preventDefault();
           e.stopPropagation();
         }
         turntableRunning = false;
+        try {
+          if (hangarRenderer) {
+            hangarRenderer.dispose();
+          }
+        } catch (err) {
+          console.warn('Hangar renderer dispose err:', err);
+        }
+
         hangarOverlay.style.opacity = '0';
-        hangarOverlay.style.transition = 'opacity 0.5s ease-out';
-        setTimeout(() => hangarOverlay.style.display = 'none', 500);
+        hangarOverlay.style.transition = 'opacity 0.4s ease-out';
+        setTimeout(() => {
+          hangarOverlay.style.display = 'none';
+        }, 400);
 
         if (!mainGame) {
           mainGame = new CosmicGame(mainCanvas, hudContainer, THREE, selectedShip);
           mainGame.start();
+        } else {
+          mainGame.selectedShipType = selectedShip;
+          mainGame.togglePause(false);
+          mainGame.startMission(mainGame.currentLevel || 1);
+          mainGame.player.reset(selectedShip);
         }
-      });
+      }
+
+      if (btnLaunch) {
+        btnLaunch.addEventListener('click', launchGame);
+        btnLaunch.addEventListener('touchend', launchGame, { passive: false });
+      }
 
       // Global one-shot touch unlock for Web Audio (iOS Safari & Android Chrome)
       const unlockAudio = () => {
@@ -1588,7 +1687,13 @@ try {
       };
       window.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
       window.addEventListener('click', unlockAudio, { once: true, passive: true });
-    });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootGameApp);
+    } else {
+      bootGameApp();
+    }
   </script>
 </body>
 </html>`;

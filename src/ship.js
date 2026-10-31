@@ -23,16 +23,16 @@ export const SHIP_CONFIGS = {
     accelRate: 36,
     turnRate: 2.8,
     rollRate: 5.2,
-    maxShield: 110,
-    maxHull: 110,
-    shieldRegenRate: 22,
+    maxShield: 150,
+    maxHull: 140,
+    shieldRegenRate: 30,
     boostDrainRate: 26,
     fireInterval: 0.12,
     primaryColor: 0xff1744,
     engineGlow: 0xff2244,
     laserColor: 0xff2244,
     weaponType: 'triple_pulse',
-    stats: { speed: 88, agility: 88, shields: 88, hull: 88, firepower: 94 }
+    stats: { speed: 88, agility: 88, shields: 92, hull: 90, firepower: 94 }
   },
   dreadnought: {
     id: 'dreadnought',
@@ -45,9 +45,9 @@ export const SHIP_CONFIGS = {
     accelRate: 28,
     turnRate: 2.2,
     rollRate: 3.8,
-    maxShield: 150,
-    maxHull: 170,
-    shieldRegenRate: 18,
+    maxShield: 220,
+    maxHull: 240,
+    shieldRegenRate: 26,
     boostDrainRate: 32,
     fireInterval: 0.16,
     primaryColor: 0xff7700,
@@ -67,16 +67,16 @@ export const SHIP_CONFIGS = {
     accelRate: 40,
     turnRate: 3.2,
     rollRate: 5.8,
-    maxShield: 90,
-    maxHull: 85,
-    shieldRegenRate: 26,
+    maxShield: 130,
+    maxHull: 120,
+    shieldRegenRate: 36,
     boostDrainRate: 24,
     fireInterval: 0.09,
     primaryColor: 0x3ef0ff,
     engineGlow: 0x3ef0ff,
     laserColor: 0x3ef0ff,
     weaponType: 'dual_rapid',
-    stats: { speed: 98, agility: 100, shields: 78, hull: 74, firepower: 86 }
+    stats: { speed: 98, agility: 100, shields: 84, hull: 82, firepower: 86 }
   }
 };
 
@@ -131,7 +131,7 @@ export class Starfighter {
     this.hull = this.maxHull;
     this.maxShield = this.config.maxShield;
     this.shield = this.maxShield;
-    this.shieldRegenDelay = 2.8;
+    this.shieldRegenDelay = 1.6;
     this.lastDamageTime = 0;
     this.shieldRegenRate = this.config.shieldRegenRate;
 
@@ -978,6 +978,7 @@ export class Starfighter {
 
   takeDamage(amount) {
     if (this.invulnerableTimer > 0) return false;
+    this.invulnerableTimer = 0.65; // Invulnerability i-frames to prevent instant death from tick collisions
     this.lastDamageTime = performance.now() * 0.001;
 
     if (this.shieldMesh) {
