@@ -35,6 +35,7 @@ export class InputController {
 
     // Gamepad
     this.padIndex = null;
+    this.sensitivity = 1.0;
 
     // Raycaster for 3D Cosmic Plane Cursor Projection
     this.raycaster = new THREE.Raycaster();
@@ -42,6 +43,10 @@ export class InputController {
     this.planeIntersect = new THREE.Vector3();
 
     this._bindEvents();
+  }
+
+  setSensitivity(val) {
+    this.sensitivity = Math.max(0.3, Math.min(2.0, val));
   }
 
   _bindEvents() {
@@ -99,6 +104,7 @@ export class InputController {
 
   sample(ship) {
     let thrust = 0;
+    let steer = 0;
     let boost = false;
     let fire = false;
     let fireMissile = false;
@@ -107,6 +113,7 @@ export class InputController {
     let togglePause = false;
     let weaponSelect = null;
     let targetHeading = ship.heading;
+    let hasMouseSteer = false;
 
     // 1. KEYBOARD AXES
     const keyW = this.keys.has('KeyW') || this.keys.has('ArrowUp');
@@ -115,7 +122,9 @@ export class InputController {
     const keyD = this.keys.has('KeyD') || this.keys.has('ArrowRight');
 
     if (keyW) thrust += 1.0;
-    if (keyS) thrust -= 0.8;
+    if (keyS) thrust -= 0.6;
+    if (keyA) steer += 1.0; // Yaw counter-clockwise (left)
+    if (keyD) steer -= 1.0; // Yaw clockwise (right)
 
     if (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) {
       boost = true;
@@ -154,51 +163,83 @@ export class InputController {
     // Clear single-frame actions
     this.justPressedKeys.clear();
 
-    // 2. MOUSE FLIGHT STEERING
-    this._updateWorldCursor();
-    const dx = this.mouse.worldX - ship.position.x;
-    const dz = this.mouse.worldZ - ship.position.z;
-    const cursorDist = Math.hypot(dx, dz);
+    // 2. VIRTUAL TOUCH JOYSTICK (Active when user touches the stick)
+    if (this.touch.active) {
+      // Thrust axis: -1.0 (down/reverse) to +1.0 (up/forward)
+      if (Math.abs(this.touch.thrust) > 0.08) {
+        const tSign = Math.sign(this.touch.thrust);
+        const tMag = (Math.abs(this.touch.thrust) - 0.08) / 0.92;
+        thrust = tSign * Math.min(1.0, tMag * tMag); // Quadratic smooth response
+      }
 
-    if (cursorDist > 2.5) {
-      targetHeading = Math.atan2(dx, dz);
+      // Steering axis: -1.0 (left) to +1.0 (right)
+      if (Math.abs(this.touch.steer) > 0.08) {
+        const sSign = Math.sign(this.touch.steer);
+        const sMag = (Math.abs(this.touch.steer) - 0.08) / 0.92;
+        // Pushing stick right (+x) turns ship right (-heading)
+        steer -= sSign * Math.min(1.0, sMag * sMag);
+      }
+
+      if (this.touch.boost) boost = true;
+      if (this.touch.fire) fire = true;
+    } else {
+      // 3. MOUSE FLIGHT STEERING (Desktop only - isolated from touch)
+      // Only steer towards mouse cursor if not using keyboard turn keys
+      if (Math.abs(steer) < 0.1) {
+        this._updateWorldCursor();
+        const dx = this.mouse.worldX - ship.position.x;
+        const dz = this.mouse.worldZ - ship.position.z;
+        const cursorDist = Math.hypot(dx, dz);
+
+        if (cursorDist > 3.0) {
+          targetHeading = Math.atan2(dx, dz);
+          hasMouseSteer = true;
+        }
+      }
     }
 
-    if (keyA) targetHeading += 0.06;
-    if (keyD) targetHeading -= 0.06;
-
-    // 3. GAMEPAD INPUT
+    // 4. GAMEPAD / ANALOG CONTROLLER JOYSTICK
     if (navigator.getGamepads && this.padIndex !== null) {
       const pads = navigator.getGamepads();
       const pad = pads[this.padIndex];
       if (pad && pad.connected) {
+        // Left Stick Y: Throttle
         const stickY = pad.axes[1] || 0;
-        if (Math.abs(stickY) > 0.15) thrust = -stickY;
-
-        const aimX = Math.abs(pad.axes[2]) > 0.2 ? pad.axes[2] : (Math.abs(pad.axes[0]) > 0.2 ? pad.axes[0] : 0);
-        const aimY = Math.abs(pad.axes[3]) > 0.2 ? pad.axes[3] : (Math.abs(pad.axes[1]) > 0.2 ? pad.axes[1] : 0);
-
-        if (Math.hypot(aimX, aimY) > 0.25) {
-          targetHeading = Math.atan2(aimX, -aimY);
+        if (Math.abs(stickY) > 0.12) {
+          const tSign = -Math.sign(stickY);
+          const tMag = (Math.abs(stickY) - 0.12) / 0.88;
+          thrust = tSign * Math.min(1.0, tMag * tMag);
         }
 
-        if (pad.buttons[7]?.pressed || pad.buttons[0]?.pressed) fire = true;
-        if (pad.buttons[6]?.pressed || pad.buttons[1]?.pressed) boost = true;
+        // Left Stick X: Yaw Steering
+        const stickX = pad.axes[0] || 0;
+        if (Math.abs(stickX) > 0.12) {
+          const sSign = Math.sign(stickX);
+          const sMag = (Math.abs(stickX) - 0.12) / 0.88;
+          steer -= sSign * Math.min(1.0, sMag * sMag);
+          hasMouseSteer = false;
+        }
+
+        // Right Stick X: Precision Aiming Yaw
+        const rStickX = pad.axes[2] || 0;
+        if (Math.abs(rStickX) > 0.15) {
+          const rSign = Math.sign(rStickX);
+          const rMag = (Math.abs(rStickX) - 0.15) / 0.85;
+          steer -= rSign * Math.min(1.0, rMag * rMag);
+          hasMouseSteer = false;
+        }
+
+        if (pad.buttons[7]?.pressed || pad.buttons[0]?.pressed) fire = true; // R2 or A
+        if (pad.buttons[6]?.pressed || pad.buttons[1]?.pressed) boost = true; // L2 or B
         if (pad.buttons[5]?.pressed) fireMissile = true; // R1
         if (pad.buttons[4]?.pressed) triggerEMP = true; // L1
         if (pad.buttons[9]?.pressed) togglePause = true; // Start
       }
     }
 
-    // 4. TOUCH OVERRIDES
-    if (this.touch.active) {
-      if (Math.abs(this.touch.thrust) > 0.05) thrust = this.touch.thrust;
-      if (this.touch.boost) boost = true;
-      if (this.touch.fire) fire = true;
-    }
-
     return {
-      thrust,
+      thrust: Math.max(-0.6, Math.min(1.0, thrust)),
+      steer: Math.max(-1.0, Math.min(1.0, steer)),
       boost,
       fire,
       fireMissile,
@@ -207,7 +248,7 @@ export class InputController {
       togglePause,
       weaponSelect,
       targetHeading,
-      hasMouseTarget: cursorDist > 2.5,
+      hasMouseSteer,
       targetWorldX: this.mouse.worldX,
       targetWorldZ: this.mouse.worldZ,
       mouseScreenX: this.mouse.x,

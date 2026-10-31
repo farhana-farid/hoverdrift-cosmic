@@ -1473,18 +1473,22 @@ try {
         let startX = 0, startY = 0;
 
         stick.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           const touch = e.changedTouches[0];
           activeTouchId = touch.identifier;
           const rect = stick.getBoundingClientRect();
           startX = rect.left + rect.width / 2;
           startY = rect.top + rect.height / 2;
           if (mainGame) mainGame.input.touch.active = true;
-        });
+        }, { passive: false });
 
         window.addEventListener('touchmove', (e) => {
+          if (activeTouchId === null) return;
           for (let i = 0; i < e.changedTouches.length; i++) {
             const touch = e.changedTouches[i];
             if (touch.identifier === activeTouchId) {
+              e.preventDefault();
               const dx = touch.clientX - startX;
               const dy = touch.clientY - startY;
               const dist = Math.hypot(dx, dy);
@@ -1502,35 +1506,63 @@ try {
               }
             }
           }
-        });
+        }, { passive: false });
 
         const resetStick = (e) => {
+          if (activeTouchId === null) return;
           for (let i = 0; i < e.changedTouches.length; i++) {
             if (e.changedTouches[i].identifier === activeTouchId) {
               activeTouchId = null;
+              knob.style.transition = 'transform 0.15s ease-out';
               knob.style.transform = 'translate(-50%, -50%)';
+              setTimeout(() => { knob.style.transition = ''; }, 160);
               if (mainGame) {
                 mainGame.input.touch.thrust = 0;
                 mainGame.input.touch.steer = 0;
+                mainGame.input.touch.active = false;
               }
             }
           }
         };
 
-        window.addEventListener('touchend', resetStick);
-        window.addEventListener('touchcancel', resetStick);
+        window.addEventListener('touchend', resetStick, { passive: true });
+        window.addEventListener('touchcancel', resetStick, { passive: true });
 
         if (btnTouchBoost) {
-          btnTouchBoost.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.boost = true; });
-          btnTouchBoost.addEventListener('touchend', () => { if (mainGame) mainGame.input.touch.boost = false; });
+          btnTouchBoost.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (mainGame) mainGame.input.touch.boost = true;
+          }, { passive: false });
+          btnTouchBoost.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (mainGame) mainGame.input.touch.boost = false;
+          }, { passive: false });
         }
         if (btnTouchMissile) {
-          btnTouchMissile.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.missile = true; });
-          btnTouchMissile.addEventListener('touchend', () => { if (mainGame) mainGame.input.touch.missile = false; });
+          btnTouchMissile.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (mainGame) mainGame.input.touch.missile = true;
+          }, { passive: false });
+          btnTouchMissile.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (mainGame) mainGame.input.touch.missile = false;
+          }, { passive: false });
         }
         if (btnTouchFire) {
-          btnTouchFire.addEventListener('touchstart', () => { if (mainGame) mainGame.input.touch.fire = true; });
-          btnTouchFire.addEventListener('touchend', () => { if (mainGame) mainGame.input.touch.fire = false; });
+          btnTouchFire.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (mainGame) mainGame.input.touch.fire = true;
+          }, { passive: false });
+          btnTouchFire.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (mainGame) mainGame.input.touch.fire = false;
+          }, { passive: false });
         }
       }
     });

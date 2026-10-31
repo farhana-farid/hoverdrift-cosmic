@@ -127,6 +127,10 @@ export class CosmicGame {
         this.startMission(lvl);
       },
       onVolume: (val) => this.audio.setVolume(val),
+      onSensitivity: (val) => {
+        if (this.player) this.player.sensitivity = val;
+        if (this.input) this.input.setSensitivity(val);
+      },
       onMute: () => this.audio.toggleMute()
     });
   }

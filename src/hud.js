@@ -173,6 +173,16 @@ export class TacticalHUD {
               </div>
               <button class="modal-btn small" id="btn-toggle-mute">MUTE AUDIO</button>
             </div>
+
+            <div class="modal-settings" style="margin-top: 8px;">
+              <div class="setting-item" style="width: 100%; justify-content: space-between;">
+                <span>JOYSTICK & FLIGHT SENSITIVITY</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="range" id="setting-sens-slider" min="0.3" max="2.0" step="0.05" value="0.9">
+                  <span id="setting-sens-val" style="font-family: var(--mono); color: var(--cyan); min-width: 44px; text-align: right;">90%</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -258,6 +268,14 @@ export class TacticalHUD {
     const volSlider = document.getElementById('setting-vol-slider');
     volSlider?.addEventListener('input', (e) => {
       if (this.callbacks.onVolume) this.callbacks.onVolume(parseFloat(e.target.value));
+    });
+
+    const sensSlider = document.getElementById('setting-sens-slider');
+    const sensValLabel = document.getElementById('setting-sens-val');
+    sensSlider?.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      if (sensValLabel) sensValLabel.textContent = Math.round(val * 100) + '%';
+      if (this.callbacks.onSensitivity) this.callbacks.onSensitivity(val);
     });
 
     document.getElementById('btn-toggle-mute')?.addEventListener('click', () => {

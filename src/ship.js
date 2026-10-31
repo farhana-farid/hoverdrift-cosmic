@@ -18,11 +18,11 @@ export const SHIP_CONFIGS = {
     type: 'Tactical Strike Fighter (Ref 1)',
     image: SHIP_IMAGES.crimson,
     description: 'Advanced strike fighter crafted with brushed titanium armor, racing crimson cowlings, twin circular VTOL turbine rings, dual heavy wing cannons, and homing missile racks.',
-    maxSpeed: 58,
-    boostSpeed: 128,
-    accelRate: 64,
-    turnRate: 7.2,
-    rollRate: 9.6,
+    maxSpeed: 44,
+    boostSpeed: 82,
+    accelRate: 36,
+    turnRate: 2.8,
+    rollRate: 5.2,
     maxShield: 110,
     maxHull: 110,
     shieldRegenRate: 22,
@@ -32,7 +32,7 @@ export const SHIP_CONFIGS = {
     engineGlow: 0xff2244,
     laserColor: 0xff2244,
     weaponType: 'triple_pulse',
-    stats: { speed: 88, agility: 90, shields: 88, hull: 88, firepower: 94 }
+    stats: { speed: 88, agility: 88, shields: 88, hull: 88, firepower: 94 }
   },
   dreadnought: {
     id: 'dreadnought',
@@ -40,11 +40,11 @@ export const SHIP_CONFIGS = {
     type: 'Heavy Twin-Hull Warship',
     image: SHIP_IMAGES.dreadnought,
     description: 'Monolithic stealth combat warship with multi-tiered composite armor plating, dual outboard catamaran hulls, and forward-facing heavy kinetic railguns.',
-    maxSpeed: 46,
-    boostSpeed: 102,
-    accelRate: 48,
-    turnRate: 5.6,
-    rollRate: 7.4,
+    maxSpeed: 38,
+    boostSpeed: 70,
+    accelRate: 28,
+    turnRate: 2.2,
+    rollRate: 3.8,
     maxShield: 150,
     maxHull: 170,
     shieldRegenRate: 18,
@@ -62,11 +62,11 @@ export const SHIP_CONFIGS = {
     type: 'High-Agility Interceptor (Ref 2)',
     image: SHIP_IMAGES.aether,
     description: 'Sleek aerodynamic spaceframe with cranked-arrow delta wings, canted dorsal stabilizers, downturned winglet fences, and twin blue plasma bolters.',
-    maxSpeed: 66,
-    boostSpeed: 140,
-    accelRate: 72,
-    turnRate: 8.2,
-    rollRate: 11.5,
+    maxSpeed: 48,
+    boostSpeed: 90,
+    accelRate: 40,
+    turnRate: 3.2,
+    rollRate: 5.8,
     maxShield: 90,
     maxHull: 85,
     shieldRegenRate: 26,
@@ -122,6 +122,7 @@ export class Starfighter {
     this.targetHeading = 0;
     this.roll = 0;
     this.pitch = 0;
+    this.sensitivity = this.sensitivity || 1.0;
 
     // Vitals from Config
     this.maxHull = this.config.maxHull;
@@ -849,8 +850,9 @@ export class Starfighter {
     }
 
     // 2. Boost & Energy
+    const forwardThrust = inputState.thrust !== undefined ? inputState.thrust : 0;
     const boostRequested = (inputState.boost || inputState.shift) && this.energy > 5;
-    if (boostRequested && (inputState.forward || inputState.backward || inputState.hasMouseTarget)) {
+    if (boostRequested && Math.abs(forwardThrust) > 0.05) {
       this.isBoosting = true;
       this.energy = Math.max(0, this.energy - this.boostDrainRate * dt);
     } else {
@@ -892,46 +894,57 @@ export class Starfighter {
       }
     });
 
-    // 5. Arcade Flight Physics
+    // 5. Smooth, Responsive Arcade Flight Physics
     const targetSpeed = this.isBoosting ? this.config.boostSpeed : this.config.maxSpeed;
     const accel = this.config.accelRate;
+    const sens = this.sensitivity || 1.0;
 
-    let forwardThrust = 0;
-    if (inputState.forward) forwardThrust += 1.0;
-    if (inputState.backward) forwardThrust -= 0.6;
+    // A. Steering / Heading Calculation
+    let activeTurnRate = 0;
 
-    if (inputState.hasMouseTarget) {
-      const dx = inputState.targetWorldX - this.position.x;
-      const dz = inputState.targetWorldZ - this.position.z;
-      const dist = Math.hypot(dx, dz);
-
-      if (dist > 1.8) {
-        this.targetHeading = Math.atan2(dx, dz);
-        forwardThrust = Math.min(1.0, Math.max(0.25, dist / 22));
-      }
-    } else if (inputState.left || inputState.right) {
-      const turnDir = (inputState.left ? 1 : 0) - (inputState.right ? 1 : 0);
-      this.heading += turnDir * this.config.turnRate * dt;
+    if (inputState.steer && Math.abs(inputState.steer) > 0.02) {
+      // Direct joystick / keyboard yaw with quadratic smooth ramp
+      const turnSpeed = this.config.turnRate * sens;
+      const turnDelta = inputState.steer * turnSpeed * dt;
+      this.heading += turnDelta;
       this.targetHeading = this.heading;
+      activeTurnRate = inputState.steer;
+    } else if (inputState.hasMouseSteer) {
+      // Smooth tracking towards mouse aim
+      let headingDiff = inputState.targetHeading - this.heading;
+      while (headingDiff > Math.PI) headingDiff -= Math.PI * 2;
+      while (headingDiff < -Math.PI) headingDiff += Math.PI * 2;
+
+      // Soft progressive damping towards mouse cursor
+      const maxTurn = this.config.turnRate * sens * dt;
+      const turnAmount = Math.max(-maxTurn, Math.min(maxTurn, headingDiff * 3.8 * dt * sens));
+      this.heading += turnAmount;
+      this.targetHeading = this.heading;
+      activeTurnRate = Math.max(-1.0, Math.min(1.0, headingDiff * 1.5));
     }
 
-    // Smooth heading (zero gimbal lock)
-    let headingDiff = this.targetHeading - this.heading;
-    while (headingDiff > Math.PI) headingDiff -= Math.PI * 2;
-    while (headingDiff < -Math.PI) headingDiff += Math.PI * 2;
-    this.heading += headingDiff * Math.min(1.0, this.config.turnRate * dt);
+    // Keep heading normalized within [-PI, PI]
+    while (this.heading > Math.PI) this.heading -= Math.PI * 2;
+    while (this.heading < -Math.PI) this.heading += Math.PI * 2;
 
-    // Aerodynamic Banking Roll & Pitch
-    const targetRoll = -headingDiff * 2.4;
+    // B. Aerodynamic Banking Roll & Pitch
+    const targetRoll = -activeTurnRate * 0.45;
     this.roll += (targetRoll - this.roll) * Math.min(1.0, this.config.rollRate * dt);
 
-    const targetPitch = forwardThrust * -0.09;
-    this.pitch += (targetPitch - this.pitch) * 10 * dt;
+    const targetPitch = forwardThrust * -0.06;
+    this.pitch += (targetPitch - this.pitch) * 8 * dt;
 
-    // Linear Velocity Update
+    // C. Linear Velocity Update (Decoupled Throttle & Momentum)
     const forwardVec = new THREE.Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
-    const desiredVel = forwardVec.clone().multiplyScalar(forwardThrust * targetSpeed);
-    this.velocity.lerp(desiredVel, Math.min(1.0, accel * dt * 0.14));
+    
+    if (Math.abs(forwardThrust) > 0.02) {
+      const speedMult = forwardThrust > 0 ? forwardThrust * targetSpeed : forwardThrust * (targetSpeed * 0.45);
+      const desiredVel = forwardVec.clone().multiplyScalar(speedMult);
+      this.velocity.lerp(desiredVel, Math.min(1.0, accel * dt * 0.16));
+    } else {
+      // Natural cruising space drag - ship smoothly decelerates without harsh jolts
+      this.velocity.multiplyScalar(Math.pow(0.88, dt * 60));
+    }
 
     this.position.addScaledVector(this.velocity, dt);
     this.group.position.copy(this.position);
@@ -945,12 +958,13 @@ export class Starfighter {
     const currentSpeed = this.velocity.length();
     const speedRatio = Math.min(1.0, currentSpeed / this.config.maxSpeed);
     const boostActive = this.isBoosting;
-    const flameScale = 0.35 + speedRatio * 0.95 + (boostActive ? 1.5 : 0) + Math.sin(time * 40) * 0.12;
+    const isAccelerating = forwardThrust > 0.05;
+    const flameScale = 0.2 + speedRatio * 0.8 + (boostActive ? 1.4 : 0) + (isAccelerating ? 0.4 : 0) + Math.sin(time * 30) * 0.08;
 
     this.thrusterFlames.forEach(({ outer, inner }) => {
       outer.scale.set(1.0 + (boostActive ? 0.35 : 0), 1.0 + (boostActive ? 0.35 : 0), flameScale);
       inner.scale.set(1.0, 1.0, flameScale * 1.15);
-      outer.visible = speedRatio > 0.05 || forwardThrust > 0 || boostActive;
+      outer.visible = speedRatio > 0.03 || isAccelerating || boostActive;
       inner.visible = outer.visible;
     });
 
@@ -1123,6 +1137,7 @@ export class Starfighter {
     this.targetHeading = 0;
     this.roll = 0;
     this.pitch = 0;
+    this.sensitivity = this.sensitivity || 1.0;
     this.heat = 0;
     this.overheated = false;
     this.weaponLevel = 1;
