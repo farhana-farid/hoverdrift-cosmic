@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="theme-color" content="#03060c" />
   <meta name="description" content="HOVERDRIFT: COSMIC EXPANSE — Photorealistic 360° space combat starfighter simulation with custom reference ships, PBR nebulae, interactive hangar bay, and capital boss battles." />
   <title>HOVERDRIFT: COSMIC EXPANSE</title>
@@ -1252,7 +1255,11 @@
         transform: translateX(-50%);
         padding: 8px 12px;
       }
-      .touch-controls { display: block; }
+    }
+
+    /* Touch controls only appear on actual touch-screen devices (smartphones/tablets) */
+    @media (pointer: coarse) {
+      .touch-controls { display: block !important; }
     }
 
     @media (max-width: 600px) and (orientation: portrait) {
@@ -3784,6 +3791,12 @@ class CosmicEnvironment {
     // Follow player smoothly
     this.group.position.x = playerPos.x * 0.98;
     this.group.position.z = playerPos.z * 0.98;
+
+    // Keep sunlight dynamically targeted at active battlefield sector
+    if (this.sunLight && this.sunLight.target) {
+      this.sunLight.target.position.set(playerPos.x, 0, playerPos.z);
+      this.sunLight.target.updateMatrixWorld();
+    }
 
     // Rotate space station habitat ring
     if (this.spaceStation && this.spaceStationRing) {
@@ -7526,7 +7539,7 @@ class CosmicGame {
       const targetCamZ = this.player.position.z - forwardZ * camDist;
       const targetCamY = camHeight;
 
-      const followSpeed = isClose ? 9.5 : 7.8;
+      const followSpeed = isClose ? 15.0 : 13.5;
       this.camera.position.x += (targetCamX - this.camera.position.x) * (1 - Math.exp(-followSpeed * dt));
       this.camera.position.z += (targetCamZ - this.camera.position.z) * (1 - Math.exp(-followSpeed * dt));
       this.camera.position.y += (targetCamY - this.camera.position.y) * (1 - Math.exp(-followSpeed * dt));

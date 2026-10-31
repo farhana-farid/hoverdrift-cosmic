@@ -486,7 +486,7 @@ export class CosmicGame {
       const targetCamZ = this.player.position.z - forwardZ * camDist;
       const targetCamY = camHeight;
 
-      const followSpeed = isClose ? 9.5 : 7.8;
+      const followSpeed = isClose ? 15.0 : 13.5;
       this.camera.position.x += (targetCamX - this.camera.position.x) * (1 - Math.exp(-followSpeed * dt));
       this.camera.position.z += (targetCamZ - this.camera.position.z) * (1 - Math.exp(-followSpeed * dt));
       this.camera.position.y += (targetCamY - this.camera.position.y) * (1 - Math.exp(-followSpeed * dt));

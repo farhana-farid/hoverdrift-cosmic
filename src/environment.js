@@ -632,6 +632,12 @@ export class CosmicEnvironment {
     this.group.position.x = playerPos.x * 0.98;
     this.group.position.z = playerPos.z * 0.98;
 
+    // Keep sunlight dynamically targeted at active battlefield sector
+    if (this.sunLight && this.sunLight.target) {
+      this.sunLight.target.position.set(playerPos.x, 0, playerPos.z);
+      this.sunLight.target.updateMatrixWorld();
+    }
+
     // Rotate space station habitat ring
     if (this.spaceStation && this.spaceStationRing) {
       this.spaceStationRing.rotation.z += 0.25 * dt;

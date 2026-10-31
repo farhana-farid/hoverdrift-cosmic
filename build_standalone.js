@@ -24,6 +24,9 @@ try {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="theme-color" content="#03060c" />
   <meta name="description" content="HOVERDRIFT: COSMIC EXPANSE — Photorealistic 360° space combat starfighter simulation with custom reference ships, PBR nebulae, interactive hangar bay, and capital boss battles." />
   <title>HOVERDRIFT: COSMIC EXPANSE</title>
@@ -1273,7 +1276,11 @@ try {
         transform: translateX(-50%);
         padding: 8px 12px;
       }
-      .touch-controls { display: block; }
+    }
+
+    /* Touch controls only appear on actual touch-screen devices (smartphones/tablets) */
+    @media (pointer: coarse) {
+      .touch-controls { display: block !important; }
     }
 
     @media (max-width: 600px) and (orientation: portrait) {
