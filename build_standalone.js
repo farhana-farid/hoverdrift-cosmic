@@ -1,8 +1,14 @@
 const fs = require('fs');
 
 try {
+  const texturesCode = fs.readFileSync('src/textures.js', 'utf8')
+    .replace(/export const/g, 'const')
+    .replace(/export function/g, 'function');
   const audioCode = fs.readFileSync('src/audio.js', 'utf8').replace(/export /g, '');
-  const shipCode = fs.readFileSync('src/ship.js', 'utf8').replace(/export const/g, 'const').replace(/export class/g, 'class');
+  const shipCode = fs.readFileSync('src/ship.js', 'utf8')
+    .replace(/import .*\n/g, '')
+    .replace(/export const/g, 'const')
+    .replace(/export class/g, 'class');
   const envCode = fs.readFileSync('src/environment.js', 'utf8').replace(/export /g, '');
   const astCode = fs.readFileSync('src/asteroids.js', 'utf8').replace(/export /g, '');
   const droneCode = fs.readFileSync('src/drones.js', 'utf8').replace(/export /g, '');
@@ -19,7 +25,7 @@ try {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#03060c" />
-  <meta name="description" content="HOVERDRIFT: COSMIC EXPANSE — Open-world 360° space combat starfighter simulation with photorealistic nebulae, multi-ship hangar, asteroid fields, and epic capital boss battles." />
+  <meta name="description" content="HOVERDRIFT: COSMIC EXPANSE — Photorealistic 360° space combat starfighter simulation with custom reference ships, PBR nebulae, interactive hangar bay, and capital boss battles." />
   <title>HOVERDRIFT: COSMIC EXPANSE</title>
 
   <!-- Offline / Local Fallback Three.js with CDN safety -->
@@ -44,7 +50,7 @@ try {
       --danger: #ff2244;
       --amber: #ffc247;
       --purple: #bf00ff;
-      --panel-bg: rgba(6, 14, 24, 0.82);
+      --panel-bg: rgba(6, 14, 24, 0.85);
       --panel-line: rgba(110, 180, 220, 0.22);
       --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
@@ -77,7 +83,6 @@ try {
       cursor: crosshair;
     }
 
-    /* Cinematic Vignette & Scanlines */
     .vignette {
       pointer-events: none;
       position: absolute;
@@ -95,7 +100,6 @@ try {
       z-index: 2;
     }
 
-    /* HUD Layout */
     .hud {
       pointer-events: none;
       position: absolute;
@@ -107,7 +111,6 @@ try {
       justify-content: space-between;
     }
 
-    /* Top Tactical Bar */
     .hud-top {
       display: flex;
       justify-content: space-between;
@@ -143,7 +146,6 @@ try {
       box-shadow: 0 0 10px var(--orange-glow);
     }
 
-    /* Dedicated Capital Ship Boss Health Bar */
     .hud-boss-bar-panel {
       position: absolute;
       top: 18px;
@@ -214,7 +216,6 @@ try {
       box-shadow: 0 0 8px rgba(255, 23, 68, 0.6);
     }
 
-    /* Central Alert Announcement */
     .hud-center-alert {
       position: absolute;
       top: 22%;
@@ -245,7 +246,6 @@ try {
       100% { transform: scale(1.02); opacity: 1.0; }
     }
 
-    /* Score & Combo Panel */
     .hud-score-panel {
       display: flex;
       flex-direction: column;
@@ -287,7 +287,6 @@ try {
       transition: opacity 0.2s;
     }
 
-    /* Tactical Combat Feed (Top Right) */
     .hud-feed {
       position: absolute;
       top: 90px;
@@ -316,7 +315,6 @@ try {
       100% { opacity: 1; transform: translateX(0); }
     }
 
-    /* Target Tracking Canvas */
     .hud-tracking-canvas {
       position: absolute;
       inset: 0;
@@ -326,7 +324,6 @@ try {
       z-index: 5;
     }
 
-    /* 360-Degree Radar Panel (Bottom Left) */
     .hud-radar-panel {
       position: absolute;
       bottom: 20px;
@@ -374,7 +371,6 @@ try {
       font-weight: 600;
     }
 
-    /* Vitals Status Panel (Bottom Center) */
     .hud-vitals {
       position: absolute;
       bottom: 20px;
@@ -458,7 +454,6 @@ try {
       100% { opacity: 1.0; }
     }
 
-    /* Key Hints */
     .hud-hints {
       position: absolute;
       bottom: 20px;
@@ -486,7 +481,7 @@ try {
     }
 
     /* =========================================================
-       SCI-FI HANGAR & STARFIGHTER SELECTION UI
+       SCI-FI HANGAR & REFERENCE SHIP SELECTION UI
        ========================================================= */
     .hangar-overlay {
       position: absolute;
@@ -494,9 +489,9 @@ try {
       z-index: 20;
       display: flex;
       flex-direction: column;
-      background: radial-gradient(circle at 50% 40%, rgba(8, 18, 32, 0.88) 0%, rgba(2, 4, 10, 0.98) 75%);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: radial-gradient(circle at 50% 40%, rgba(8, 18, 32, 0.90) 0%, rgba(2, 4, 10, 0.98) 75%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       padding: 24px 32px;
     }
 
@@ -529,14 +524,13 @@ try {
 
     .hangar-content {
       display: grid;
-      grid-template-columns: 360px 1fr 360px;
+      grid-template-columns: 380px 1fr 360px;
       gap: 24px;
       flex: 1;
       align-items: center;
-      padding: 20px 0;
+      padding: 16px 0;
     }
 
-    /* Left: Ship Selection Cards */
     .ship-cards-list {
       display: flex;
       flex-direction: column;
@@ -547,12 +541,13 @@ try {
       background: rgba(10, 20, 34, 0.65);
       border: 1px solid var(--panel-line);
       border-radius: 4px;
-      padding: 16px;
+      padding: 12px;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 14px;
+      align-items: center;
     }
 
     .ship-card:hover {
@@ -562,38 +557,47 @@ try {
     }
 
     .ship-card.active {
-      background: linear-gradient(90deg, rgba(62, 240, 255, 0.16), rgba(6, 14, 24, 0.85));
+      background: linear-gradient(90deg, rgba(62, 240, 255, 0.18), rgba(6, 14, 24, 0.85));
       border-color: var(--cyan);
       box-shadow: 0 0 22px rgba(62, 240, 255, 0.25);
     }
 
-    .card-top {
+    .card-thumb {
+      width: 100px;
+      height: 72px;
+      border-radius: 3px;
+      background-size: cover;
+      background-position: center;
+      border: 1px solid var(--panel-line);
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    .card-info {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .card-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
-      letter-spacing: 0.16em;
+      letter-spacing: 0.14em;
       color: #fff;
     }
 
     .card-type {
       font-family: var(--mono);
-      font-size: 9px;
-      color: var(--muted);
-      letter-spacing: 0.14em;
+      font-size: 8.5px;
+      color: var(--cyan);
+      letter-spacing: 0.12em;
     }
 
     .card-desc {
-      font-size: 10.5px;
+      font-size: 10px;
       color: #8faec9;
-      line-height: 1.45;
+      line-height: 1.35;
     }
 
-    /* Center: 3D Holographic Turntable Canvas */
     .hangar-turntable-container {
       position: relative;
       height: 100%;
@@ -625,15 +629,14 @@ try {
       color: var(--muted);
     }
 
-    /* Right: Ship Diagnostics & Stat Meters */
     .ship-stats-panel {
-      background: rgba(8, 16, 28, 0.82);
+      background: rgba(8, 16, 28, 0.85);
       border: 1px solid var(--panel-line);
       border-radius: 4px;
-      padding: 22px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
 
     .stats-header {
@@ -689,7 +692,7 @@ try {
       justify-content: space-between;
       align-items: center;
       border-top: 1px solid var(--panel-line);
-      padding-top: 18px;
+      padding-top: 16px;
     }
 
     .mission-brief {
@@ -733,7 +736,6 @@ try {
       box-shadow: 0 0 48px rgba(62, 240, 255, 0.75);
     }
 
-    /* Mobile Virtual Touch Controls */
     .touch-controls {
       display: none;
       pointer-events: none;
@@ -819,75 +821,78 @@ try {
   <!-- Tactical HUD Container -->
   <div class="hud" id="hud-container"></div>
 
-  <!-- Interactive Sci-Fi Hangar & Ship Selection Overlay -->
+  <!-- Interactive Sci-Fi Hangar & Reference Ship Selection Overlay -->
   <div class="hangar-overlay" id="hangar-overlay">
     <header class="hangar-header">
       <div class="hangar-brand">
         <h1 class="hangar-title">HOVERDRIFT<span> // HANGAR BAY</span></h1>
-        <div class="hangar-subtitle">SELECT STARFIGHTER // DEPLOYMENT PROTOCOL READY</div>
+        <div class="hangar-subtitle">SELECT REFERENCE STARFIGHTER // PHOTOREALISTIC PBR PROTOCOL</div>
       </div>
     </header>
 
     <div class="hangar-content">
       <!-- Ship Selection Cards (Left) -->
       <div class="ship-cards-list">
-        <!-- Ship 1: Aether Vanguard -->
-        <div class="ship-card active" data-ship="aether" id="card-aether">
-          <div class="card-top">
-            <span class="card-title">AETHER VANGUARD</span>
-            <span class="card-type">INTERCEPTOR</span>
-          </div>
-          <p class="card-desc">Sleek aerodynamic spaceframe with cranked delta wings, dual canted stabilizers, and rapid blue plasma cannons.</p>
-        </div>
-
-        <!-- Ship 2: Void Dreadnought -->
-        <div class="ship-card" data-ship="dreadnought" id="card-dreadnought">
-          <div class="card-top">
+        <!-- Ship 1: Void Dreadnought (Ref Image 1) -->
+        <div class="ship-card active" data-ship="dreadnought" id="card-dreadnought">
+          <div class="card-thumb" id="thumb-dreadnought"></div>
+          <div class="card-info">
             <span class="card-title">VOID DREADNOUGHT</span>
-            <span class="card-type">TWIN-HULL CRUISER</span>
+            <span class="card-type">TWIN-HULL WARSHIP</span>
+            <p class="card-desc">Stealth composite armor, catamaran hulls, heavy rail-cannons.</p>
           </div>
-          <p class="card-desc">Monolithic warship with stealth composite armor, heavy catamaran hulls, and twin rail-cannons.</p>
         </div>
 
-        <!-- Ship 3: Crimson Interceptor -->
-        <div class="ship-card" data-ship="crimson" id="card-crimson">
-          <div class="card-top">
-            <span class="card-title">CRIMSON INTERCEPTOR</span>
-            <span class="card-type">TACTICAL STRIKE</span>
+        <!-- Ship 2: Aether Vanguard (Ref Image 2) -->
+        <div class="ship-card" data-ship="aether" id="card-aether">
+          <div class="card-thumb" id="thumb-aether"></div>
+          <div class="card-info">
+            <span class="card-title">AETHER VANGUARD</span>
+            <span class="card-type">HIGH-AGILITY INTERCEPTOR</span>
+            <p class="card-desc">Cranked delta wings, canted stabilizers, cyan plasma bolters.</p>
           </div>
-          <p class="card-desc">Brushed titanium aero-body with racing crimson foils, twin circular VTOL thrusters, and triple lasers.</p>
+        </div>
+
+        <!-- Ship 3: Crimson Interceptor (Ref Image 3) -->
+        <div class="ship-card" data-ship="crimson" id="card-crimson">
+          <div class="card-thumb" id="thumb-crimson"></div>
+          <div class="card-info">
+            <span class="card-title">CRIMSON INTERCEPTOR</span>
+            <span class="card-type">TACTICAL STRIKE FIGHTER</span>
+            <p class="card-desc">Brushed titanium, crimson cowlings, dual VTOL turbine rings.</p>
+          </div>
         </div>
       </div>
 
       <!-- Center: 3D Holographic Turntable Showcase -->
       <div class="hangar-turntable-container">
         <canvas id="hangar-turntable-canvas"></canvas>
-        <div class="turntable-hint">DRAG TO INSPECT 360° MODEL</div>
+        <div class="turntable-hint">DRAG TO ROTATE 360° PBR MODEL</div>
       </div>
 
       <!-- Right: Ship Diagnostics & Stat Meters -->
       <div class="ship-stats-panel">
-        <div class="stats-header" id="stats-ship-title">AETHER VANGUARD // STATS</div>
+        <div class="stats-header" id="stats-ship-title">VOID DREADNOUGHT // STATS</div>
         <div class="stat-bar-group">
           <div class="stat-row">
-            <div class="stat-meta"><span>TOP SPEED</span><b id="stat-speed-val">95%</b></div>
-            <div class="stat-track"><div class="stat-fill" id="stat-speed-bar" style="width: 95%;"></div></div>
+            <div class="stat-meta"><span>TOP SPEED</span><b id="stat-speed-val">70%</b></div>
+            <div class="stat-track"><div class="stat-fill" id="stat-speed-bar" style="width: 70%;"></div></div>
           </div>
           <div class="stat-row">
-            <div class="stat-meta"><span>AGILITY & ROLL</span><b id="stat-agility-val">98%</b></div>
-            <div class="stat-track"><div class="stat-fill" id="stat-agility-bar" style="width: 98%;"></div></div>
+            <div class="stat-meta"><span>AGILITY & ROLL</span><b id="stat-agility-val">62%</b></div>
+            <div class="stat-track"><div class="stat-fill" id="stat-agility-bar" style="width: 62%;"></div></div>
           </div>
           <div class="stat-row">
-            <div class="stat-meta"><span>SHIELD CAPACITY</span><b id="stat-shields-val">75%</b></div>
-            <div class="stat-track"><div class="stat-fill" id="stat-shields-bar" style="width: 75%;"></div></div>
+            <div class="stat-meta"><span>SHIELD CAPACITY</span><b id="stat-shields-val">98%</b></div>
+            <div class="stat-track"><div class="stat-fill" id="stat-shields-bar" style="width: 98%;"></div></div>
           </div>
           <div class="stat-row">
-            <div class="stat-meta"><span>HULL ARMOR</span><b id="stat-hull-val">70%</b></div>
-            <div class="stat-track"><div class="stat-fill" id="stat-hull-bar" style="width: 70%;"></div></div>
+            <div class="stat-meta"><span>HULL ARMOR</span><b id="stat-hull-val">100%</b></div>
+            <div class="stat-track"><div class="stat-fill" id="stat-hull-bar" style="width: 100%;"></div></div>
           </div>
           <div class="stat-row">
-            <div class="stat-meta"><span>FIREPOWER</span><b id="stat-firepower-val">82%</b></div>
-            <div class="stat-track"><div class="stat-fill" id="stat-firepower-bar" style="width: 82%;"></div></div>
+            <div class="stat-meta"><span>FIREPOWER</span><b id="stat-firepower-val">96%</b></div>
+            <div class="stat-track"><div class="stat-fill" id="stat-firepower-bar" style="width: 96%;"></div></div>
           </div>
         </div>
       </div>
@@ -904,6 +909,7 @@ try {
 
   <script>
     // Self-Contained Standalone Game Bundle
+    ${texturesCode}
     ${audioCode}
     ${shipCode}
     ${envCode}
@@ -924,13 +930,18 @@ try {
       const btnLaunch = document.getElementById('btn-launch-mission');
       const turntableCanvas = document.getElementById('hangar-turntable-canvas');
 
-      let selectedShip = 'aether';
+      // Populate reference image thumbnails
+      document.getElementById('thumb-dreadnought').style.backgroundImage = 'url(' + SHIP_IMAGES.dreadnought + ')';
+      document.getElementById('thumb-aether').style.backgroundImage = 'url(' + SHIP_IMAGES.aether + ')';
+      document.getElementById('thumb-crimson').style.backgroundImage = 'url(' + SHIP_IMAGES.crimson + ')';
+
+      let selectedShip = 'dreadnought';
       let mainGame = null;
 
       // Hangar 3D Turntable Scene
       const hangarScene = new THREE.Scene();
       const hangarCamera = new THREE.PerspectiveCamera(45, turntableCanvas.clientWidth / turntableCanvas.clientHeight, 0.1, 100);
-      hangarCamera.position.set(0, 3.2, 7.8);
+      hangarCamera.position.set(0, 3.2, 8.2);
       hangarCamera.lookAt(0, 0.2, 0);
 
       const hangarRenderer = new THREE.WebGLRenderer({
@@ -940,30 +951,29 @@ try {
       });
       hangarRenderer.setSize(turntableCanvas.clientWidth, turntableCanvas.clientHeight);
       hangarRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      hangarRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+      hangarRenderer.toneMappingExposure = 1.25;
 
-      // Hangar Lighting & Pedestal
-      const hSun = new THREE.DirectionalLight(0xffffff, 2.2);
-      hSun.position.set(5, 8, 6);
+      // Hangar PBR Environment & Lighting
+      const hSun = new THREE.DirectionalLight(0xfff5ea, 2.8);
+      hSun.position.set(6, 9, 7);
       hangarScene.add(hSun);
 
-      const hRim = new THREE.DirectionalLight(0x3ef0ff, 1.8);
-      hRim.position.set(-6, 2, -6);
+      const hRim = new THREE.DirectionalLight(0x3ef0ff, 2.2);
+      hRim.position.set(-7, 3, -7);
       hangarScene.add(hRim);
 
-      const hAmb = new THREE.AmbientLight(0x182433, 1.2);
+      const hAmb = new THREE.AmbientLight(0x1a2638, 1.4);
       hangarScene.add(hAmb);
 
-      // Holographic Platform Grid
-      const grid = new THREE.GridHelper(12, 24, 0x3ef0ff, 0x1a334d);
+      const grid = new THREE.GridHelper(12, 24, 0x3ef0ff, 0x162c42);
       grid.position.y = -0.6;
       hangarScene.add(grid);
 
-      // Preview Ship Display Group
       let previewShipGroup = new THREE.Group();
       hangarScene.add(previewShipGroup);
 
       function updatePreviewModel(type) {
-        // Clear previous
         while (previewShipGroup.children.length > 0) {
           previewShipGroup.remove(previewShipGroup.children[0]);
         }
@@ -971,26 +981,24 @@ try {
         const tempShip = new Starfighter(previewShipGroup, THREE, type);
         tempShip.group.position.set(0, 0, 0);
 
-        // Update Stat Meters
         const cfg = SHIP_CONFIGS[type];
-        document.getElementById('stats-ship-title').textContent = \`\${cfg.name} // STATS\`;
-        document.getElementById('stat-speed-val').textContent = \`\${cfg.stats.speed}%\`;
-        document.getElementById('stat-speed-bar').style.width = \`\${cfg.stats.speed}%\`;
-        document.getElementById('stat-agility-val').textContent = \`\${cfg.stats.agility}%\`;
-        document.getElementById('stat-agility-bar').style.width = \`\${cfg.stats.agility}%\`;
-        document.getElementById('stat-shields-val').textContent = \`\${cfg.stats.shields}%\`;
-        document.getElementById('stat-shields-bar').style.width = \`\${cfg.stats.shields}%\`;
-        document.getElementById('stat-hull-val').textContent = \`\${cfg.stats.hull}%\`;
-        document.getElementById('stat-hull-bar').style.width = \`\${cfg.stats.hull}%\`;
-        document.getElementById('stat-firepower-val').textContent = \`\${cfg.stats.firepower}%\`;
-        document.getElementById('stat-firepower-bar').style.width = \`\${cfg.stats.firepower}%\`;
+        document.getElementById('stats-ship-title').textContent = cfg.name + ' // STATS';
+        document.getElementById('stat-speed-val').textContent = cfg.stats.speed + '%';
+        document.getElementById('stat-speed-bar').style.width = cfg.stats.speed + '%';
+        document.getElementById('stat-agility-val').textContent = cfg.stats.agility + '%';
+        document.getElementById('stat-agility-bar').style.width = cfg.stats.agility + '%';
+        document.getElementById('stat-shields-val').textContent = cfg.stats.shields + '%';
+        document.getElementById('stat-shields-bar').style.width = cfg.stats.shields + '%';
+        document.getElementById('stat-hull-val').textContent = cfg.stats.hull + '%';
+        document.getElementById('stat-hull-bar').style.width = cfg.stats.hull + '%';
+        document.getElementById('stat-firepower-val').textContent = cfg.stats.firepower + '%';
+        document.getElementById('stat-firepower-bar').style.width = cfg.stats.firepower + '%';
       }
 
-      updatePreviewModel('aether');
+      updatePreviewModel('dreadnought');
 
-      // Ship Card Click Handlers
-      ['aether', 'dreadnought', 'crimson'].forEach(id => {
-        const card = document.getElementById(\`card-\${id}\`);
+      ['dreadnought', 'aether', 'crimson'].forEach(id => {
+        const card = document.getElementById('card-' + id);
         card.addEventListener('click', () => {
           document.querySelectorAll('.ship-card').forEach(c => c.classList.remove('active'));
           card.classList.add('active');
@@ -999,7 +1007,6 @@ try {
         });
       });
 
-      // Turntable Drag Interaction
       let isDragging = false;
       let prevMouseX = 0;
       let autoRotate = true;
@@ -1023,7 +1030,6 @@ try {
         }
       });
 
-      // Turntable Loop
       let turntableRunning = true;
       function animateTurntable() {
         if (!turntableRunning) return;
@@ -1035,7 +1041,6 @@ try {
       }
       animateTurntable();
 
-      // Launch Mission
       btnLaunch.addEventListener('click', () => {
         turntableRunning = false;
         hangarOverlay.style.opacity = '0';
@@ -1048,7 +1053,7 @@ try {
         }
       });
 
-      // Mobile touch stick
+      // Mobile Touch stick helpers
       const stick = document.getElementById('touch-stick-left');
       const knob = document.getElementById('stick-knob-left');
       const btnTouchBoost = document.getElementById('btn-touch-boost');

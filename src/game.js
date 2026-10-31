@@ -50,7 +50,7 @@ export class CosmicGame {
     this.hud = new TacticalHUD(this.hudContainer);
     this.input = new InputController(this.canvas, this.camera, THREE);
     this.particles = new ParticleSystem(this.scene, THREE);
-    this.environment = new CosmicEnvironment(this.scene, THREE);
+    this.environment = new CosmicEnvironment(this.scene, this.renderer, THREE);
     this.player = new Starfighter(this.scene, THREE, this.selectedShipType);
     this.asteroids = new AsteroidManager(this.scene, THREE);
     this.drones = new DroneManager(this.scene, THREE);

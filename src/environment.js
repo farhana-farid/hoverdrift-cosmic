@@ -1,20 +1,22 @@
 /**
- * Hyper-Realistic Photorealistic Cosmic Environment
- * Features high-resolution multi-tiered starfields, volumetric glowing nebulae,
- * cinematic gas giant planet with atmospheric rim scattering, realistic solar lens flare,
- * and deep-space dust particles.
+ * Hyper-Realistic Photorealistic Cosmic Environment & PBR Image-Based Lighting
+ * Features IBL environment reflection map, high-resolution multi-tiered starfields,
+ * volumetric glowing nebulae, cinematic gas giant planet with atmospheric rim scattering,
+ * realistic solar lens flare, and deep-space dust particles.
  */
 export class CosmicEnvironment {
-  constructor(scene, THREE) {
+  constructor(scene, renderer, THREE) {
     this.scene = scene;
+    this.renderer = renderer;
     this.THREE = THREE;
 
     this.group = new THREE.Group();
     this.dustParticles = null;
     this.dustPositions = null;
-    this.dustCount = 900;
-    this.dustRadius = 260;
+    this.dustCount = 1000;
+    this.dustRadius = 280;
 
+    this._createPBREnvironmentMap();
     this._createDeepStarfield();
     this._createVolumetricNebulae();
     this._createCinematicPlanet();
@@ -24,15 +26,76 @@ export class CosmicEnvironment {
     this.scene.add(this.group);
   }
 
+  _createPBREnvironmentMap() {
+    const THREE = this.THREE;
+    if (!this.renderer) return;
+
+    try {
+      const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+      pmremGenerator.compileEquirectangularShader();
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      // Deep cosmic gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
+      bgGrad.addColorStop(0, '#02050e');
+      bgGrad.addColorStop(0.5, '#060f1c');
+      bgGrad.addColorStop(1, '#010307');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1024, 512);
+
+      // Cosmic nebula streaks in reflection map
+      const nebGrad1 = ctx.createRadialGradient(250, 200, 10, 250, 200, 240);
+      nebGrad1.addColorStop(0, 'rgba(62, 240, 255, 0.45)');
+      nebGrad1.addColorStop(0.5, 'rgba(30, 80, 180, 0.2)');
+      nebGrad1.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = nebGrad1;
+      ctx.fillRect(0, 0, 1024, 512);
+
+      const nebGrad2 = ctx.createRadialGradient(780, 280, 20, 780, 280, 300);
+      nebGrad2.addColorStop(0, 'rgba(255, 60, 140, 0.35)');
+      nebGrad2.addColorStop(0.6, 'rgba(110, 20, 160, 0.15)');
+      nebGrad2.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = nebGrad2;
+      ctx.fillRect(0, 0, 1024, 512);
+
+      // Directional Sun highlight for sharp specular reflection
+      const sunGrad = ctx.createRadialGradient(180, 140, 0, 180, 140, 60);
+      sunGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      sunGrad.addColorStop(0.2, 'rgba(255, 230, 180, 0.8)');
+      sunGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = sunGrad;
+      ctx.fillRect(0, 0, 1024, 512);
+
+      // Distant stars reflection specks
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 400; i++) {
+        ctx.fillRect(Math.random() * 1024, Math.random() * 512, Math.random() > 0.8 ? 2 : 1, 1);
+      }
+
+      const envTexture = new THREE.CanvasTexture(canvas);
+      envTexture.mapping = THREE.EquirectangularReflectionMapping;
+
+      const envMap = pmremGenerator.fromEquirectangular(envTexture).texture;
+      this.scene.environment = envMap;
+      pmremGenerator.dispose();
+      envTexture.dispose();
+    } catch (e) {
+      console.warn('PBR Environment Map initialization skipped:', e);
+    }
+  }
+
   _createDeepStarfield() {
     const THREE = this.THREE;
-    const count = 4200;
+    const count = 4800;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
 
-    // Astronomical star spectral color temperatures
     const starPalette = [
       new THREE.Color(0xffffff), // White A-class
       new THREE.Color(0xaad8ff), // Brilliant Blue B-class
@@ -47,20 +110,20 @@ export class CosmicEnvironment {
       const v = Math.random();
       const theta = u * 2.0 * Math.PI;
       const phi = Math.acos(2.0 * v - 1.0);
-      const r = 2600 + Math.random() * 600;
+      const r = 2600 + Math.random() * 700;
 
       const sinPhi = Math.sin(phi);
       positions[i * 3] = r * sinPhi * Math.cos(theta);
-      positions[i * 3 + 1] = r * Math.cos(phi) * 0.7; // Cosmic disc flattening
+      positions[i * 3 + 1] = r * Math.cos(phi) * 0.7;
       positions[i * 3 + 2] = r * sinPhi * Math.sin(theta);
 
       const col = starPalette[Math.floor(Math.random() * starPalette.length)];
-      const brightness = 0.4 + Math.random() * 0.6;
+      const brightness = 0.45 + Math.random() * 0.55;
       colors[i * 3] = col.r * brightness;
       colors[i * 3 + 1] = col.g * brightness;
       colors[i * 3 + 2] = col.b * brightness;
 
-      sizes[i] = (Math.random() > 0.94) ? 4.8 : (1.6 + Math.random() * 2.2);
+      sizes[i] = (Math.random() > 0.94) ? 4.8 : (1.8 + Math.random() * 2.4);
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -69,7 +132,7 @@ export class CosmicEnvironment {
 
     const starTexture = this._generateStarTexture();
     const material = new THREE.PointsMaterial({
-      size: 3.2,
+      size: 3.4,
       map: starTexture,
       vertexColors: true,
       transparent: true,
@@ -86,18 +149,17 @@ export class CosmicEnvironment {
     const THREE = this.THREE;
     const nebulaTexture = this._generateNebulaTexture();
 
-    // 10 Volumetric High-Density Cosmic Nebula Clouds
     const nebulae = [
-      { color: 0x4822cf, size: 1200, x: -1100, y: 220, z: -1400, opacity: 0.38 }, // Deep Indigo-Violet
-      { color: 0x0088ff, size: 1400, x: 1400, y: -120, z: -1600, opacity: 0.34 }, // Sapphire Expanse
-      { color: 0xff1493, size: 950, x: 900, y: 320, z: 1100, opacity: 0.30 },    // Luminous Magenta
-      { color: 0x00e5ff, size: 1100, x: -1300, y: -200, z: 950, opacity: 0.32 },  // Electric Cyan
-      { color: 0xff8800, size: 850, x: -500, y: 400, z: -1800, opacity: 0.28 },  // Solar Amber Dust
-      { color: 0x9400d3, size: 1300, x: 1800, y: 150, z: 500, opacity: 0.26 },   // Dark Orchid
-      { color: 0x00ffcc, size: 800, x: -800, y: -250, z: -850, opacity: 0.25 },  // Turquoise Shimmer
-      { color: 0x7b2cbf, size: 1050, x: 300, y: -380, z: 1500, opacity: 0.28 },  // Royal Violet
-      { color: 0x3a0ca3, size: 1500, x: -1600, y: 50, z: -400, opacity: 0.32 },  // Midnight Void
-      { color: 0xf72585, size: 900, x: 1100, y: -280, z: -900, opacity: 0.25 }   // Radiant Pink
+      { color: 0x4822cf, size: 1300, x: -1100, y: 220, z: -1400, opacity: 0.38 },
+      { color: 0x0088ff, size: 1500, x: 1400, y: -120, z: -1600, opacity: 0.35 },
+      { color: 0xff1493, size: 1000, x: 900, y: 320, z: 1100, opacity: 0.32 },
+      { color: 0x00e5ff, size: 1200, x: -1300, y: -200, z: 950, opacity: 0.34 },
+      { color: 0xff8800, size: 900, x: -500, y: 400, z: -1800, opacity: 0.28 },
+      { color: 0x9400d3, size: 1400, x: 1800, y: 150, z: 500, opacity: 0.28 },
+      { color: 0x00ffcc, size: 850, x: -800, y: -250, z: -850, opacity: 0.26 },
+      { color: 0x7b2cbf, size: 1100, x: 300, y: -380, z: 1500, opacity: 0.30 },
+      { color: 0x3a0ca3, size: 1600, x: -1600, y: 50, z: -400, opacity: 0.34 },
+      { color: 0xf72585, size: 950, x: 1100, y: -280, z: -900, opacity: 0.26 }
     ];
 
     this.nebulaSprites = [];
@@ -122,10 +184,8 @@ export class CosmicEnvironment {
   _createCinematicPlanet() {
     const THREE = this.THREE;
     const planetGroup = new THREE.Group();
-    // Position distant giant planet on the celestial horizon (as in Ref Image 1)
     planetGroup.position.set(1600, -320, 2100);
 
-    // Planet Core Sphere
     const planetGeom = new THREE.SphereGeometry(380, 48, 48);
     const planetTexture = this._generatePlanetTexture();
     const planetMat = new THREE.MeshStandardMaterial({
@@ -137,7 +197,6 @@ export class CosmicEnvironment {
     const planet = new THREE.Mesh(planetGeom, planetMat);
     planetGroup.add(planet);
 
-    // Atmospheric Glow Rim Envelope
     const atmoGeom = new THREE.SphereGeometry(395, 32, 32);
     const atmoMat = new THREE.MeshBasicMaterial({
       color: 0x4cc9f0,
@@ -149,7 +208,6 @@ export class CosmicEnvironment {
     const atmo = new THREE.Mesh(atmoGeom, atmoMat);
     planetGroup.add(atmo);
 
-    // Concentric Planetary Rings
     const ringGeom = new THREE.RingGeometry(460, 720, 64);
     ringGeom.rotateX(Math.PI / 2.3);
     ringGeom.rotateY(0.4);
@@ -172,17 +230,14 @@ export class CosmicEnvironment {
     const sunGroup = new THREE.Group();
     sunGroup.position.set(-2200, 520, -2600);
 
-    // 1. Incandescent Sun Core
     const sunCore = new THREE.Mesh(
       new THREE.SphereGeometry(180, 32, 32),
       new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.99 })
     );
     sunGroup.add(sunCore);
 
-    // 2. Multi-Element Solar Corona & Glare Sprites
     const flareTex = this._generateNebulaTexture();
 
-    // Hot Inner Corona
     const innerCorona = new THREE.Sprite(new THREE.SpriteMaterial({
       map: flareTex,
       color: 0xffe099,
@@ -194,7 +249,6 @@ export class CosmicEnvironment {
     innerCorona.scale.set(950, 950, 1);
     sunGroup.add(innerCorona);
 
-    // Chromatic Outer Halo
     const outerHalo = new THREE.Sprite(new THREE.SpriteMaterial({
       map: flareTex,
       color: 0x44aaff,
@@ -206,7 +260,6 @@ export class CosmicEnvironment {
     outerHalo.scale.set(1800, 1800, 1);
     sunGroup.add(outerHalo);
 
-    // Anamorphic Horizontal Streak (Cinematic sci-fi flare)
     const streak = new THREE.Sprite(new THREE.SpriteMaterial({
       map: flareTex,
       color: 0x77d4ff,
@@ -218,22 +271,18 @@ export class CosmicEnvironment {
     streak.scale.set(4500, 220, 1);
     sunGroup.add(streak);
 
-    // Dynamic Directional Sun Light illuminating open cosmic battlefield
-    const sunLight = new THREE.DirectionalLight(0xfff7ea, 1.8);
+    const sunLight = new THREE.DirectionalLight(0xfff7ea, 2.0);
     sunLight.position.copy(sunGroup.position);
     this.scene.add(sunLight);
 
-    // Deep space fill lighting
-    const fillLight = new THREE.DirectionalLight(0x1a3048, 0.85);
+    const fillLight = new THREE.DirectionalLight(0x1a3048, 0.95);
     fillLight.position.set(2200, -400, 2600);
     this.scene.add(fillLight);
 
-    // Ambient Space Radiance
-    const ambientLight = new THREE.AmbientLight(0x141f2e, 0.85);
+    const ambientLight = new THREE.AmbientLight(0x141f2e, 0.9);
     this.scene.add(ambientLight);
 
-    // Cosmic sky-to-ground gradient
-    const hemiLight = new THREE.HemisphereLight(0x284262, 0x070b14, 0.9);
+    const hemiLight = new THREE.HemisphereLight(0x284262, 0x070b14, 0.95);
     this.scene.add(hemiLight);
 
     this.group.add(sunGroup);
@@ -310,18 +359,15 @@ export class CosmicEnvironment {
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
 
-    // Deep ocean base
     ctx.fillStyle = '#0f3152';
     ctx.fillRect(0, 0, 512, 256);
 
-    // Swirling atmospheric cloud bands
     for (let y = 0; y < 256; y += 4) {
       const alpha = 0.15 + Math.sin(y * 0.08) * 0.12;
       ctx.fillStyle = `rgba(180, 225, 255, ${alpha})`;
       ctx.fillRect(0, y, 512, 4);
     }
 
-    // Organic atmospheric vortex storms
     for (let i = 0; i < 18; i++) {
       const cx = Math.random() * 512;
       const cy = 40 + Math.random() * 176;
@@ -343,12 +389,10 @@ export class CosmicEnvironment {
       this.starPoints.position.set(playerPos.x * 0.94, 0, playerPos.z * 0.94);
     }
 
-    // Slowly rotate distant planet for living cosmos effect
     if (this.planetGroup) {
       this.planetGroup.rotation.y += 0.008 * dt;
     }
 
-    // Wrap local space dust around player position
     if (this.dustParticles && this.dustPositions) {
       const posAttr = this.dustParticles.geometry.attributes.position;
       const r = this.dustRadius;
