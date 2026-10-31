@@ -230,10 +230,11 @@ export class AsteroidManager {
     for (let i = 0; i < this.asteroids.length; i++) {
       const ast = this.asteroids[i];
       const dx = laser.position.x - ast.mesh.position.x;
+      const dy = laser.position.y - ast.mesh.position.y;
       const dz = laser.position.z - ast.mesh.position.z;
-      const distSq = dx * dx + dz * dz;
+      const distSq = dx * dx + dy * dy + dz * dz;
 
-      if (distSq < ast.radius * ast.radius) {
+      if (distSq < (ast.radius + 1.2) * (ast.radius + 1.2)) {
         return { hit: true, result: this.damageAsteroid(i, damage, particles, audio) };
       }
     }
@@ -244,23 +245,27 @@ export class AsteroidManager {
     for (let i = 0; i < this.asteroids.length; i++) {
       const ast = this.asteroids[i];
       const dx = ship.position.x - ast.mesh.position.x;
+      const dy = ship.position.y - ast.mesh.position.y;
       const dz = ship.position.z - ast.mesh.position.z;
-      const dist = Math.hypot(dx, dz);
+      const dist = Math.hypot(dx, dy, dz);
       const minDist = ast.radius + 2.0;
 
       if (dist < minDist && dist > 0.001) {
-        // Bounce ship smoothly away from asteroid surface
+        // Bounce ship smoothly away from asteroid surface in 3D
         const nx = dx / dist;
+        const ny = dy / dist;
         const nz = dz / dist;
         const penetration = minDist - dist;
 
         ship.position.x += nx * penetration;
+        ship.position.y += ny * penetration;
         ship.position.z += nz * penetration;
 
         // Dampen velocity along normal
-        const vDotN = ship.velocity.x * nx + ship.velocity.z * nz;
+        const vDotN = ship.velocity.x * nx + ship.velocity.y * ny + ship.velocity.z * nz;
         if (vDotN < 0) {
           ship.velocity.x -= vDotN * nx * 1.4;
+          ship.velocity.y -= vDotN * ny * 1.4;
           ship.velocity.z -= vDotN * nz * 1.4;
         }
 

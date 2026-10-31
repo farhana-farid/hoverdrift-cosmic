@@ -1110,6 +1110,44 @@
       box-shadow: 0 0 18px rgba(62, 240, 255, 0.22);
     }
 
+    .touch-altitude-buttons {
+      pointer-events: auto;
+      touch-action: none;
+      position: absolute;
+      bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+      left: calc(24px + env(safe-area-inset-left, 0px));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .touch-alt-btn {
+      width: 54px;
+      height: 46px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      color: #3ef0ff;
+      background: radial-gradient(circle, rgba(14, 34, 60, 0.88) 0%, rgba(6, 16, 28, 0.96) 100%);
+      border: 1.5px solid rgba(62, 240, 255, 0.5);
+      box-shadow: 0 0 14px rgba(62, 240, 255, 0.3);
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform 0.1s ease, background 0.1s ease;
+    }
+
+    .touch-alt-btn:active {
+      transform: scale(0.92);
+      background: rgba(62, 240, 255, 0.35);
+      border-color: #3ef0ff;
+      box-shadow: 0 0 22px rgba(62, 240, 255, 0.7);
+    }
+
     .stick-knob {
       position: absolute;
       top: 50%;
@@ -2939,28 +2977,70 @@ class Starfighter {
     const targetRoll = -activeTurnRate * 0.45;
     this.roll += (targetRoll - this.roll) * Math.min(1.0, this.config.rollRate * dt);
 
-    const targetPitch = forwardThrust * -0.06;
-    this.pitch += (targetPitch - this.pitch) * 8 * dt;
+    // Vertical Altitude Thrust & Pitch Aiming (Climb / Dive)
+    const vertInput = inputState.vertical || 0;
+    let desiredPitch = 0;
 
-    // C. Linear Velocity Update (Decoupled Throttle & Momentum - 0 allocations)
-    this._forwardVec.set(Math.sin(this.heading), 0, Math.cos(this.heading));
+    if (Math.abs(vertInput) > 0.05) {
+      // Direct keyboard (R/F, Space, PageUp/Down) or mobile (▲ UP / ▼ DN) altitude control
+      desiredPitch = vertInput * 0.58; // ~33° climb / dive
+      const targetVertVel = vertInput * 46 * (this.isBoosting ? 1.5 : 1.0);
+      this.velocity.y += (targetVertVel - this.velocity.y) * Math.min(1.0, 7.5 * dt);
+    } else if (inputState.hasMouseSteer && Math.abs(inputState.mousePitch || 0) > 0.05) {
+      // Desktop mouse vertical aim pitch
+      desiredPitch = inputState.mousePitch;
+      const fwdSpeed = this.velocity.length();
+      const targetVertVel = Math.sin(this.pitch) * Math.max(20, fwdSpeed);
+      this.velocity.y += (targetVertVel - this.velocity.y) * Math.min(1.0, 5.0 * dt);
+    } else {
+      // Level flight recovery
+      desiredPitch = forwardThrust * -0.04;
+      this.velocity.y *= Math.pow(0.88, dt * 60);
+    }
+
+    // Clamp pitch between -55° and +55°
+    desiredPitch = Math.max(-0.95, Math.min(0.95, desiredPitch));
+    this.pitch += (desiredPitch - this.pitch) * Math.min(1.0, 6.5 * dt);
+
+    // C. Linear Velocity Update (Full 3D Forward Momentum)
+    const cosPitch = Math.cos(this.pitch);
+    const sinPitch = Math.sin(this.pitch);
+    this._forwardVec.set(
+      Math.sin(this.heading) * cosPitch,
+      sinPitch,
+      Math.cos(this.heading) * cosPitch
+    );
     
     if (Math.abs(forwardThrust) > 0.02) {
       const speedMult = forwardThrust > 0 ? forwardThrust * targetSpeed : forwardThrust * (targetSpeed * 0.45);
       this._desiredVel.copy(this._forwardVec).multiplyScalar(speedMult);
-      this.velocity.lerp(this._desiredVel, Math.min(1.0, accel * dt * 0.16));
+      this.velocity.x += (this._desiredVel.x - this.velocity.x) * Math.min(1.0, accel * dt * 0.16);
+      this.velocity.z += (this._desiredVel.z - this.velocity.z) * Math.min(1.0, accel * dt * 0.16);
+      if (Math.abs(vertInput) < 0.05) {
+        this.velocity.y += (this._desiredVel.y - this.velocity.y) * Math.min(1.0, accel * dt * 0.16);
+      }
     } else {
-      // Natural cruising space drag - ship smoothly decelerates without harsh jolts
-      this.velocity.multiplyScalar(Math.pow(0.88, dt * 60));
+      this.velocity.x *= Math.pow(0.88, dt * 60);
+      this.velocity.z *= Math.pow(0.88, dt * 60);
     }
 
     this.position.addScaledVector(this.velocity, dt);
+
+    // Soft open-world altitude limits (-240m to +240m)
+    if (this.position.y > 240) {
+      this.position.y = 240;
+      if (this.velocity.y > 0) this.velocity.y = 0;
+    } else if (this.position.y < -240) {
+      this.position.y = -240;
+      if (this.velocity.y < 0) this.velocity.y = 0;
+    }
+
     this.group.position.copy(this.position);
 
-    // Apply 3D Orientation
+    // Apply 3D Orientation (Pitch, Yaw, Roll)
     this.group.rotation.y = this.heading;
     this.shipMesh.rotation.z = this.roll;
-    this.shipMesh.rotation.x = this.pitch;
+    this.shipMesh.rotation.x = -this.pitch;
 
     // Thruster Dynamic Plume Scaling
     const currentSpeed = this.velocity.length();
@@ -3087,14 +3167,22 @@ class Starfighter {
       v.applyEuler(this.group.rotation);
       v.add(this.position);
 
-      const forwardVec = new THREE.Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
+      const cosP = Math.cos(this.pitch);
+      const sinP = Math.sin(this.pitch);
+      const forwardVec = new THREE.Vector3(
+        Math.sin(this.heading) * cosP,
+        sinP,
+        Math.cos(this.heading) * cosP
+      );
       return {
         x: v.x,
         y: v.y,
         z: v.z,
         vx: forwardVec.x * speed + this.velocity.x * 0.4,
+        vy: forwardVec.y * speed + this.velocity.y * 0.4,
         vz: forwardVec.z * speed + this.velocity.z * 0.4,
         heading: this.heading,
+        pitch: this.pitch,
         color: isUpgraded ? 0xffaa00 : this.config.laserColor
       };
     });
@@ -4079,10 +4167,11 @@ class AsteroidManager {
     for (let i = 0; i < this.asteroids.length; i++) {
       const ast = this.asteroids[i];
       const dx = laser.position.x - ast.mesh.position.x;
+      const dy = laser.position.y - ast.mesh.position.y;
       const dz = laser.position.z - ast.mesh.position.z;
-      const distSq = dx * dx + dz * dz;
+      const distSq = dx * dx + dy * dy + dz * dz;
 
-      if (distSq < ast.radius * ast.radius) {
+      if (distSq < (ast.radius + 1.2) * (ast.radius + 1.2)) {
         return { hit: true, result: this.damageAsteroid(i, damage, particles, audio) };
       }
     }
@@ -4093,23 +4182,27 @@ class AsteroidManager {
     for (let i = 0; i < this.asteroids.length; i++) {
       const ast = this.asteroids[i];
       const dx = ship.position.x - ast.mesh.position.x;
+      const dy = ship.position.y - ast.mesh.position.y;
       const dz = ship.position.z - ast.mesh.position.z;
-      const dist = Math.hypot(dx, dz);
+      const dist = Math.hypot(dx, dy, dz);
       const minDist = ast.radius + 2.0;
 
       if (dist < minDist && dist > 0.001) {
-        // Bounce ship smoothly away from asteroid surface
+        // Bounce ship smoothly away from asteroid surface in 3D
         const nx = dx / dist;
+        const ny = dy / dist;
         const nz = dz / dist;
         const penetration = minDist - dist;
 
         ship.position.x += nx * penetration;
+        ship.position.y += ny * penetration;
         ship.position.z += nz * penetration;
 
         // Dampen velocity along normal
-        const vDotN = ship.velocity.x * nx + ship.velocity.z * nz;
+        const vDotN = ship.velocity.x * nx + ship.velocity.y * ny + ship.velocity.z * nz;
         if (vDotN < 0) {
           ship.velocity.x -= vDotN * nx * 1.4;
+          ship.velocity.y -= vDotN * ny * 1.4;
           ship.velocity.z -= vDotN * nz * 1.4;
         }
 
@@ -4822,6 +4915,11 @@ class DroneManager {
           b.group.position.z += Math.cos(b.heading) * b.speed * dt;
         }
 
+        // Majestic 3D altitude alignment
+        const bDY = player.position.y - b.group.position.y;
+        b.group.position.y += Math.max(-14, Math.min(14, bDY * 0.9)) * dt;
+        b.group.rotation.x = Math.max(-0.25, Math.min(0.25, -bDY * 0.015));
+
         // Engine Thruster Animation
         if (b.thrusters) {
           const pulse = 1.0 + Math.sin(time * 24) * 0.15;
@@ -4944,6 +5042,11 @@ class DroneManager {
       drone.group.position.x += drone.vx * dt;
       drone.group.position.z += drone.vz * dt;
 
+      // 3D Altitude Tracking & Natural Banking
+      const dY = player.position.y - drone.group.position.y;
+      drone.group.position.y += Math.max(-28, Math.min(28, dY * 1.6)) * dt;
+      drone.group.rotation.x = Math.max(-0.45, Math.min(0.45, -dY * 0.03));
+
       // Pulse engine plasma exhaust
       if (drone.thrusters) {
         const pulse = 1.0 + Math.sin(time * 32 + i * 2) * 0.16;
@@ -5036,9 +5139,13 @@ class DroneManager {
       m.mesh.position.x += Math.sin(m.heading) * speed * dt;
       m.mesh.position.z += Math.cos(m.heading) * speed * dt;
 
+      // 3D Homing Pitch Tracking
+      const dy = player.position.y - m.mesh.position.y;
+      m.mesh.position.y += Math.max(-28, Math.min(28, dy * 2.0)) * dt;
+
       particles.createMissileSmoke(m.mesh.position);
 
-      if (dist < 3.4) {
+      if (dist < 3.4 && Math.abs(dy) < 4.0) {
         player.takeDamage(m.damage, time);
         audio.explode(false);
         particles.createExplosion(m.mesh.position, 1.6, 0xff5500);
@@ -5060,12 +5167,16 @@ class DroneManager {
     for (let i = this.enemyLasers.length - 1; i >= 0; i--) {
       const laser = this.enemyLasers[i];
       laser.mesh.position.x += laser.vx * dt;
+      laser.mesh.position.y += (laser.vy || 0) * dt;
       laser.mesh.position.z += laser.vz * dt;
       laser.life -= dt;
 
       const pDx = player.position.x - laser.mesh.position.x;
+      const pDy = player.position.y - laser.mesh.position.y;
       const pDz = player.position.z - laser.mesh.position.z;
-      if (Math.hypot(pDx, pDz) < 2.6) {
+      const dist3D = Math.hypot(pDx, pDy, pDz);
+
+      if (dist3D < 3.0) {
         player.takeDamage(laser.damage, time);
         audio.shieldHit();
         particles.createShieldHit(laser.mesh.position, 0xff1744);
@@ -5188,19 +5299,23 @@ class DroneManager {
     mesh.position.copy(drone.group.position);
     mesh.position.y += 0.1;
 
-    // Lead player velocity slightly
+    // Lead player velocity in 3D
     const dx = (player.position.x + player.velocity.x * 0.25) - mesh.position.x;
+    const dy = (player.position.y + player.velocity.y * 0.25) - mesh.position.y;
     const dz = (player.position.z + player.velocity.z * 0.25) - mesh.position.z;
+    const dist3D = Math.hypot(dx, dy, dz) || 1;
     const aimHeading = Math.atan2(dx, dz);
     mesh.rotation.y = aimHeading;
+    mesh.rotation.x = -Math.asin(Math.max(-0.95, Math.min(0.95, dy / dist3D)));
 
     const speed = drone.type === 'gunship' ? 140 : 130;
     const damage = drone.type === 'gunship' ? 12 : 8;
 
     this.enemyLasers.push({
       mesh,
-      vx: Math.sin(aimHeading) * speed,
-      vz: Math.cos(aimHeading) * speed,
+      vx: (dx / dist3D) * speed,
+      vy: (dy / dist3D) * speed,
+      vz: (dz / dist3D) * speed,
       life: 2.2,
       damage
     });
@@ -5949,11 +6064,13 @@ class InputController {
       rightJustPressed: false
     };
 
-    // Virtual Touch Stick State
+    // Virtual Touch Stick & Altitude State
     this.touch = {
       active: false,
       thrust: 0,
       steer: 0,
+      climb: false,
+      dive: false,
       fire: false,
       boost: false,
       missile: false
@@ -5982,7 +6099,7 @@ class InputController {
       }
       this.keys.add(e.code);
 
-      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyC', 'KeyQ', 'KeyE', 'KeyP', 'Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyC', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyP', 'Digit1', 'Digit2', 'Digit3', 'PageUp', 'PageDown'].includes(e.code)) {
         e.preventDefault();
       }
     });
@@ -6031,6 +6148,8 @@ class InputController {
   sample(ship) {
     let thrust = 0;
     let steer = 0;
+    let vertical = 0;
+    let mousePitch = 0;
     let boost = false;
     let fire = false;
     let fireMissile = false;
@@ -6052,6 +6171,16 @@ class InputController {
     if (keyA) steer += 1.0; // Yaw counter-clockwise (left)
     if (keyD) steer -= 1.0; // Yaw clockwise (right)
 
+    // Vertical Altitude (Climb Up / Dive Down)
+    // KeyR / Space / PageUp: Climb Up
+    if (this.keys.has('KeyR') || this.keys.has('PageUp') || (this.keys.has('Space') && !this.mouse.isDown)) {
+      vertical += 1.0;
+    }
+    // KeyF / KeyC / PageDown / ControlLeft: Dive Down
+    if (this.keys.has('KeyF') || this.keys.has('KeyC') || this.keys.has('PageDown') || this.keys.has('ControlLeft')) {
+      vertical -= 1.0;
+    }
+
     if (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) {
       boost = true;
     }
@@ -6059,20 +6188,20 @@ class InputController {
       fire = true;
     }
 
-    // Secondary Weapon / Missiles (Right Click or E or F)
-    if (this.mouse.rightJustPressed || this.justPressedKeys.has('KeyE') || this.justPressedKeys.has('KeyF') || this.touch.missile) {
+    // Secondary Weapon / Missiles (Right Click or E)
+    if (this.mouse.rightJustPressed || this.justPressedKeys.has('KeyE') || this.touch.missile) {
       fireMissile = true;
       this.mouse.rightJustPressed = false;
       this.touch.missile = false;
     }
 
-    // Special Weapon / EMP (Q or R)
-    if (this.justPressedKeys.has('KeyQ') || this.justPressedKeys.has('KeyR')) {
+    // Special Weapon / EMP (Q)
+    if (this.justPressedKeys.has('KeyQ')) {
       triggerEMP = true;
     }
 
-    // Camera Switch (C or V)
-    if (this.justPressedKeys.has('KeyC') || this.justPressedKeys.has('KeyV')) {
+    // Camera Switch (V)
+    if (this.justPressedKeys.has('KeyV')) {
       switchCamera = true;
     }
 
@@ -6089,8 +6218,8 @@ class InputController {
     // Clear single-frame actions
     this.justPressedKeys.clear();
 
-    // 2. VIRTUAL TOUCH JOYSTICK (Active when user touches the stick)
-    if (this.touch.active) {
+    // 2. VIRTUAL TOUCH JOYSTICK & ALTITUDE (Mobile)
+    if (this.touch.active || this.touch.climb || this.touch.dive) {
       // Thrust axis: -1.0 (down/reverse) to +1.0 (up/forward)
       if (Math.abs(this.touch.thrust) > 0.08) {
         const tSign = Math.sign(this.touch.thrust);
@@ -6102,15 +6231,24 @@ class InputController {
       if (Math.abs(this.touch.steer) > 0.08) {
         const sSign = Math.sign(this.touch.steer);
         const sMag = (Math.abs(this.touch.steer) - 0.08) / 0.92;
-        // Pushing stick right (+x) turns ship right (-heading)
         steer -= sSign * Math.min(1.0, sMag * sMag);
       }
+
+      // Mobile Dedicated Climb / Dive Buttons
+      if (this.touch.climb) vertical += 1.0;
+      if (this.touch.dive) vertical -= 1.0;
 
       if (this.touch.boost) boost = true;
       if (this.touch.fire) fire = true;
     } else {
-      // 3. MOUSE FLIGHT STEERING (Desktop only - isolated from touch)
-      // Only steer towards mouse cursor if not using keyboard turn keys
+      // 3. MOUSE FLIGHT STEERING & 3D PITCH (Desktop)
+      const normY = (this.mouse.y - window.innerHeight / 2) / (window.innerHeight / 2);
+      if (Math.abs(normY) > 0.08) {
+        const sign = Math.sign(normY);
+        const mag = (Math.abs(normY) - 0.08) / 0.92;
+        mousePitch = -sign * (mag * mag) * 0.85;
+      }
+
       if (Math.abs(steer) < 0.1) {
         this._updateWorldCursor();
         const dx = this.mouse.worldX - ship.position.x;
@@ -6166,6 +6304,8 @@ class InputController {
     return {
       thrust: Math.max(-0.6, Math.min(1.0, thrust)),
       steer: Math.max(-1.0, Math.min(1.0, steer)),
+      vertical: Math.max(-1.0, Math.min(1.0, vertical)),
+      mousePitch,
       boost,
       fire,
       fireMissile,
@@ -6203,6 +6343,7 @@ class TacticalHUD {
           <div class="hud-brand">
             <span class="hud-title">HOVERDRIFT // COSMIC</span>
             <span class="hud-sector" id="hud-sector-badge">LEVEL 01: PATROL</span>
+            <span class="hud-alt" id="hud-alt-badge" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); letter-spacing: 0.12em; background: rgba(62,240,255,0.12); padding: 2px 7px; border-radius: 3px; border: 1px solid rgba(62,240,255,0.35);">ALT: 0m</span>
           </div>
 
           <!-- Mission Objective Panel (Top Left Center) -->
@@ -6321,10 +6462,11 @@ class TacticalHUD {
 
         <!-- Camera Mode Badge & Key Hints (Bottom Right) -->
         <div class="hud-hints">
-          <div class="cam-badge" id="hud-cam-badge"><kbd>C</kbd> CAM: TACTICAL CHASE</div>
+          <div class="cam-badge" id="hud-cam-badge"><kbd>V</kbd> CAM: TACTICAL CHASE</div>
           <div class="hint-chip"><kbd>W</kbd>/<kbd>S</kbd> THRUST / BRAKE</div>
-          <div class="hint-chip"><kbd>L-CLICK</kbd> FIRE // <kbd>R-CLICK</kbd>/<kbd>E</kbd> MISSILE</div>
-          <div class="hint-chip"><kbd>Q</kbd> EMP DISCHARGE // <kbd>SHIFT</kbd> BOOST</div>
+          <div class="hint-chip"><kbd>R</kbd>/<kbd>F</kbd> CLIMB UP / DIVE DOWN</div>
+          <div class="hint-chip"><kbd>MOUSE</kbd> 3D AIM & PITCH // <kbd>L-CLICK</kbd> FIRE</div>
+          <div class="hint-chip"><kbd>R-CLICK</kbd>/<kbd>E</kbd> MISSILE // <kbd>Q</kbd> EMP</div>
           <div class="hint-chip"><kbd>ESC</kbd> PAUSE MENU</div>
         </div>
 
@@ -6332,6 +6474,11 @@ class TacticalHUD {
         <div class="touch-controls" id="touch-controls">
           <div class="touch-stick" id="touch-stick-left">
             <div class="stick-knob" id="stick-knob-left"></div>
+          </div>
+          <!-- Mobile Dedicated Altitude Thrusters -->
+          <div class="touch-altitude-buttons">
+            <button class="touch-alt-btn" id="btn-touch-climb">▲ UP</button>
+            <button class="touch-alt-btn" id="btn-touch-dive">▼ DN</button>
           </div>
           <div class="touch-buttons">
             <button class="touch-action-btn boost-btn" id="btn-touch-boost">BOOST</button>
@@ -6434,6 +6581,7 @@ class TacticalHUD {
     this.wSlot2 = document.getElementById('w-slot-2');
     this.wSlot3 = document.getElementById('w-slot-3');
     this.camBadge = document.getElementById('hud-cam-badge');
+    this.altBadgeEl = document.getElementById('hud-alt-badge');
 
     // DOM Dirty-Checking State (eliminates 60 FPS layout recalculations & UI stutter)
     this._lastScore = -1;
@@ -6536,6 +6684,40 @@ class TacticalHUD {
     const btnTouchBoost = document.getElementById('btn-touch-boost');
     const btnTouchMissile = document.getElementById('btn-touch-missile');
     const btnTouchFire = document.getElementById('btn-touch-fire');
+    const btnTouchClimb = document.getElementById('btn-touch-climb');
+    const btnTouchDive = document.getElementById('btn-touch-dive');
+
+    if (btnTouchClimb) {
+      btnTouchClimb.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.climb = true;
+      }, { passive: false });
+      btnTouchClimb.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.climb = false;
+      }, { passive: false });
+      btnTouchClimb.addEventListener('touchcancel', () => {
+        inputController.touch.climb = false;
+      }, { passive: true });
+    }
+
+    if (btnTouchDive) {
+      btnTouchDive.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.dive = true;
+      }, { passive: false });
+      btnTouchDive.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.dive = false;
+      }, { passive: false });
+      btnTouchDive.addEventListener('touchcancel', () => {
+        inputController.touch.dive = false;
+      }, { passive: true });
+    }
 
     if (stick && knob) {
       let activeTouchId = null;
@@ -6718,6 +6900,11 @@ class TacticalHUD {
   }
 
   update(player, score, combo, levelNum, trackingInfo, radarData, time, missionStats) {
+    if (this.altBadgeEl) {
+      const altM = Math.round(player.position.y * 10);
+      this.altBadgeEl.textContent = `ALT: ${altM >= 0 ? '+' : ''}${altM}m`;
+    }
+
     // 1. Dirty-check Score & Combo
     const intScore = Math.floor(score);
     if (this._lastScore !== intScore) {
@@ -7340,11 +7527,13 @@ class CosmicGame {
         mesh.scale.set(isRapid ? 0.75 : 1.0, isRapid ? 0.75 : 1.0, isRapid ? 0.75 : 1.0);
         mesh.position.set(spawn.x, spawn.y, spawn.z);
         mesh.rotation.y = spawn.heading;
+        mesh.rotation.x = -spawn.pitch;
         mesh.visible = true;
 
         this.playerLasers.push({
           mesh,
           vx: spawn.vx * (isRapid ? 1.15 : 1.0),
+          vy: (spawn.vy || 0) * (isRapid ? 1.15 : 1.0),
           vz: spawn.vz * (isRapid ? 1.15 : 1.0),
           life: 1.4,
           damage: isRapid ? 1.4 : (this.player.weaponLevel >= 2 ? 3 : 2)
@@ -7381,6 +7570,7 @@ class CosmicGame {
     for (let i = this.playerLasers.length - 1; i >= 0; i--) {
       const laser = this.playerLasers[i];
       laser.mesh.position.x += laser.vx * dt;
+      laser.mesh.position.y += (laser.vy || 0) * dt;
       laser.mesh.position.z += laser.vz * dt;
       laser.life -= dt;
 
@@ -7515,14 +7705,18 @@ class CosmicGame {
   _updateCamera(dt) {
     const forwardX = Math.sin(this.player.heading);
     const forwardZ = Math.cos(this.player.heading);
+    const cosP = Math.cos(this.player.pitch);
+    const sinP = Math.sin(this.player.pitch);
 
     if (this.cameraMode === 2) {
       // MODE 2: FIRST-PERSON COCKPIT VIEW
       const cockPos = this.player.getCockpitWorldPosition();
       this.camera.position.copy(cockPos);
-      const lookX = cockPos.x + forwardX * 60;
-      const lookZ = cockPos.z + forwardZ * 60;
-      this.camera.lookAt(lookX, cockPos.y, lookZ);
+      const lookDist = 60;
+      const lookX = cockPos.x + forwardX * cosP * lookDist;
+      const lookY = cockPos.y + sinP * lookDist;
+      const lookZ = cockPos.z + forwardZ * cosP * lookDist;
+      this.camera.lookAt(lookX, lookY, lookZ);
 
       // Subtle cockpit roll alignment
       this.camera.rotation.z = this.player.roll * 0.8;
@@ -7530,14 +7724,17 @@ class CosmicGame {
       this.camera.updateProjectionMatrix();
     } else {
       // MODE 0 (Tactical Chase) & MODE 1 (Close Action Chase)
-      // Tuned for crystal-clear forward dogfight sightlines (player in lower-third)
       const isClose = this.cameraMode === 1;
-      const camDist = isClose ? 22 : 32;
-      const camHeight = isClose ? 6.2 : 9.5;
+      const camDist = isClose ? 20 : 30;
+      const camHeight = isClose ? 5.5 : 8.5;
 
-      const targetCamX = this.player.position.x - forwardX * camDist;
-      const targetCamZ = this.player.position.z - forwardZ * camDist;
-      const targetCamY = camHeight;
+      const pitchFollow = this.player.pitch * 0.65;
+      const cosPF = Math.cos(pitchFollow);
+      const sinPF = Math.sin(pitchFollow);
+
+      const targetCamX = this.player.position.x - forwardX * cosPF * camDist;
+      const targetCamY = this.player.position.y + camHeight - sinPF * camDist;
+      const targetCamZ = this.player.position.z - forwardZ * cosPF * camDist;
 
       const followSpeed = isClose ? 15.0 : 13.5;
       this.camera.position.x += (targetCamX - this.camera.position.x) * (1 - Math.exp(-followSpeed * dt));
@@ -7548,11 +7745,11 @@ class CosmicGame {
       this.camera.fov += (targetFov - this.camera.fov) * (1 - Math.exp(-5.0 * dt));
       this.camera.updateProjectionMatrix();
 
-      // Look comfortably forward into the space battle arena
+      // Look comfortably forward into the 3D space arena
       const lookDist = isClose ? 55 : 68;
-      const lookTargetX = this.player.position.x + forwardX * lookDist;
-      const lookTargetZ = this.player.position.z + forwardZ * lookDist;
-      const lookTargetY = isClose ? 2.6 : 3.4;
+      const lookTargetX = this.player.position.x + forwardX * cosP * lookDist;
+      const lookTargetY = this.player.position.y + sinP * lookDist + (isClose ? 2.4 : 3.2);
+      const lookTargetZ = this.player.position.z + forwardZ * cosP * lookDist;
       this.camera.lookAt(lookTargetX, lookTargetY, lookTargetZ);
     }
 

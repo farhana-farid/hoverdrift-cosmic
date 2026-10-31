@@ -1131,6 +1131,44 @@ try {
       box-shadow: 0 0 18px rgba(62, 240, 255, 0.22);
     }
 
+    .touch-altitude-buttons {
+      pointer-events: auto;
+      touch-action: none;
+      position: absolute;
+      bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+      left: calc(24px + env(safe-area-inset-left, 0px));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .touch-alt-btn {
+      width: 54px;
+      height: 46px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      color: #3ef0ff;
+      background: radial-gradient(circle, rgba(14, 34, 60, 0.88) 0%, rgba(6, 16, 28, 0.96) 100%);
+      border: 1.5px solid rgba(62, 240, 255, 0.5);
+      box-shadow: 0 0 14px rgba(62, 240, 255, 0.3);
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform 0.1s ease, background 0.1s ease;
+    }
+
+    .touch-alt-btn:active {
+      transform: scale(0.92);
+      background: rgba(62, 240, 255, 0.35);
+      border-color: #3ef0ff;
+      box-shadow: 0 0 22px rgba(62, 240, 255, 0.7);
+    }
+
     .stick-knob {
       position: absolute;
       top: 50%;

@@ -687,6 +687,11 @@ export class DroneManager {
           b.group.position.z += Math.cos(b.heading) * b.speed * dt;
         }
 
+        // Majestic 3D altitude alignment
+        const bDY = player.position.y - b.group.position.y;
+        b.group.position.y += Math.max(-14, Math.min(14, bDY * 0.9)) * dt;
+        b.group.rotation.x = Math.max(-0.25, Math.min(0.25, -bDY * 0.015));
+
         // Engine Thruster Animation
         if (b.thrusters) {
           const pulse = 1.0 + Math.sin(time * 24) * 0.15;
@@ -809,6 +814,11 @@ export class DroneManager {
       drone.group.position.x += drone.vx * dt;
       drone.group.position.z += drone.vz * dt;
 
+      // 3D Altitude Tracking & Natural Banking
+      const dY = player.position.y - drone.group.position.y;
+      drone.group.position.y += Math.max(-28, Math.min(28, dY * 1.6)) * dt;
+      drone.group.rotation.x = Math.max(-0.45, Math.min(0.45, -dY * 0.03));
+
       // Pulse engine plasma exhaust
       if (drone.thrusters) {
         const pulse = 1.0 + Math.sin(time * 32 + i * 2) * 0.16;
@@ -901,9 +911,13 @@ export class DroneManager {
       m.mesh.position.x += Math.sin(m.heading) * speed * dt;
       m.mesh.position.z += Math.cos(m.heading) * speed * dt;
 
+      // 3D Homing Pitch Tracking
+      const dy = player.position.y - m.mesh.position.y;
+      m.mesh.position.y += Math.max(-28, Math.min(28, dy * 2.0)) * dt;
+
       particles.createMissileSmoke(m.mesh.position);
 
-      if (dist < 3.4) {
+      if (dist < 3.4 && Math.abs(dy) < 4.0) {
         player.takeDamage(m.damage, time);
         audio.explode(false);
         particles.createExplosion(m.mesh.position, 1.6, 0xff5500);
@@ -925,12 +939,16 @@ export class DroneManager {
     for (let i = this.enemyLasers.length - 1; i >= 0; i--) {
       const laser = this.enemyLasers[i];
       laser.mesh.position.x += laser.vx * dt;
+      laser.mesh.position.y += (laser.vy || 0) * dt;
       laser.mesh.position.z += laser.vz * dt;
       laser.life -= dt;
 
       const pDx = player.position.x - laser.mesh.position.x;
+      const pDy = player.position.y - laser.mesh.position.y;
       const pDz = player.position.z - laser.mesh.position.z;
-      if (Math.hypot(pDx, pDz) < 2.6) {
+      const dist3D = Math.hypot(pDx, pDy, pDz);
+
+      if (dist3D < 3.0) {
         player.takeDamage(laser.damage, time);
         audio.shieldHit();
         particles.createShieldHit(laser.mesh.position, 0xff1744);
@@ -1053,19 +1071,23 @@ export class DroneManager {
     mesh.position.copy(drone.group.position);
     mesh.position.y += 0.1;
 
-    // Lead player velocity slightly
+    // Lead player velocity in 3D
     const dx = (player.position.x + player.velocity.x * 0.25) - mesh.position.x;
+    const dy = (player.position.y + player.velocity.y * 0.25) - mesh.position.y;
     const dz = (player.position.z + player.velocity.z * 0.25) - mesh.position.z;
+    const dist3D = Math.hypot(dx, dy, dz) || 1;
     const aimHeading = Math.atan2(dx, dz);
     mesh.rotation.y = aimHeading;
+    mesh.rotation.x = -Math.asin(Math.max(-0.95, Math.min(0.95, dy / dist3D)));
 
     const speed = drone.type === 'gunship' ? 140 : 130;
     const damage = drone.type === 'gunship' ? 12 : 8;
 
     this.enemyLasers.push({
       mesh,
-      vx: Math.sin(aimHeading) * speed,
-      vz: Math.cos(aimHeading) * speed,
+      vx: (dx / dist3D) * speed,
+      vy: (dy / dist3D) * speed,
+      vz: (dz / dist3D) * speed,
       life: 2.2,
       damage
     });

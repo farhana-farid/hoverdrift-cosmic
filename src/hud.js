@@ -18,6 +18,7 @@ export class TacticalHUD {
           <div class="hud-brand">
             <span class="hud-title">HOVERDRIFT // COSMIC</span>
             <span class="hud-sector" id="hud-sector-badge">LEVEL 01: PATROL</span>
+            <span class="hud-alt" id="hud-alt-badge" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); letter-spacing: 0.12em; background: rgba(62,240,255,0.12); padding: 2px 7px; border-radius: 3px; border: 1px solid rgba(62,240,255,0.35);">ALT: 0m</span>
           </div>
 
           <!-- Mission Objective Panel (Top Left Center) -->
@@ -136,10 +137,11 @@ export class TacticalHUD {
 
         <!-- Camera Mode Badge & Key Hints (Bottom Right) -->
         <div class="hud-hints">
-          <div class="cam-badge" id="hud-cam-badge"><kbd>C</kbd> CAM: TACTICAL CHASE</div>
+          <div class="cam-badge" id="hud-cam-badge"><kbd>V</kbd> CAM: TACTICAL CHASE</div>
           <div class="hint-chip"><kbd>W</kbd>/<kbd>S</kbd> THRUST / BRAKE</div>
-          <div class="hint-chip"><kbd>L-CLICK</kbd> FIRE // <kbd>R-CLICK</kbd>/<kbd>E</kbd> MISSILE</div>
-          <div class="hint-chip"><kbd>Q</kbd> EMP DISCHARGE // <kbd>SHIFT</kbd> BOOST</div>
+          <div class="hint-chip"><kbd>R</kbd>/<kbd>F</kbd> CLIMB UP / DIVE DOWN</div>
+          <div class="hint-chip"><kbd>MOUSE</kbd> 3D AIM & PITCH // <kbd>L-CLICK</kbd> FIRE</div>
+          <div class="hint-chip"><kbd>R-CLICK</kbd>/<kbd>E</kbd> MISSILE // <kbd>Q</kbd> EMP</div>
           <div class="hint-chip"><kbd>ESC</kbd> PAUSE MENU</div>
         </div>
 
@@ -147,6 +149,11 @@ export class TacticalHUD {
         <div class="touch-controls" id="touch-controls">
           <div class="touch-stick" id="touch-stick-left">
             <div class="stick-knob" id="stick-knob-left"></div>
+          </div>
+          <!-- Mobile Dedicated Altitude Thrusters -->
+          <div class="touch-altitude-buttons">
+            <button class="touch-alt-btn" id="btn-touch-climb">▲ UP</button>
+            <button class="touch-alt-btn" id="btn-touch-dive">▼ DN</button>
           </div>
           <div class="touch-buttons">
             <button class="touch-action-btn boost-btn" id="btn-touch-boost">BOOST</button>
@@ -249,6 +256,7 @@ export class TacticalHUD {
     this.wSlot2 = document.getElementById('w-slot-2');
     this.wSlot3 = document.getElementById('w-slot-3');
     this.camBadge = document.getElementById('hud-cam-badge');
+    this.altBadgeEl = document.getElementById('hud-alt-badge');
 
     // DOM Dirty-Checking State (eliminates 60 FPS layout recalculations & UI stutter)
     this._lastScore = -1;
@@ -351,6 +359,40 @@ export class TacticalHUD {
     const btnTouchBoost = document.getElementById('btn-touch-boost');
     const btnTouchMissile = document.getElementById('btn-touch-missile');
     const btnTouchFire = document.getElementById('btn-touch-fire');
+    const btnTouchClimb = document.getElementById('btn-touch-climb');
+    const btnTouchDive = document.getElementById('btn-touch-dive');
+
+    if (btnTouchClimb) {
+      btnTouchClimb.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.climb = true;
+      }, { passive: false });
+      btnTouchClimb.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.climb = false;
+      }, { passive: false });
+      btnTouchClimb.addEventListener('touchcancel', () => {
+        inputController.touch.climb = false;
+      }, { passive: true });
+    }
+
+    if (btnTouchDive) {
+      btnTouchDive.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.dive = true;
+      }, { passive: false });
+      btnTouchDive.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputController.touch.dive = false;
+      }, { passive: false });
+      btnTouchDive.addEventListener('touchcancel', () => {
+        inputController.touch.dive = false;
+      }, { passive: true });
+    }
 
     if (stick && knob) {
       let activeTouchId = null;
@@ -533,6 +575,11 @@ export class TacticalHUD {
   }
 
   update(player, score, combo, levelNum, trackingInfo, radarData, time, missionStats) {
+    if (this.altBadgeEl) {
+      const altM = Math.round(player.position.y * 10);
+      this.altBadgeEl.textContent = `ALT: ${altM >= 0 ? '+' : ''}${altM}m`;
+    }
+
     // 1. Dirty-check Score & Combo
     const intScore = Math.floor(score);
     if (this._lastScore !== intScore) {

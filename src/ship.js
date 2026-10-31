@@ -933,28 +933,70 @@ export class Starfighter {
     const targetRoll = -activeTurnRate * 0.45;
     this.roll += (targetRoll - this.roll) * Math.min(1.0, this.config.rollRate * dt);
 
-    const targetPitch = forwardThrust * -0.06;
-    this.pitch += (targetPitch - this.pitch) * 8 * dt;
+    // Vertical Altitude Thrust & Pitch Aiming (Climb / Dive)
+    const vertInput = inputState.vertical || 0;
+    let desiredPitch = 0;
 
-    // C. Linear Velocity Update (Decoupled Throttle & Momentum - 0 allocations)
-    this._forwardVec.set(Math.sin(this.heading), 0, Math.cos(this.heading));
+    if (Math.abs(vertInput) > 0.05) {
+      // Direct keyboard (R/F, Space, PageUp/Down) or mobile (▲ UP / ▼ DN) altitude control
+      desiredPitch = vertInput * 0.58; // ~33° climb / dive
+      const targetVertVel = vertInput * 46 * (this.isBoosting ? 1.5 : 1.0);
+      this.velocity.y += (targetVertVel - this.velocity.y) * Math.min(1.0, 7.5 * dt);
+    } else if (inputState.hasMouseSteer && Math.abs(inputState.mousePitch || 0) > 0.05) {
+      // Desktop mouse vertical aim pitch
+      desiredPitch = inputState.mousePitch;
+      const fwdSpeed = this.velocity.length();
+      const targetVertVel = Math.sin(this.pitch) * Math.max(20, fwdSpeed);
+      this.velocity.y += (targetVertVel - this.velocity.y) * Math.min(1.0, 5.0 * dt);
+    } else {
+      // Level flight recovery
+      desiredPitch = forwardThrust * -0.04;
+      this.velocity.y *= Math.pow(0.88, dt * 60);
+    }
+
+    // Clamp pitch between -55° and +55°
+    desiredPitch = Math.max(-0.95, Math.min(0.95, desiredPitch));
+    this.pitch += (desiredPitch - this.pitch) * Math.min(1.0, 6.5 * dt);
+
+    // C. Linear Velocity Update (Full 3D Forward Momentum)
+    const cosPitch = Math.cos(this.pitch);
+    const sinPitch = Math.sin(this.pitch);
+    this._forwardVec.set(
+      Math.sin(this.heading) * cosPitch,
+      sinPitch,
+      Math.cos(this.heading) * cosPitch
+    );
     
     if (Math.abs(forwardThrust) > 0.02) {
       const speedMult = forwardThrust > 0 ? forwardThrust * targetSpeed : forwardThrust * (targetSpeed * 0.45);
       this._desiredVel.copy(this._forwardVec).multiplyScalar(speedMult);
-      this.velocity.lerp(this._desiredVel, Math.min(1.0, accel * dt * 0.16));
+      this.velocity.x += (this._desiredVel.x - this.velocity.x) * Math.min(1.0, accel * dt * 0.16);
+      this.velocity.z += (this._desiredVel.z - this.velocity.z) * Math.min(1.0, accel * dt * 0.16);
+      if (Math.abs(vertInput) < 0.05) {
+        this.velocity.y += (this._desiredVel.y - this.velocity.y) * Math.min(1.0, accel * dt * 0.16);
+      }
     } else {
-      // Natural cruising space drag - ship smoothly decelerates without harsh jolts
-      this.velocity.multiplyScalar(Math.pow(0.88, dt * 60));
+      this.velocity.x *= Math.pow(0.88, dt * 60);
+      this.velocity.z *= Math.pow(0.88, dt * 60);
     }
 
     this.position.addScaledVector(this.velocity, dt);
+
+    // Soft open-world altitude limits (-240m to +240m)
+    if (this.position.y > 240) {
+      this.position.y = 240;
+      if (this.velocity.y > 0) this.velocity.y = 0;
+    } else if (this.position.y < -240) {
+      this.position.y = -240;
+      if (this.velocity.y < 0) this.velocity.y = 0;
+    }
+
     this.group.position.copy(this.position);
 
-    // Apply 3D Orientation
+    // Apply 3D Orientation (Pitch, Yaw, Roll)
     this.group.rotation.y = this.heading;
     this.shipMesh.rotation.z = this.roll;
-    this.shipMesh.rotation.x = this.pitch;
+    this.shipMesh.rotation.x = -this.pitch;
 
     // Thruster Dynamic Plume Scaling
     const currentSpeed = this.velocity.length();
@@ -1081,14 +1123,22 @@ export class Starfighter {
       v.applyEuler(this.group.rotation);
       v.add(this.position);
 
-      const forwardVec = new THREE.Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
+      const cosP = Math.cos(this.pitch);
+      const sinP = Math.sin(this.pitch);
+      const forwardVec = new THREE.Vector3(
+        Math.sin(this.heading) * cosP,
+        sinP,
+        Math.cos(this.heading) * cosP
+      );
       return {
         x: v.x,
         y: v.y,
         z: v.z,
         vx: forwardVec.x * speed + this.velocity.x * 0.4,
+        vy: forwardVec.y * speed + this.velocity.y * 0.4,
         vz: forwardVec.z * speed + this.velocity.z * 0.4,
         heading: this.heading,
+        pitch: this.pitch,
         color: isUpgraded ? 0xffaa00 : this.config.laserColor
       };
     });

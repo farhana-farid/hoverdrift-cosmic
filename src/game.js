@@ -287,11 +287,13 @@ export class CosmicGame {
         mesh.scale.set(isRapid ? 0.75 : 1.0, isRapid ? 0.75 : 1.0, isRapid ? 0.75 : 1.0);
         mesh.position.set(spawn.x, spawn.y, spawn.z);
         mesh.rotation.y = spawn.heading;
+        mesh.rotation.x = -spawn.pitch;
         mesh.visible = true;
 
         this.playerLasers.push({
           mesh,
           vx: spawn.vx * (isRapid ? 1.15 : 1.0),
+          vy: (spawn.vy || 0) * (isRapid ? 1.15 : 1.0),
           vz: spawn.vz * (isRapid ? 1.15 : 1.0),
           life: 1.4,
           damage: isRapid ? 1.4 : (this.player.weaponLevel >= 2 ? 3 : 2)
@@ -328,6 +330,7 @@ export class CosmicGame {
     for (let i = this.playerLasers.length - 1; i >= 0; i--) {
       const laser = this.playerLasers[i];
       laser.mesh.position.x += laser.vx * dt;
+      laser.mesh.position.y += (laser.vy || 0) * dt;
       laser.mesh.position.z += laser.vz * dt;
       laser.life -= dt;
 
@@ -462,14 +465,18 @@ export class CosmicGame {
   _updateCamera(dt) {
     const forwardX = Math.sin(this.player.heading);
     const forwardZ = Math.cos(this.player.heading);
+    const cosP = Math.cos(this.player.pitch);
+    const sinP = Math.sin(this.player.pitch);
 
     if (this.cameraMode === 2) {
       // MODE 2: FIRST-PERSON COCKPIT VIEW
       const cockPos = this.player.getCockpitWorldPosition();
       this.camera.position.copy(cockPos);
-      const lookX = cockPos.x + forwardX * 60;
-      const lookZ = cockPos.z + forwardZ * 60;
-      this.camera.lookAt(lookX, cockPos.y, lookZ);
+      const lookDist = 60;
+      const lookX = cockPos.x + forwardX * cosP * lookDist;
+      const lookY = cockPos.y + sinP * lookDist;
+      const lookZ = cockPos.z + forwardZ * cosP * lookDist;
+      this.camera.lookAt(lookX, lookY, lookZ);
 
       // Subtle cockpit roll alignment
       this.camera.rotation.z = this.player.roll * 0.8;
@@ -477,14 +484,17 @@ export class CosmicGame {
       this.camera.updateProjectionMatrix();
     } else {
       // MODE 0 (Tactical Chase) & MODE 1 (Close Action Chase)
-      // Tuned for crystal-clear forward dogfight sightlines (player in lower-third)
       const isClose = this.cameraMode === 1;
-      const camDist = isClose ? 22 : 32;
-      const camHeight = isClose ? 6.2 : 9.5;
+      const camDist = isClose ? 20 : 30;
+      const camHeight = isClose ? 5.5 : 8.5;
 
-      const targetCamX = this.player.position.x - forwardX * camDist;
-      const targetCamZ = this.player.position.z - forwardZ * camDist;
-      const targetCamY = camHeight;
+      const pitchFollow = this.player.pitch * 0.65;
+      const cosPF = Math.cos(pitchFollow);
+      const sinPF = Math.sin(pitchFollow);
+
+      const targetCamX = this.player.position.x - forwardX * cosPF * camDist;
+      const targetCamY = this.player.position.y + camHeight - sinPF * camDist;
+      const targetCamZ = this.player.position.z - forwardZ * cosPF * camDist;
 
       const followSpeed = isClose ? 15.0 : 13.5;
       this.camera.position.x += (targetCamX - this.camera.position.x) * (1 - Math.exp(-followSpeed * dt));
@@ -495,11 +505,11 @@ export class CosmicGame {
       this.camera.fov += (targetFov - this.camera.fov) * (1 - Math.exp(-5.0 * dt));
       this.camera.updateProjectionMatrix();
 
-      // Look comfortably forward into the space battle arena
+      // Look comfortably forward into the 3D space arena
       const lookDist = isClose ? 55 : 68;
-      const lookTargetX = this.player.position.x + forwardX * lookDist;
-      const lookTargetZ = this.player.position.z + forwardZ * lookDist;
-      const lookTargetY = isClose ? 2.6 : 3.4;
+      const lookTargetX = this.player.position.x + forwardX * cosP * lookDist;
+      const lookTargetY = this.player.position.y + sinP * lookDist + (isClose ? 2.4 : 3.2);
+      const lookTargetZ = this.player.position.z + forwardZ * cosP * lookDist;
       this.camera.lookAt(lookTargetX, lookTargetY, lookTargetZ);
     }
 

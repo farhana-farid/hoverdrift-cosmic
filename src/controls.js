@@ -23,11 +23,13 @@ export class InputController {
       rightJustPressed: false
     };
 
-    // Virtual Touch Stick State
+    // Virtual Touch Stick & Altitude State
     this.touch = {
       active: false,
       thrust: 0,
       steer: 0,
+      climb: false,
+      dive: false,
       fire: false,
       boost: false,
       missile: false
@@ -56,7 +58,7 @@ export class InputController {
       }
       this.keys.add(e.code);
 
-      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyC', 'KeyQ', 'KeyE', 'KeyP', 'Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyC', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyP', 'Digit1', 'Digit2', 'Digit3', 'PageUp', 'PageDown'].includes(e.code)) {
         e.preventDefault();
       }
     });
@@ -105,6 +107,8 @@ export class InputController {
   sample(ship) {
     let thrust = 0;
     let steer = 0;
+    let vertical = 0;
+    let mousePitch = 0;
     let boost = false;
     let fire = false;
     let fireMissile = false;
@@ -126,6 +130,16 @@ export class InputController {
     if (keyA) steer += 1.0; // Yaw counter-clockwise (left)
     if (keyD) steer -= 1.0; // Yaw clockwise (right)
 
+    // Vertical Altitude (Climb Up / Dive Down)
+    // KeyR / Space / PageUp: Climb Up
+    if (this.keys.has('KeyR') || this.keys.has('PageUp') || (this.keys.has('Space') && !this.mouse.isDown)) {
+      vertical += 1.0;
+    }
+    // KeyF / KeyC / PageDown / ControlLeft: Dive Down
+    if (this.keys.has('KeyF') || this.keys.has('KeyC') || this.keys.has('PageDown') || this.keys.has('ControlLeft')) {
+      vertical -= 1.0;
+    }
+
     if (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) {
       boost = true;
     }
@@ -133,20 +147,20 @@ export class InputController {
       fire = true;
     }
 
-    // Secondary Weapon / Missiles (Right Click or E or F)
-    if (this.mouse.rightJustPressed || this.justPressedKeys.has('KeyE') || this.justPressedKeys.has('KeyF') || this.touch.missile) {
+    // Secondary Weapon / Missiles (Right Click or E)
+    if (this.mouse.rightJustPressed || this.justPressedKeys.has('KeyE') || this.touch.missile) {
       fireMissile = true;
       this.mouse.rightJustPressed = false;
       this.touch.missile = false;
     }
 
-    // Special Weapon / EMP (Q or R)
-    if (this.justPressedKeys.has('KeyQ') || this.justPressedKeys.has('KeyR')) {
+    // Special Weapon / EMP (Q)
+    if (this.justPressedKeys.has('KeyQ')) {
       triggerEMP = true;
     }
 
-    // Camera Switch (C or V)
-    if (this.justPressedKeys.has('KeyC') || this.justPressedKeys.has('KeyV')) {
+    // Camera Switch (V)
+    if (this.justPressedKeys.has('KeyV')) {
       switchCamera = true;
     }
 
@@ -163,8 +177,8 @@ export class InputController {
     // Clear single-frame actions
     this.justPressedKeys.clear();
 
-    // 2. VIRTUAL TOUCH JOYSTICK (Active when user touches the stick)
-    if (this.touch.active) {
+    // 2. VIRTUAL TOUCH JOYSTICK & ALTITUDE (Mobile)
+    if (this.touch.active || this.touch.climb || this.touch.dive) {
       // Thrust axis: -1.0 (down/reverse) to +1.0 (up/forward)
       if (Math.abs(this.touch.thrust) > 0.08) {
         const tSign = Math.sign(this.touch.thrust);
@@ -176,15 +190,24 @@ export class InputController {
       if (Math.abs(this.touch.steer) > 0.08) {
         const sSign = Math.sign(this.touch.steer);
         const sMag = (Math.abs(this.touch.steer) - 0.08) / 0.92;
-        // Pushing stick right (+x) turns ship right (-heading)
         steer -= sSign * Math.min(1.0, sMag * sMag);
       }
+
+      // Mobile Dedicated Climb / Dive Buttons
+      if (this.touch.climb) vertical += 1.0;
+      if (this.touch.dive) vertical -= 1.0;
 
       if (this.touch.boost) boost = true;
       if (this.touch.fire) fire = true;
     } else {
-      // 3. MOUSE FLIGHT STEERING (Desktop only - isolated from touch)
-      // Only steer towards mouse cursor if not using keyboard turn keys
+      // 3. MOUSE FLIGHT STEERING & 3D PITCH (Desktop)
+      const normY = (this.mouse.y - window.innerHeight / 2) / (window.innerHeight / 2);
+      if (Math.abs(normY) > 0.08) {
+        const sign = Math.sign(normY);
+        const mag = (Math.abs(normY) - 0.08) / 0.92;
+        mousePitch = -sign * (mag * mag) * 0.85;
+      }
+
       if (Math.abs(steer) < 0.1) {
         this._updateWorldCursor();
         const dx = this.mouse.worldX - ship.position.x;
@@ -240,6 +263,8 @@ export class InputController {
     return {
       thrust: Math.max(-0.6, Math.min(1.0, thrust)),
       steer: Math.max(-1.0, Math.min(1.0, steer)),
+      vertical: Math.max(-1.0, Math.min(1.0, vertical)),
+      mousePitch,
       boost,
       fire,
       fireMissile,
