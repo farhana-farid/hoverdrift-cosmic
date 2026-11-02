@@ -7,7 +7,7 @@
     "start": "node serve.js",
     "dev": "node serve.js",
     "build": "node build_standalone.js",
-    "test": "node -e \"console.log('Testing build integrity...'); require('fs').readFileSync('index.html'); console.log('Build OK');\""
+    "test": "node check_apis.js && node -e \"console.log('Testing build integrity...'); require('fs').readFileSync('index.html'); console.log('Build OK');\""
   },
   "keywords": [
     "game",

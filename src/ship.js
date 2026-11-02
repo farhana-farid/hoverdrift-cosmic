@@ -153,11 +153,16 @@ export class Starfighter {
     this.overheated = false;
     this.coolRate = 0.42;
 
-    // Secondary Homing Missiles
+    // Secondary Ordance
     this.missiles = 8;
     this.maxMissiles = 8;
     this.lastMissileTime = 0;
     this.missileCooldown = 1.0;
+
+    // Selectable missile profiles. Each changes speed, guidance, damage and how
+    // many rounds leave the rack per trigger pull (which is also its ammo cost).
+    this.missileModes = ['homing', 'salvo', 'torpedo'];
+    this.missileModeIndex = 0;
 
     // Special Weapon: EMP Pulse
     this.empCooldown = 0;
@@ -1062,13 +1067,27 @@ export class Starfighter {
     }
   }
 
+  get missileMode() {
+    return this.missileModes[this.missileModeIndex];
+  }
+
+  getMissileAmmoCost() {
+    return this.missileMode === 'salvo' ? 3 : 1;
+  }
+
+  cycleMissileMode() {
+    this.missileModeIndex = (this.missileModeIndex + 1) % this.missileModes.length;
+    return this.missileMode;
+  }
+
   canLaunchMissile(time) {
-    return this.missiles > 0 && (time - this.lastMissileTime >= this.missileCooldown);
+    return this.missiles >= this.getMissileAmmoCost() && (time - this.lastMissileTime >= this.missileCooldown);
   }
 
   recordMissileLaunch(time) {
-    if (this.missiles > 0) {
-      this.missiles--;
+    const cost = this.getMissileAmmoCost();
+    if (this.missiles >= cost) {
+      this.missiles -= cost;
       this.lastMissileTime = time;
       // Hide visible wing missile mesh if inventory depleting
       if (this.missileMeshes.length > 0) {

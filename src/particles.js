@@ -224,6 +224,94 @@ export class ParticleSystem {
     }
   }
 
+  createShieldHit(pos, colorHex = 0x3ef0ff) {
+    const col = new this.THREE.Color(colorHex);
+    for (let i = 0; i < 18; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const pitch = (Math.random() - 0.5) * Math.PI;
+      const speed = 14 + Math.random() * 26;
+      const cosPitch = Math.cos(pitch);
+      this._addSpark({
+        x: pos.x,
+        y: pos.y,
+        z: pos.z,
+        vx: Math.sin(angle) * cosPitch * speed,
+        vy: Math.sin(pitch) * speed,
+        vz: Math.cos(angle) * cosPitch * speed,
+        r: Math.min(1, col.r + 0.3),
+        g: Math.min(1, col.g + 0.3),
+        b: Math.min(1, col.b + 0.3),
+        life: 0.25 + Math.random() * 0.3,
+        maxLife: 0.55,
+        size: 2.2 + Math.random() * 2.0
+      });
+    }
+  }
+
+  createExplosion(pos, scale = 1, colorHex = 0xff5500) {
+    const THREE = this.THREE;
+    const col = new THREE.Color(colorHex);
+    const size = Math.max(0.4, scale);
+    const sparkCount = Math.min(140, Math.round(14 + size * 40));
+
+    if (size >= 1.2) {
+      const ring = new THREE.Mesh(this.ringGeom, this.ringMatNormal);
+      ring.position.copy(pos);
+      ring.position.y = 0.5;
+      this.scene.add(ring);
+      this.shockwaves.push({
+        mesh: ring,
+        scale: 1,
+        maxScale: 8 + size * 12,
+        speed: 25 + size * 18,
+        life: 1.0,
+        decay: 1.8
+      });
+    }
+
+    if (size >= 0.8) {
+      const shardCount = Math.min(12, Math.round(size * 6));
+      for (let i = 0; i < shardCount && this.shards.length < 50; i++) {
+        const shard = new THREE.Mesh(this.shardGeom, this.shardMatNormal);
+        shard.position.copy(pos);
+        shard.scale.setScalar(0.4 + Math.random() * 0.7 * size);
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 14 + Math.random() * 30 * size;
+        this.scene.add(shard);
+        this.shards.push({
+          mesh: shard,
+          vx: Math.sin(angle) * speed,
+          vy: (Math.random() - 0.5) * 10,
+          vz: Math.cos(angle) * speed,
+          rotX: (Math.random() - 0.5) * 10,
+          rotY: (Math.random() - 0.5) * 10,
+          rotZ: (Math.random() - 0.5) * 10,
+          life: 1.2 + Math.random() * 0.6
+        });
+      }
+    }
+
+    for (let i = 0; i < sparkCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 8 + Math.random() * 34 * size;
+      const lift = Math.random();
+      this._addSpark({
+        x: pos.x,
+        y: pos.y + (Math.random() - 0.5) * size * 2,
+        z: pos.z,
+        vx: Math.sin(angle) * speed,
+        vy: (Math.random() - 0.5) * 12 * size,
+        vz: Math.cos(angle) * speed,
+        r: Math.min(1, col.r + lift * 0.5),
+        g: Math.min(1, col.g + lift * 0.35),
+        b: Math.min(1, col.b + lift * 0.35),
+        life: 0.5 + Math.random() * 0.7,
+        maxLife: 1.2,
+        size: 2.5 + Math.random() * 2.5 * size
+      });
+    }
+  }
+
   createThrusterSparks(pos, heading, isBoosting) {
     const col = isBoosting ? new this.THREE.Color(0x66ffff) : new this.THREE.Color(0xff7722);
     const speed = isBoosting ? 45 : 25;

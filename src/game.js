@@ -67,6 +67,9 @@ export class CosmicGame {
     this.currentLevel = 1;
     this.levelKills = 0;
     this.shake = 0;
+    this.victoryModalActive = false;
+    this.gameOverActive = false;
+    this.updateErrors = 0;
 
     // Camera Modes: 0 = Tactical Chase, 1 = Close Action Chase, 2 = Cockpit View
     this.cameraMode = 0;
@@ -191,6 +194,15 @@ export class CosmicGame {
     this.isPaused = false;
     this.currentLevel = levelNum;
     this.levelKills = 0;
+
+    // Reset per-mission modal state. victoryModalActive was never cleared, so
+    // after the first victory _onMissionComplete could never fire again and
+    // every later mission became unwinnable.
+    this.victoryModalActive = false;
+    this.gameOverActive = false;
+    this.hud.showGameOverModal(false);
+    this.hud.showVictoryModal(false);
+
     const def = MISSION_DEFINITIONS[levelNum - 1] || MISSION_DEFINITIONS[0];
 
     this.player.reset();
@@ -225,8 +237,25 @@ export class CosmicGame {
     const dt = Math.min(0.1, (now - this.lastTime) / 1000);
     this.lastTime = now;
 
-    if (!this.isPaused) {
-      this._update(dt, now / 1000);
+    if (this.isPaused) {
+      // Input must still be polled while paused. Previously the pause key was
+      // only read inside _update(), which does not run while paused, so Esc/P
+      // could open the menu but never close it again.
+      const pausedInput = this.input.sample(this.player);
+      const modalBlocking = this.gameOverActive || this.victoryModalActive;
+      if (pausedInput.togglePause && !modalBlocking) {
+        this.togglePause(false);
+      }
+    } else {
+      try {
+        this._update(dt, now / 1000);
+      } catch (err) {
+        // A single bad update must never kill the render/camera/HUD loop.
+        this.updateErrors = (this.updateErrors || 0) + 1;
+        if (this.updateErrors === 1) {
+          console.error('[HOVERDRIFT] update loop recovered from error:', err);
+        }
+      }
     }
 
     this._render();
@@ -236,7 +265,12 @@ export class CosmicGame {
     // 1. SAMPLE INPUT & CONTROLS
     const inputState = this.input.sample(this.player);
 
-    if (inputState.togglePause) {
+    // While a modal owns the screen its own buttons drive the game, so the pause
+    // key must be inert in both directions. Otherwise Esc pauses behind the modal
+    // and the paused branch (which ignores the key while a modal is open) can
+    // never unpause it again.
+    const modalBlocking = this.gameOverActive || this.victoryModalActive;
+    if (inputState.togglePause && !modalBlocking) {
       this.togglePause();
       return;
     }
@@ -248,6 +282,12 @@ export class CosmicGame {
     if (inputState.weaponSelect) {
       this.player.selectedWeapon = inputState.weaponSelect;
       this.hud.addFeedMessage(`WEAPON ARMED: ${inputState.weaponSelect.toUpperCase()}`, '#ffaa00');
+    }
+
+    if (inputState.cycleMissile) {
+      const mode = this.player.cycleMissileMode();
+      this.audio.missileLock();
+      this.hud.addFeedMessage(`ORDNANCE SELECTED: ${mode.toUpperCase()}`, '#ffaa00');
     }
 
     // Update Player Movement & Physics
@@ -266,7 +306,7 @@ export class CosmicGame {
     const wType = this.player.selectedWeapon || 'cannons';
 
     // Primary & Rapid Fire
-    if (inputState.fire && this.player.canFire(time, wType)) {
+    if (inputState.fire && wType !== 'missiles' && this.player.canFire(time, wType)) {
       this.player.recordShot(time, wType);
       const isRapid = wType === 'rapid';
       const laserSpawns = this.player.getLaserSpawns();
@@ -304,16 +344,19 @@ export class CosmicGame {
       this.addShake(isRapid ? 0.03 : 0.06);
     }
 
-    // Secondary Homing Missiles (R-Click / E)
-    if (inputState.fireMissile && this.player.canLaunchMissile(time)) {
+    // Secondary ordnance: right-click / E, or the primary trigger while rack
+    // slot 3 (MISSILES) is armed -- otherwise selecting slot 3 dead-fired.
+    const wantsMissile = inputState.fireMissile || (wType === 'missiles' && inputState.fire);
+    if (wantsMissile && this.player.canLaunchMissile(time)) {
       const trackingInfo = this.drones.getTargetTrackingInfo(this.player, this.camera, this.canvas.width, this.canvas.height);
       const target = trackingInfo ? trackingInfo.target : null;
+      const mode = this.player.missileMode;
 
       if (this.player.recordMissileLaunch(time)) {
-        this.drones.launchPlayerMissile(this.player, target);
+        this.drones.launchPlayerMissile(this.player, target, mode);
         this.audio.missileLaunch();
         this.addShake(0.18);
-        this.hud.addFeedMessage(`HOMING MISSILE LAUNCHED [${this.player.missiles} REMAINING]`, '#3ef0ff');
+        this.hud.addFeedMessage(`${mode.toUpperCase()} LAUNCHED [${this.player.missiles} REMAINING]`, '#3ef0ff');
       }
     }
 
@@ -371,6 +414,19 @@ export class CosmicGame {
     // 4. UPDATE ASTEROIDS & DRONES
     this.asteroids.update(dt, this.player.position);
     this.drones.update(dt, this.player, time, this.audio, this.particles);
+
+    // Missile detonations resolve inside DroneManager, so credit those kills here.
+    // Without this a missile could destroy a hostile and the objective never moved.
+    if (this.drones.missileKills.length > 0) {
+      for (const k of this.drones.missileKills) {
+        const pts = (k.points || 100) * this.combo;
+        this.score += pts;
+        this.levelKills++;
+        this._incrementCombo();
+        this.hud.addFeedMessage(`+${pts} ${k.name || 'HOSTILE'} ELIMINATED`, k.isBoss ? '#bf00ff' : '#5cff9d');
+      }
+      this.drones.missileKills.length = 0;
+    }
 
     // Ship vs Asteroid Collision
     const shipAstHit = this.asteroids.checkShipCollision(this.player);
@@ -547,6 +603,7 @@ export class CosmicGame {
   _onGameOver() {
     if (this.isPaused) return;
     this.isPaused = true;
+    this.gameOverActive = true;
     this.audio.explode(true);
     this.particles.createShipExplosion(this.player.position, true);
     const def = MISSION_DEFINITIONS[this.currentLevel - 1] || { title: 'PATROL' };

@@ -12,7 +12,6 @@
 
   <!-- Offline / Local Fallback Three.js with CDN safety -->
   <script src="./three.min.js"></script>
-  <script src="./public/three.min.js"></script>
   <script>
     if (typeof THREE === 'undefined') {
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');
@@ -632,6 +631,10 @@
       background: rgba(2, 4, 10, 0.88);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
+      /* .hud is pointer-events: none so the HUD never blocks the canvas.
+         Modals must re-enable it, otherwise the canvas swallows the click
+         and no modal button (Redeploy / Hangar / Next Mission / Resume) works. */
+      pointer-events: auto;
     }
 
     .modal-card {
@@ -2197,11 +2200,16 @@ class Starfighter {
     this.overheated = false;
     this.coolRate = 0.42;
 
-    // Secondary Homing Missiles
+    // Secondary Ordance
     this.missiles = 8;
     this.maxMissiles = 8;
     this.lastMissileTime = 0;
     this.missileCooldown = 1.0;
+
+    // Selectable missile profiles. Each changes speed, guidance, damage and how
+    // many rounds leave the rack per trigger pull (which is also its ammo cost).
+    this.missileModes = ['homing', 'salvo', 'torpedo'];
+    this.missileModeIndex = 0;
 
     // Special Weapon: EMP Pulse
     this.empCooldown = 0;
@@ -3106,13 +3114,27 @@ class Starfighter {
     }
   }
 
+  get missileMode() {
+    return this.missileModes[this.missileModeIndex];
+  }
+
+  getMissileAmmoCost() {
+    return this.missileMode === 'salvo' ? 3 : 1;
+  }
+
+  cycleMissileMode() {
+    this.missileModeIndex = (this.missileModeIndex + 1) % this.missileModes.length;
+    return this.missileMode;
+  }
+
   canLaunchMissile(time) {
-    return this.missiles > 0 && (time - this.lastMissileTime >= this.missileCooldown);
+    return this.missiles >= this.getMissileAmmoCost() && (time - this.lastMissileTime >= this.missileCooldown);
   }
 
   recordMissileLaunch(time) {
-    if (this.missiles > 0) {
-      this.missiles--;
+    const cost = this.getMissileAmmoCost();
+    if (this.missiles >= cost) {
+      this.missiles -= cost;
       this.lastMissileTime = time;
       // Hide visible wing missile mesh if inventory depleting
       if (this.missileMeshes.length > 0) {
@@ -4246,6 +4268,9 @@ class DroneManager {
     this.enemyLasers = [];
     this.enemyMissiles = [];
     this.playerMissiles = [];
+    // Kills scored by ordnance, drained by CosmicGame so missiles count toward
+    // score, combo and the mission objective exactly like laser kills do.
+    this.missileKills = [];
     this.powerups = [];
     this.activeEMPWave = null;
 
@@ -4818,23 +4843,50 @@ class DroneManager {
   }
 
   /**
-   * Player Fires a Homing Missile toward locked target
+   * Player fires ordnance. `mode` selects the profile:
+   *   homing  - one guided round, balanced
+   *   salvo   - three guided rounds in a fan, lighter each
+   *   torpedo - one heavy unguided round, slow but devastating
    */
-  launchPlayerMissile(player, target) {
+  launchPlayerMissile(player, target, mode = 'homing') {
+    if (mode === 'salvo') {
+      for (let k = -1; k <= 1; k++) {
+        this._spawnPlayerMissile(player, target, {
+          spread: k * 0.17, speed: 100, damage: 9, homing: true, life: 5.0, scale: 0.8
+        });
+      }
+      return;
+    }
+
+    if (mode === 'torpedo') {
+      this._spawnPlayerMissile(player, target, {
+        spread: 0, speed: 76, damage: 34, homing: false, life: 4.2, scale: 1.6
+      });
+      return;
+    }
+
+    this._spawnPlayerMissile(player, target, {
+      spread: 0, speed: 110, damage: 16, homing: true, life: 5.0, scale: 1
+    });
+  }
+
+  _spawnPlayerMissile(player, target, cfg) {
     const THREE = this.THREE;
-    const spawnPos = player.getMissileSpawn();
     const mesh = new THREE.Mesh(this.missileGeom, this.playerMissileMat);
-    mesh.position.copy(spawnPos);
-    mesh.rotation.y = player.heading;
+    mesh.position.copy(player.getMissileSpawn());
+    mesh.scale.setScalar(cfg.scale);
+    mesh.rotation.y = player.heading + cfg.spread;
     this.scene.add(mesh);
 
     this.playerMissiles.push({
       mesh,
       target,
-      heading: player.heading,
-      speed: 110,
-      life: 5.0,
-      damage: 16
+      heading: player.heading + cfg.spread,
+      pitch: 0,
+      speed: cfg.speed,
+      life: cfg.life,
+      damage: cfg.damage,
+      homing: cfg.homing
     });
   }
 
@@ -5072,19 +5124,33 @@ class DroneManager {
       const pm = this.playerMissiles[i];
       pm.life -= dt;
 
-      // Guide toward target if still active
-      if (pm.target && (pm.target.hp > 0 || (pm.target.group && pm.target.group.parent))) {
+      // Guided rounds steer in BOTH axes. The original update only moved x/z, so a
+      // missile stayed at its launch altitude and flew straight past any enemy at a
+      // different height -- which is most of them.
+      const liveTarget = pm.target && pm.target.group && pm.target.group.parent;
+      if (pm.homing && liveTarget) {
         const tPos = pm.target.group.position;
         const dx = tPos.x - pm.mesh.position.x;
+        const dy = tPos.y - pm.mesh.position.y;
         const dz = tPos.z - pm.mesh.position.z;
+
         const targetAngle = Math.atan2(dx, dz);
         let angleDiff = Math.atan2(Math.sin(targetAngle - pm.heading), Math.cos(targetAngle - pm.heading));
         pm.heading += angleDiff * Math.min(1.0, 4.5 * dt);
+
+        const horiz = Math.hypot(dx, dz);
+        const targetPitch = Math.atan2(dy, Math.max(0.001, horiz));
+        pm.pitch = (pm.pitch || 0) + (targetPitch - (pm.pitch || 0)) * Math.min(1.0, 3.5 * dt);
       }
 
       pm.mesh.rotation.y = pm.heading;
-      pm.mesh.position.x += Math.sin(pm.heading) * pm.speed * dt;
-      pm.mesh.position.z += Math.cos(pm.heading) * pm.speed * dt;
+      pm.mesh.rotation.x = -(pm.pitch || 0);
+
+      const step = pm.speed * dt;
+      const cosPitch = Math.cos(pm.pitch || 0);
+      pm.mesh.position.x += Math.sin(pm.heading) * cosPitch * step;
+      pm.mesh.position.y += Math.sin(pm.pitch || 0) * step;
+      pm.mesh.position.z += Math.cos(pm.heading) * cosPitch * step;
 
       particles.createMissileSmoke(pm.mesh.position);
 
@@ -5094,7 +5160,8 @@ class DroneManager {
       // Boss check
       if (this.boss && !this.boss.isDestroying) {
         if (pm.mesh.position.distanceTo(this.boss.group.position) < this.boss.radius) {
-          this._applyDamageToTarget(this.boss, pm.damage, particles, audio);
+          const res = this._applyDamageToTarget(this.boss, pm.damage, particles, audio);
+          if (res && res.destroyed) this.missileKills.push(res);
           detonated = true;
         }
       }
@@ -5104,7 +5171,8 @@ class DroneManager {
         for (let j = this.drones.length - 1; j >= 0; j--) {
           const d = this.drones[j];
           if (pm.mesh.position.distanceTo(d.group.position) < d.radius + 1.2) {
-            this._applyDamageToTarget(d, pm.damage, particles, audio);
+            const res = this._applyDamageToTarget(d, pm.damage, particles, audio);
+            if (res && res.destroyed) this.missileKills.push(res);
             detonated = true;
             break;
           }
@@ -5250,7 +5318,7 @@ class DroneManager {
       });
       this.scene.add(mesh);
     });
-    audio.enemyLaser();
+    audio.enemyShoot();
   }
 
   _bossLaunchMissile(boss, player, audio) {
@@ -5290,7 +5358,7 @@ class DroneManager {
       damage: 20
     });
     this.scene.add(mesh);
-    audio.enemyLaser();
+    audio.enemyShoot();
   }
 
   _droneFire(drone, player, audio) {
@@ -5320,7 +5388,7 @@ class DroneManager {
       damage
     });
     this.scene.add(mesh);
-    audio.enemyLaser();
+    audio.enemyShoot();
   }
 
   _droneLaunchMissile(drone, player, audio) {
@@ -5353,10 +5421,13 @@ class DroneManager {
     if (target.hp <= 0) {
       if (target === this.boss) {
         target.isDestroying = true;
-      } else {
-        this._destroyDrone(target, particles, audio);
+        return { destroyed: true, name: target.name, points: target.points, isBoss: true };
       }
+      this._destroyDrone(target, particles, audio);
+      return { destroyed: true, name: target.name, points: target.points, isBoss: false };
     }
+
+    return { destroyed: false };
   }
 
   checkPlayerLaserCollisions(laserMesh, damage, particles, audio) {
@@ -5475,10 +5546,12 @@ class DroneManager {
     const THREE = this.THREE;
     const candidates = [];
 
+    // Keep a reference to the live entity: the spread copies are snapshots, so
+    // homing off a copy tracked stale hp/position and never let go of dead targets.
     if (this.boss && !this.boss.isDestroying) {
-      candidates.push({ ...this.boss, isBoss: true });
+      candidates.push({ ...this.boss, isBoss: true, ref: this.boss });
     }
-    this.drones.forEach(d => candidates.push({ ...d, isBoss: false }));
+    this.drones.forEach(d => candidates.push({ ...d, isBoss: false, ref: d }));
 
     if (candidates.length === 0) return null;
 
@@ -5555,7 +5628,7 @@ class DroneManager {
       const leadScreenY = (-this._tempLead.y * 0.5 + 0.5) * canvasHeight;
 
       const targetData = {
-        target: c,
+        target: c.ref || c,
         name: c.name || 'HOSTILE',
         hp: c.hp,
         maxHp: c.maxHp,
@@ -5618,6 +5691,7 @@ class DroneManager {
 
     this.playerMissiles.forEach(pm => this.scene.remove(pm.mesh));
     this.playerMissiles = [];
+    this.missileKills = [];
 
     this.powerups.forEach(p => this.scene.remove(p.group));
     this.powerups = [];
@@ -5846,6 +5920,94 @@ class ParticleSystem {
         life: 0.4 + Math.random() * 0.4,
         maxLife: 0.8,
         size: 2.0 + Math.random() * 2.0
+      });
+    }
+  }
+
+  createShieldHit(pos, colorHex = 0x3ef0ff) {
+    const col = new this.THREE.Color(colorHex);
+    for (let i = 0; i < 18; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const pitch = (Math.random() - 0.5) * Math.PI;
+      const speed = 14 + Math.random() * 26;
+      const cosPitch = Math.cos(pitch);
+      this._addSpark({
+        x: pos.x,
+        y: pos.y,
+        z: pos.z,
+        vx: Math.sin(angle) * cosPitch * speed,
+        vy: Math.sin(pitch) * speed,
+        vz: Math.cos(angle) * cosPitch * speed,
+        r: Math.min(1, col.r + 0.3),
+        g: Math.min(1, col.g + 0.3),
+        b: Math.min(1, col.b + 0.3),
+        life: 0.25 + Math.random() * 0.3,
+        maxLife: 0.55,
+        size: 2.2 + Math.random() * 2.0
+      });
+    }
+  }
+
+  createExplosion(pos, scale = 1, colorHex = 0xff5500) {
+    const THREE = this.THREE;
+    const col = new THREE.Color(colorHex);
+    const size = Math.max(0.4, scale);
+    const sparkCount = Math.min(140, Math.round(14 + size * 40));
+
+    if (size >= 1.2) {
+      const ring = new THREE.Mesh(this.ringGeom, this.ringMatNormal);
+      ring.position.copy(pos);
+      ring.position.y = 0.5;
+      this.scene.add(ring);
+      this.shockwaves.push({
+        mesh: ring,
+        scale: 1,
+        maxScale: 8 + size * 12,
+        speed: 25 + size * 18,
+        life: 1.0,
+        decay: 1.8
+      });
+    }
+
+    if (size >= 0.8) {
+      const shardCount = Math.min(12, Math.round(size * 6));
+      for (let i = 0; i < shardCount && this.shards.length < 50; i++) {
+        const shard = new THREE.Mesh(this.shardGeom, this.shardMatNormal);
+        shard.position.copy(pos);
+        shard.scale.setScalar(0.4 + Math.random() * 0.7 * size);
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 14 + Math.random() * 30 * size;
+        this.scene.add(shard);
+        this.shards.push({
+          mesh: shard,
+          vx: Math.sin(angle) * speed,
+          vy: (Math.random() - 0.5) * 10,
+          vz: Math.cos(angle) * speed,
+          rotX: (Math.random() - 0.5) * 10,
+          rotY: (Math.random() - 0.5) * 10,
+          rotZ: (Math.random() - 0.5) * 10,
+          life: 1.2 + Math.random() * 0.6
+        });
+      }
+    }
+
+    for (let i = 0; i < sparkCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 8 + Math.random() * 34 * size;
+      const lift = Math.random();
+      this._addSpark({
+        x: pos.x,
+        y: pos.y + (Math.random() - 0.5) * size * 2,
+        z: pos.z,
+        vx: Math.sin(angle) * speed,
+        vy: (Math.random() - 0.5) * 12 * size,
+        vz: Math.cos(angle) * speed,
+        r: Math.min(1, col.r + lift * 0.5),
+        g: Math.min(1, col.g + lift * 0.35),
+        b: Math.min(1, col.b + lift * 0.35),
+        life: 0.5 + Math.random() * 0.7,
+        maxLife: 1.2,
+        size: 2.5 + Math.random() * 2.5 * size
       });
     }
   }
@@ -6153,6 +6315,7 @@ class InputController {
     let boost = false;
     let fire = false;
     let fireMissile = false;
+    let cycleMissile = false;
     let triggerEMP = false;
     let switchCamera = false;
     let togglePause = false;
@@ -6198,6 +6361,11 @@ class InputController {
     // Special Weapon / EMP (Q)
     if (this.justPressedKeys.has('KeyQ')) {
       triggerEMP = true;
+    }
+
+    // Cycle Missile Ordnance Type (X)
+    if (this.justPressedKeys.has('KeyX')) {
+      cycleMissile = true;
     }
 
     // Camera Switch (V)
@@ -6309,6 +6477,7 @@ class InputController {
       boost,
       fire,
       fireMissile,
+      cycleMissile,
       triggerEMP,
       switchCamera,
       togglePause,
@@ -6455,7 +6624,7 @@ class TacticalHUD {
           <div class="weapons-rack">
             <div class="w-slot active" id="w-slot-1"><span class="w-key">1</span> CANNONS</div>
             <div class="w-slot" id="w-slot-2"><span class="w-key">2</span> GATLING</div>
-            <div class="w-slot" id="w-slot-3"><span class="w-key">3</span> MISSILES (<span id="hud-missiles-val">8</span>)</div>
+            <div class="w-slot" id="w-slot-3"><span class="w-key">3</span> <span id="hud-missile-mode">HOMING</span> (<span id="hud-missiles-val">8</span>)</div>
             <div class="w-slot emp-slot" id="w-slot-emp"><span class="w-key">Q</span> EMP [READY]</div>
           </div>
         </div>
@@ -6466,7 +6635,7 @@ class TacticalHUD {
           <div class="hint-chip"><kbd>W</kbd>/<kbd>S</kbd> THRUST / BRAKE</div>
           <div class="hint-chip"><kbd>R</kbd>/<kbd>F</kbd> CLIMB UP / DIVE DOWN</div>
           <div class="hint-chip"><kbd>MOUSE</kbd> 3D AIM & PITCH // <kbd>L-CLICK</kbd> FIRE</div>
-          <div class="hint-chip"><kbd>R-CLICK</kbd>/<kbd>E</kbd> MISSILE // <kbd>Q</kbd> EMP</div>
+          <div class="hint-chip"><kbd>R-CLICK</kbd>/<kbd>E</kbd> MISSILE // <kbd>X</kbd> TYPE // <kbd>Q</kbd> EMP</div>
           <div class="hint-chip"><kbd>ESC</kbd> PAUSE MENU</div>
         </div>
 
@@ -6576,6 +6745,7 @@ class TacticalHUD {
     this.heatVal = document.getElementById('hud-heat-val');
     this.weaponLabel = document.getElementById('hud-weapon-label');
     this.missilesVal = document.getElementById('hud-missiles-val');
+    this.missileModeEl = document.getElementById('hud-missile-mode');
     this.empSlot = document.getElementById('w-slot-emp');
     this.wSlot1 = document.getElementById('w-slot-1');
     this.wSlot2 = document.getElementById('w-slot-2');
@@ -6592,6 +6762,7 @@ class TacticalHUD {
     this._lastHeat = -1;
     this._lastWeapon = '';
     this._lastMissiles = -1;
+    this._lastMissileMode = '';
     this.cockpitOverlay = document.getElementById('cockpit-overlay');
     this.feedEl = document.getElementById('hud-feed');
     this.announcementEl = document.getElementById('hud-announcement');
@@ -6968,6 +7139,12 @@ class TacticalHUD {
       this.missilesVal.textContent = player.missiles;
     }
 
+    const curMissileMode = (player.missileMode || 'homing').toUpperCase();
+    if (this._lastMissileMode !== curMissileMode && this.missileModeEl) {
+      this._lastMissileMode = curMissileMode;
+      this.missileModeEl.textContent = curMissileMode;
+    }
+
     if (this.empSlot) {
       if (player.empCooldown <= 0) {
         this.empSlot.classList.add('ready');
@@ -7307,6 +7484,9 @@ class CosmicGame {
     this.currentLevel = 1;
     this.levelKills = 0;
     this.shake = 0;
+    this.victoryModalActive = false;
+    this.gameOverActive = false;
+    this.updateErrors = 0;
 
     // Camera Modes: 0 = Tactical Chase, 1 = Close Action Chase, 2 = Cockpit View
     this.cameraMode = 0;
@@ -7431,6 +7611,15 @@ class CosmicGame {
     this.isPaused = false;
     this.currentLevel = levelNum;
     this.levelKills = 0;
+
+    // Reset per-mission modal state. victoryModalActive was never cleared, so
+    // after the first victory _onMissionComplete could never fire again and
+    // every later mission became unwinnable.
+    this.victoryModalActive = false;
+    this.gameOverActive = false;
+    this.hud.showGameOverModal(false);
+    this.hud.showVictoryModal(false);
+
     const def = MISSION_DEFINITIONS[levelNum - 1] || MISSION_DEFINITIONS[0];
 
     this.player.reset();
@@ -7465,8 +7654,25 @@ class CosmicGame {
     const dt = Math.min(0.1, (now - this.lastTime) / 1000);
     this.lastTime = now;
 
-    if (!this.isPaused) {
-      this._update(dt, now / 1000);
+    if (this.isPaused) {
+      // Input must still be polled while paused. Previously the pause key was
+      // only read inside _update(), which does not run while paused, so Esc/P
+      // could open the menu but never close it again.
+      const pausedInput = this.input.sample(this.player);
+      const modalBlocking = this.gameOverActive || this.victoryModalActive;
+      if (pausedInput.togglePause && !modalBlocking) {
+        this.togglePause(false);
+      }
+    } else {
+      try {
+        this._update(dt, now / 1000);
+      } catch (err) {
+        // A single bad update must never kill the render/camera/HUD loop.
+        this.updateErrors = (this.updateErrors || 0) + 1;
+        if (this.updateErrors === 1) {
+          console.error('[HOVERDRIFT] update loop recovered from error:', err);
+        }
+      }
     }
 
     this._render();
@@ -7476,7 +7682,12 @@ class CosmicGame {
     // 1. SAMPLE INPUT & CONTROLS
     const inputState = this.input.sample(this.player);
 
-    if (inputState.togglePause) {
+    // While a modal owns the screen its own buttons drive the game, so the pause
+    // key must be inert in both directions. Otherwise Esc pauses behind the modal
+    // and the paused branch (which ignores the key while a modal is open) can
+    // never unpause it again.
+    const modalBlocking = this.gameOverActive || this.victoryModalActive;
+    if (inputState.togglePause && !modalBlocking) {
       this.togglePause();
       return;
     }
@@ -7488,6 +7699,12 @@ class CosmicGame {
     if (inputState.weaponSelect) {
       this.player.selectedWeapon = inputState.weaponSelect;
       this.hud.addFeedMessage(`WEAPON ARMED: ${inputState.weaponSelect.toUpperCase()}`, '#ffaa00');
+    }
+
+    if (inputState.cycleMissile) {
+      const mode = this.player.cycleMissileMode();
+      this.audio.missileLock();
+      this.hud.addFeedMessage(`ORDNANCE SELECTED: ${mode.toUpperCase()}`, '#ffaa00');
     }
 
     // Update Player Movement & Physics
@@ -7506,7 +7723,7 @@ class CosmicGame {
     const wType = this.player.selectedWeapon || 'cannons';
 
     // Primary & Rapid Fire
-    if (inputState.fire && this.player.canFire(time, wType)) {
+    if (inputState.fire && wType !== 'missiles' && this.player.canFire(time, wType)) {
       this.player.recordShot(time, wType);
       const isRapid = wType === 'rapid';
       const laserSpawns = this.player.getLaserSpawns();
@@ -7544,16 +7761,19 @@ class CosmicGame {
       this.addShake(isRapid ? 0.03 : 0.06);
     }
 
-    // Secondary Homing Missiles (R-Click / E)
-    if (inputState.fireMissile && this.player.canLaunchMissile(time)) {
+    // Secondary ordnance: right-click / E, or the primary trigger while rack
+    // slot 3 (MISSILES) is armed -- otherwise selecting slot 3 dead-fired.
+    const wantsMissile = inputState.fireMissile || (wType === 'missiles' && inputState.fire);
+    if (wantsMissile && this.player.canLaunchMissile(time)) {
       const trackingInfo = this.drones.getTargetTrackingInfo(this.player, this.camera, this.canvas.width, this.canvas.height);
       const target = trackingInfo ? trackingInfo.target : null;
+      const mode = this.player.missileMode;
 
       if (this.player.recordMissileLaunch(time)) {
-        this.drones.launchPlayerMissile(this.player, target);
+        this.drones.launchPlayerMissile(this.player, target, mode);
         this.audio.missileLaunch();
         this.addShake(0.18);
-        this.hud.addFeedMessage(`HOMING MISSILE LAUNCHED [${this.player.missiles} REMAINING]`, '#3ef0ff');
+        this.hud.addFeedMessage(`${mode.toUpperCase()} LAUNCHED [${this.player.missiles} REMAINING]`, '#3ef0ff');
       }
     }
 
@@ -7611,6 +7831,19 @@ class CosmicGame {
     // 4. UPDATE ASTEROIDS & DRONES
     this.asteroids.update(dt, this.player.position);
     this.drones.update(dt, this.player, time, this.audio, this.particles);
+
+    // Missile detonations resolve inside DroneManager, so credit those kills here.
+    // Without this a missile could destroy a hostile and the objective never moved.
+    if (this.drones.missileKills.length > 0) {
+      for (const k of this.drones.missileKills) {
+        const pts = (k.points || 100) * this.combo;
+        this.score += pts;
+        this.levelKills++;
+        this._incrementCombo();
+        this.hud.addFeedMessage(`+${pts} ${k.name || 'HOSTILE'} ELIMINATED`, k.isBoss ? '#bf00ff' : '#5cff9d');
+      }
+      this.drones.missileKills.length = 0;
+    }
 
     // Ship vs Asteroid Collision
     const shipAstHit = this.asteroids.checkShipCollision(this.player);
@@ -7787,6 +8020,7 @@ class CosmicGame {
   _onGameOver() {
     if (this.isPaused) return;
     this.isPaused = true;
+    this.gameOverActive = true;
     this.audio.explode(true);
     this.particles.createShipExplosion(this.player.position, true);
     const def = MISSION_DEFINITIONS[this.currentLevel - 1] || { title: 'PATROL' };
@@ -8063,6 +8297,9 @@ class CosmicGame {
           mainGame.startMission(mainGame.currentLevel || 1);
           mainGame.player.reset(selectedShip);
         }
+
+        // Exposed for debugging / automated testing.
+        window.__game = mainGame;
       }
 
       if (btnLaunch) {

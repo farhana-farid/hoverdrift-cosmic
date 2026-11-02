@@ -112,6 +112,7 @@ export class InputController {
     let boost = false;
     let fire = false;
     let fireMissile = false;
+    let cycleMissile = false;
     let triggerEMP = false;
     let switchCamera = false;
     let togglePause = false;
@@ -157,6 +158,11 @@ export class InputController {
     // Special Weapon / EMP (Q)
     if (this.justPressedKeys.has('KeyQ')) {
       triggerEMP = true;
+    }
+
+    // Cycle Missile Ordnance Type (X)
+    if (this.justPressedKeys.has('KeyX')) {
+      cycleMissile = true;
     }
 
     // Camera Switch (V)
@@ -268,6 +274,7 @@ export class InputController {
       boost,
       fire,
       fireMissile,
+      cycleMissile,
       triggerEMP,
       switchCamera,
       togglePause,

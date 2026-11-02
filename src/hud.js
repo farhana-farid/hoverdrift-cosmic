@@ -130,7 +130,7 @@ export class TacticalHUD {
           <div class="weapons-rack">
             <div class="w-slot active" id="w-slot-1"><span class="w-key">1</span> CANNONS</div>
             <div class="w-slot" id="w-slot-2"><span class="w-key">2</span> GATLING</div>
-            <div class="w-slot" id="w-slot-3"><span class="w-key">3</span> MISSILES (<span id="hud-missiles-val">8</span>)</div>
+            <div class="w-slot" id="w-slot-3"><span class="w-key">3</span> <span id="hud-missile-mode">HOMING</span> (<span id="hud-missiles-val">8</span>)</div>
             <div class="w-slot emp-slot" id="w-slot-emp"><span class="w-key">Q</span> EMP [READY]</div>
           </div>
         </div>
@@ -141,7 +141,7 @@ export class TacticalHUD {
           <div class="hint-chip"><kbd>W</kbd>/<kbd>S</kbd> THRUST / BRAKE</div>
           <div class="hint-chip"><kbd>R</kbd>/<kbd>F</kbd> CLIMB UP / DIVE DOWN</div>
           <div class="hint-chip"><kbd>MOUSE</kbd> 3D AIM & PITCH // <kbd>L-CLICK</kbd> FIRE</div>
-          <div class="hint-chip"><kbd>R-CLICK</kbd>/<kbd>E</kbd> MISSILE // <kbd>Q</kbd> EMP</div>
+          <div class="hint-chip"><kbd>R-CLICK</kbd>/<kbd>E</kbd> MISSILE // <kbd>X</kbd> TYPE // <kbd>Q</kbd> EMP</div>
           <div class="hint-chip"><kbd>ESC</kbd> PAUSE MENU</div>
         </div>
 
@@ -251,6 +251,7 @@ export class TacticalHUD {
     this.heatVal = document.getElementById('hud-heat-val');
     this.weaponLabel = document.getElementById('hud-weapon-label');
     this.missilesVal = document.getElementById('hud-missiles-val');
+    this.missileModeEl = document.getElementById('hud-missile-mode');
     this.empSlot = document.getElementById('w-slot-emp');
     this.wSlot1 = document.getElementById('w-slot-1');
     this.wSlot2 = document.getElementById('w-slot-2');
@@ -267,6 +268,7 @@ export class TacticalHUD {
     this._lastHeat = -1;
     this._lastWeapon = '';
     this._lastMissiles = -1;
+    this._lastMissileMode = '';
     this.cockpitOverlay = document.getElementById('cockpit-overlay');
     this.feedEl = document.getElementById('hud-feed');
     this.announcementEl = document.getElementById('hud-announcement');
@@ -641,6 +643,12 @@ export class TacticalHUD {
     if (this._lastMissiles !== player.missiles) {
       this._lastMissiles = player.missiles;
       this.missilesVal.textContent = player.missiles;
+    }
+
+    const curMissileMode = (player.missileMode || 'homing').toUpperCase();
+    if (this._lastMissileMode !== curMissileMode && this.missileModeEl) {
+      this._lastMissileMode = curMissileMode;
+      this.missileModeEl.textContent = curMissileMode;
     }
 
     if (this.empSlot) {

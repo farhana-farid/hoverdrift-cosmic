@@ -18,6 +18,9 @@ export class DroneManager {
     this.enemyLasers = [];
     this.enemyMissiles = [];
     this.playerMissiles = [];
+    // Kills scored by ordnance, drained by CosmicGame so missiles count toward
+    // score, combo and the mission objective exactly like laser kills do.
+    this.missileKills = [];
     this.powerups = [];
     this.activeEMPWave = null;
 
@@ -590,23 +593,50 @@ export class DroneManager {
   }
 
   /**
-   * Player Fires a Homing Missile toward locked target
+   * Player fires ordnance. `mode` selects the profile:
+   *   homing  - one guided round, balanced
+   *   salvo   - three guided rounds in a fan, lighter each
+   *   torpedo - one heavy unguided round, slow but devastating
    */
-  launchPlayerMissile(player, target) {
+  launchPlayerMissile(player, target, mode = 'homing') {
+    if (mode === 'salvo') {
+      for (let k = -1; k <= 1; k++) {
+        this._spawnPlayerMissile(player, target, {
+          spread: k * 0.17, speed: 100, damage: 9, homing: true, life: 5.0, scale: 0.8
+        });
+      }
+      return;
+    }
+
+    if (mode === 'torpedo') {
+      this._spawnPlayerMissile(player, target, {
+        spread: 0, speed: 76, damage: 34, homing: false, life: 4.2, scale: 1.6
+      });
+      return;
+    }
+
+    this._spawnPlayerMissile(player, target, {
+      spread: 0, speed: 110, damage: 16, homing: true, life: 5.0, scale: 1
+    });
+  }
+
+  _spawnPlayerMissile(player, target, cfg) {
     const THREE = this.THREE;
-    const spawnPos = player.getMissileSpawn();
     const mesh = new THREE.Mesh(this.missileGeom, this.playerMissileMat);
-    mesh.position.copy(spawnPos);
-    mesh.rotation.y = player.heading;
+    mesh.position.copy(player.getMissileSpawn());
+    mesh.scale.setScalar(cfg.scale);
+    mesh.rotation.y = player.heading + cfg.spread;
     this.scene.add(mesh);
 
     this.playerMissiles.push({
       mesh,
       target,
-      heading: player.heading,
-      speed: 110,
-      life: 5.0,
-      damage: 16
+      heading: player.heading + cfg.spread,
+      pitch: 0,
+      speed: cfg.speed,
+      life: cfg.life,
+      damage: cfg.damage,
+      homing: cfg.homing
     });
   }
 
@@ -844,19 +874,33 @@ export class DroneManager {
       const pm = this.playerMissiles[i];
       pm.life -= dt;
 
-      // Guide toward target if still active
-      if (pm.target && (pm.target.hp > 0 || (pm.target.group && pm.target.group.parent))) {
+      // Guided rounds steer in BOTH axes. The original update only moved x/z, so a
+      // missile stayed at its launch altitude and flew straight past any enemy at a
+      // different height -- which is most of them.
+      const liveTarget = pm.target && pm.target.group && pm.target.group.parent;
+      if (pm.homing && liveTarget) {
         const tPos = pm.target.group.position;
         const dx = tPos.x - pm.mesh.position.x;
+        const dy = tPos.y - pm.mesh.position.y;
         const dz = tPos.z - pm.mesh.position.z;
+
         const targetAngle = Math.atan2(dx, dz);
         let angleDiff = Math.atan2(Math.sin(targetAngle - pm.heading), Math.cos(targetAngle - pm.heading));
         pm.heading += angleDiff * Math.min(1.0, 4.5 * dt);
+
+        const horiz = Math.hypot(dx, dz);
+        const targetPitch = Math.atan2(dy, Math.max(0.001, horiz));
+        pm.pitch = (pm.pitch || 0) + (targetPitch - (pm.pitch || 0)) * Math.min(1.0, 3.5 * dt);
       }
 
       pm.mesh.rotation.y = pm.heading;
-      pm.mesh.position.x += Math.sin(pm.heading) * pm.speed * dt;
-      pm.mesh.position.z += Math.cos(pm.heading) * pm.speed * dt;
+      pm.mesh.rotation.x = -(pm.pitch || 0);
+
+      const step = pm.speed * dt;
+      const cosPitch = Math.cos(pm.pitch || 0);
+      pm.mesh.position.x += Math.sin(pm.heading) * cosPitch * step;
+      pm.mesh.position.y += Math.sin(pm.pitch || 0) * step;
+      pm.mesh.position.z += Math.cos(pm.heading) * cosPitch * step;
 
       particles.createMissileSmoke(pm.mesh.position);
 
@@ -866,7 +910,8 @@ export class DroneManager {
       // Boss check
       if (this.boss && !this.boss.isDestroying) {
         if (pm.mesh.position.distanceTo(this.boss.group.position) < this.boss.radius) {
-          this._applyDamageToTarget(this.boss, pm.damage, particles, audio);
+          const res = this._applyDamageToTarget(this.boss, pm.damage, particles, audio);
+          if (res && res.destroyed) this.missileKills.push(res);
           detonated = true;
         }
       }
@@ -876,7 +921,8 @@ export class DroneManager {
         for (let j = this.drones.length - 1; j >= 0; j--) {
           const d = this.drones[j];
           if (pm.mesh.position.distanceTo(d.group.position) < d.radius + 1.2) {
-            this._applyDamageToTarget(d, pm.damage, particles, audio);
+            const res = this._applyDamageToTarget(d, pm.damage, particles, audio);
+            if (res && res.destroyed) this.missileKills.push(res);
             detonated = true;
             break;
           }
@@ -1022,7 +1068,7 @@ export class DroneManager {
       });
       this.scene.add(mesh);
     });
-    audio.enemyLaser();
+    audio.enemyShoot();
   }
 
   _bossLaunchMissile(boss, player, audio) {
@@ -1062,7 +1108,7 @@ export class DroneManager {
       damage: 20
     });
     this.scene.add(mesh);
-    audio.enemyLaser();
+    audio.enemyShoot();
   }
 
   _droneFire(drone, player, audio) {
@@ -1092,7 +1138,7 @@ export class DroneManager {
       damage
     });
     this.scene.add(mesh);
-    audio.enemyLaser();
+    audio.enemyShoot();
   }
 
   _droneLaunchMissile(drone, player, audio) {
@@ -1125,10 +1171,13 @@ export class DroneManager {
     if (target.hp <= 0) {
       if (target === this.boss) {
         target.isDestroying = true;
-      } else {
-        this._destroyDrone(target, particles, audio);
+        return { destroyed: true, name: target.name, points: target.points, isBoss: true };
       }
+      this._destroyDrone(target, particles, audio);
+      return { destroyed: true, name: target.name, points: target.points, isBoss: false };
     }
+
+    return { destroyed: false };
   }
 
   checkPlayerLaserCollisions(laserMesh, damage, particles, audio) {
@@ -1247,10 +1296,12 @@ export class DroneManager {
     const THREE = this.THREE;
     const candidates = [];
 
+    // Keep a reference to the live entity: the spread copies are snapshots, so
+    // homing off a copy tracked stale hp/position and never let go of dead targets.
     if (this.boss && !this.boss.isDestroying) {
-      candidates.push({ ...this.boss, isBoss: true });
+      candidates.push({ ...this.boss, isBoss: true, ref: this.boss });
     }
-    this.drones.forEach(d => candidates.push({ ...d, isBoss: false }));
+    this.drones.forEach(d => candidates.push({ ...d, isBoss: false, ref: d }));
 
     if (candidates.length === 0) return null;
 
@@ -1327,7 +1378,7 @@ export class DroneManager {
       const leadScreenY = (-this._tempLead.y * 0.5 + 0.5) * canvasHeight;
 
       const targetData = {
-        target: c,
+        target: c.ref || c,
         name: c.name || 'HOSTILE',
         hp: c.hp,
         maxHp: c.maxHp,
@@ -1390,6 +1441,7 @@ export class DroneManager {
 
     this.playerMissiles.forEach(pm => this.scene.remove(pm.mesh));
     this.playerMissiles = [];
+    this.missileKills = [];
 
     this.powerups.forEach(p => this.scene.remove(p.group));
     this.powerups = [];

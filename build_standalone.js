@@ -33,7 +33,6 @@ try {
 
   <!-- Offline / Local Fallback Three.js with CDN safety -->
   <script src="./three.min.js"></script>
-  <script src="./public/three.min.js"></script>
   <script>
     if (typeof THREE === 'undefined') {
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\\\/script>');
@@ -653,6 +652,10 @@ try {
       background: rgba(2, 4, 10, 0.88);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
+      /* .hud is pointer-events: none so the HUD never blocks the canvas.
+         Modals must re-enable it, otherwise the canvas swallows the click
+         and no modal button (Redeploy / Hangar / Next Mission / Resume) works. */
+      pointer-events: auto;
     }
 
     .modal-card {
@@ -1719,6 +1722,9 @@ try {
           mainGame.startMission(mainGame.currentLevel || 1);
           mainGame.player.reset(selectedShip);
         }
+
+        // Exposed for debugging / automated testing.
+        window.__game = mainGame;
       }
 
       if (btnLaunch) {
